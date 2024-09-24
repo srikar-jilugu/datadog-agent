@@ -258,9 +258,13 @@ func ExtractServiceMetadata(lang language.Language, ctx DetectionContext) (metad
 	exe := cmd[0]
 	// check if all args are packed into the first argument
 	if len(cmd) == 1 {
-		if idx := strings.IndexRune(exe, ' '); idx != -1 {
-			exe = exe[0:idx]
-			cmd = strings.Split(cmd[0], " ")
+		// check if this is a full path. Windows paths may includes spaces.
+		_, err := os.Stat(exe)
+		if err != nil {
+			if idx := strings.IndexRune(exe, ' '); idx != -1 {
+				exe = exe[0:idx]
+				cmd = strings.Split(cmd[0], " ")
+			}
 		}
 	}
 

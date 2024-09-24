@@ -399,7 +399,7 @@ func Initialize(paths ...string) error {
 	csPythonExecPath := TrackedCString(pythonBinPath)
 	defer C._free(unsafe.Pointer(csPythonExecPath))
 
-	if pythonVersion == "3" {
+	if pythonVersion == "0" {
 		log.Infof("Initializing rtloader with Python 3 %s", PythonHome)
 		rtloader = C.make3(csPythonHome, csPythonExecPath, &pyErr)
 	} else {

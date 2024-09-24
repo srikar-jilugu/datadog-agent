@@ -19,12 +19,14 @@ import (
 
 // All System Probe modules should register their factories here
 var All = []module.Factory{
+	DiscoveryModule,
 	NetworkTracer,
 	// there is a dependency from EventMonitor -> NetworkTracer
 	// so EventMonitor has to follow NetworkTracer
 	EventMonitor,
 	WinCrashProbe,
 	Traceroute,
+	DiscoveryModule,
 }
 
 func inactivityEventLog(duration time.Duration) {
