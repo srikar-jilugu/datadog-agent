@@ -4,10 +4,13 @@
 #include "map-defs.h"
 #include "port_range.h"
 #include "protocols/classification/stack-helpers.h"
+#include "protocols/tls/tls.h"
 
 // Maps a connection tuple to its classified protocol. Used to reduce redundant
 // classification procedures on the same connection
 BPF_HASH_MAP(connection_protocol, conn_tuple_t, protocol_stack_wrapper_t, 0)
+
+BPF_HASH_MAP(tls_enhanced_tags, conn_tuple_t, tls_info_t, 0)
 
 static __always_inline bool is_protocol_classification_supported() {
     __u64 val = 0;
@@ -30,6 +33,24 @@ static __always_inline protocol_stack_t* get_protocol_stack_if_exists(conn_tuple
     conn_tuple_t normalized_tup = *tuple;
     normalize_tuple(&normalized_tup);
     return __get_protocol_stack_if_exists(&normalized_tup);
+}
+
+static __always_inline tls_info_t* get_tls_enhanced_tags(conn_tuple_t* tuple) {
+    conn_tuple_t normalized_tup = *tuple;
+    normalize_tuple(&normalized_tup);
+    return bpf_map_lookup_elem(&tls_enhanced_tags, &normalized_tup);
+}
+
+static __always_inline tls_info_t* get_or_create_tls_enhanced_tags(conn_tuple_t *tuple) {
+    tls_info_t *tags = get_tls_enhanced_tags(tuple);
+    if (!tags) {
+        conn_tuple_t normalized_tup = *tuple;
+        normalize_tuple(&normalized_tup);
+        tls_info_t empty_tags = {.reserved = 1};
+        bpf_map_update_elem(&tls_enhanced_tags, &normalized_tup, &empty_tags, BPF_ANY);
+        tags = bpf_map_lookup_elem(&tls_enhanced_tags, &normalized_tup);
+    }
+    return tags;
 }
 
 // Returns the protocol_stack_t associated with the given connection tuple.
