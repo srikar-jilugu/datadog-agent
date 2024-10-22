@@ -1,0 +1,24 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "configure_make")
+
+configure_make(
+    name = "libgcrypt",
+    configure_options = [
+        "--enable-maintainer-mode",
+    ],
+    lib_source = "@libgcrypt//:all",
+    out_shared_libs = select({
+        "@platforms//os:linux": [
+            "libgcrypt.so",
+        ],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//deps/libgpg-error",
+    ],
+    autoreconf = True,
+    configure_in_place = True,
+    # Workaround for https://github.com/bazel-contrib/rules_foreign_cc/issues/1160
+    env = {
+        "PATH": "$$EXT_BUILD_DEPS/libgpg-error/bin:$$PATH",
+    },
+)
