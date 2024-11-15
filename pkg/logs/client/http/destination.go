@@ -21,6 +21,7 @@ import (
 
 	"github.com/DataDog/datadog-agent/comp/logs/agent/config"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
+	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
@@ -81,10 +82,14 @@ type Destination struct {
 	lastRetryError error
 
 	// Telemetry
-	expVars         *expvar.Map
-	destMeta        *client.DestinationMetadata
-	pipelineMonitor metrics.PipelineMonitor
-	utilization     metrics.UtilizationMonitor
+	expVars                      *expvar.Map
+	destMeta                     *client.DestinationMetadata
+	pipelineMonitor              metrics.PipelineMonitor
+	utilization                  metrics.UtilizationMonitor
+	latency                      float64
+	inUseSenders                 int
+	targetLatency                float64
+	maxConcurrentBackgroundSends int
 }
 
 // NewDestination returns a new Destination.
@@ -141,25 +146,29 @@ func newDestination(endpoint config.Endpoint,
 	}
 
 	return &Destination{
-		host:                endpoint.Host,
-		url:                 buildURL(endpoint),
-		endpoint:            endpoint,
-		contentType:         contentType,
-		client:              httputils.NewResetClient(endpoint.ConnectionResetInterval, httpClientFactory(timeout, cfg)),
-		destinationsContext: destinationsContext,
-		climit:              make(chan struct{}, maxConcurrentBackgroundSends),
-		wg:                  sync.WaitGroup{},
-		backoff:             policy,
-		protocol:            endpoint.Protocol,
-		origin:              endpoint.Origin,
-		lastRetryError:      nil,
-		retryLock:           sync.Mutex{},
-		shouldRetry:         shouldRetry,
-		expVars:             expVars,
-		destMeta:            destMeta,
-		isMRF:               endpoint.IsMRF,
-		pipelineMonitor:     pipelineMonitor,
-		utilization:         pipelineMonitor.MakeUtilizationMonitor(destMeta.MonitorTag()),
+		host:                         endpoint.Host,
+		url:                          buildURL(endpoint),
+		endpoint:                     endpoint,
+		contentType:                  contentType,
+		client:                       httputils.NewResetClient(endpoint.ConnectionResetInterval, httpClientFactory(timeout, cfg)),
+		destinationsContext:          destinationsContext,
+		climit:                       make(chan struct{}, maxConcurrentBackgroundSends),
+		wg:                           sync.WaitGroup{},
+		backoff:                      policy,
+		protocol:                     endpoint.Protocol,
+		origin:                       endpoint.Origin,
+		lastRetryError:               nil,
+		retryLock:                    sync.Mutex{},
+		shouldRetry:                  shouldRetry,
+		expVars:                      expVars,
+		destMeta:                     destMeta,
+		isMRF:                        endpoint.IsMRF,
+		pipelineMonitor:              pipelineMonitor,
+		utilization:                  pipelineMonitor.MakeUtilizationMonitor(destMeta.MonitorTag()),
+		latency:                      0,
+		inUseSenders:                 1,
+		targetLatency:                pkgconfigsetup.Datadog().GetFloat64("logs_config.target_latency"),
+		maxConcurrentBackgroundSends: maxConcurrentBackgroundSends,
 	}
 }
 
@@ -198,6 +207,9 @@ func (d *Destination) Start(input chan *message.Payload, output chan *message.Pa
 func (d *Destination) run(input chan *message.Payload, output chan *message.Payload, stopChan chan struct{}, isRetrying chan bool) {
 	var startIdle = time.Now()
 
+	// start with at least one sender.
+	d.climit <- struct{}{}
+
 	for p := range input {
 		d.utilization.Start()
 		idle := float64(time.Since(startIdle) / time.Millisecond)
@@ -223,14 +235,30 @@ func (d *Destination) run(input chan *message.Payload, output chan *message.Payl
 
 func (d *Destination) sendConcurrent(payload *message.Payload, output chan *message.Payload, isRetrying chan bool) {
 	d.wg.Add(1)
-	d.climit <- struct{}{}
+
+	now := time.Now()
+	<-d.climit
 	go func() {
 		defer func() {
-			<-d.climit
+			d.climit <- struct{}{}
 			d.wg.Done()
 		}()
 		d.sendAndRetry(payload, output, isRetrying)
 	}()
+
+	l := float64(time.Since(now).Milliseconds())
+	alpha := 0.064
+	d.latency = d.latency*(1.0-alpha) + (l * alpha)
+
+	if d.latency > d.targetLatency && d.inUseSenders < d.maxConcurrentBackgroundSends {
+		d.climit <- struct{}{}
+		d.inUseSenders++
+	} else if d.inUseSenders > 1 {
+		<-d.climit
+		d.inUseSenders--
+	}
+	metrics.TlmNumSenders.Set(float64(d.inUseSenders), d.destMeta.TelemetryName())
+	metrics.TlmVirtualLatency.Set(d.latency, d.destMeta.TelemetryName())
 }
 
 // Send sends a payload over HTTP,
@@ -283,6 +311,7 @@ func (d *Destination) sendAndRetry(payload *message.Payload, output chan *messag
 }
 
 func (d *Destination) unconditionalSend(payload *message.Payload) (err error) {
+	time.Sleep(200 * time.Millisecond)
 	defer func() {
 		tlmSend.Inc(d.host, errorToTag(err))
 	}()

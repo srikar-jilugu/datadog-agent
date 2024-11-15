@@ -91,6 +91,11 @@ var (
 	TlmUtilizationItems = telemetry.NewGauge("logs_component_utilization", "items", []string{"name", "instance"}, "Gauge of the number of items currently held in a component and it's bufferes")
 	// TlmUtilizationBytes is the capacity of a component by number of bytes
 	TlmUtilizationBytes = telemetry.NewGauge("logs_component_utilization", "bytes", []string{"name", "instance"}, "Gauge of the number of bytes currently held in a component and it's bufferes")
+
+	// TlmNumSenders is the capacity of a component by number of bytes
+	TlmNumSenders = telemetry.NewGauge("logs_destination", "num_senders", []string{"instance"}, "")
+	// TlmVirtualLatency is the capacity of a component by number of bytes
+	TlmVirtualLatency = telemetry.NewGauge("logs_destination", "vert_latency", []string{"instance"}, "")
 )
 
 func init() {
