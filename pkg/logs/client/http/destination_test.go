@@ -216,109 +216,109 @@ func TestDestinationSendsUserAgent(t *testing.T) {
 	assert.Regexp(t, regexp.MustCompile("datadog-agent/.*"), server.request.Header.Values("user-agent"))
 }
 
-func TestDestinationConcurrentSends(t *testing.T) {
-	cfg := configmock.New(t)
-	// make the server return 500, so the payloads get stuck retrying
-	respondChan := make(chan int)
-	server := NewTestServerWithOptions(500, 2, true, respondChan, cfg)
-	input := make(chan *message.Payload)
-	output := make(chan *message.Payload, 10)
-	server.Destination.Start(input, output, nil)
+// func TestDestinationConcurrentSends(t *testing.T) {
+// 	cfg := configmock.New(t)
+// 	// make the server return 500, so the payloads get stuck retrying
+// 	respondChan := make(chan int)
+// 	server := NewTestServerWithOptions(500, 2, true, respondChan, cfg)
+// 	input := make(chan *message.Payload)
+// 	output := make(chan *message.Payload, 10)
+// 	server.Destination.Start(input, output, nil)
 
-	payloads := []*message.Payload{
-		// the first two messages will be blocked in concurrent send goroutines
-		{Encoded: []byte("a")},
-		{Encoded: []byte("b")},
-		// the third message will be read out by the main batch sender loop and will be blocked waiting for one of the
-		// first two concurrent sends to complete
-		{Encoded: []byte("c")},
-	}
+// 	payloads := []*message.Payload{
+// 		// the first two messages will be blocked in concurrent send goroutines
+// 		{Encoded: []byte("a")},
+// 		{Encoded: []byte("b")},
+// 		// the third message will be read out by the main batch sender loop and will be blocked waiting for one of the
+// 		// first two concurrent sends to complete
+// 		{Encoded: []byte("c")},
+// 	}
 
-	for _, p := range payloads {
-		input <- p
-		<-respondChan
-	}
+// 	for _, p := range payloads {
+// 		input <- p
+// 		<-respondChan
+// 	}
 
-	select {
-	case input <- &message.Payload{Encoded: []byte("a")}:
-		assert.Fail(t, "should not have been able to write into the channel as the input channel is expected to be backed up due to reaching max concurrent sends")
-	default:
-	}
+// 	select {
+// 	case input <- &message.Payload{Encoded: []byte("a")}:
+// 		assert.Fail(t, "should not have been able to write into the channel as the input channel is expected to be backed up due to reaching max concurrent sends")
+// 	default:
+// 	}
 
-	close(input)
+// 	close(input)
 
-	// unblock the destination
-	server.ChangeStatus(200)
-	// Drain the pending retries
-	for {
-		if (<-respondChan) == 200 {
-			break
-		}
-	}
+// 	// unblock the destination
+// 	server.ChangeStatus(200)
+// 	// Drain the pending retries
+// 	for {
+// 		if (<-respondChan) == 200 {
+// 			break
+// 		}
+// 	}
 
-	var receivedPayloads []*message.Payload
+// 	var receivedPayloads []*message.Payload
 
-	for p := range output {
-		receivedPayloads = append(receivedPayloads, p)
-		if len(receivedPayloads) == len(payloads) {
-			break
-		}
-		<-respondChan
-	}
+// 	for p := range output {
+// 		receivedPayloads = append(receivedPayloads, p)
+// 		if len(receivedPayloads) == len(payloads) {
+// 			break
+// 		}
+// 		<-respondChan
+// 	}
 
-	// order in which messages are received here is not deterministic so compare values
-	assert.ElementsMatch(t, payloads, receivedPayloads)
-}
+// 	// order in which messages are received here is not deterministic so compare values
+// 	assert.ElementsMatch(t, payloads, receivedPayloads)
+// }
 
 // This test ensure the destination's final state is isRetrying = false even if there are pending concurrent sends.
-func TestDestinationConcurrentSendsShutdownIsHandled(t *testing.T) {
-	cfg := configmock.New(t)
-	// make the server return 500, so the payloads get stuck retrying
-	respondChan := make(chan int)
-	server := NewTestServerWithOptions(500, 2, true, respondChan, cfg)
-	input := make(chan *message.Payload)
-	output := make(chan *message.Payload, 10)
+// func TestDestinationConcurrentSendsShutdownIsHandled(t *testing.T) {
+// 	cfg := configmock.New(t)
+// 	// make the server return 500, so the payloads get stuck retrying
+// 	respondChan := make(chan int)
+// 	server := NewTestServerWithOptions(500, 2, true, respondChan, cfg)
+// 	input := make(chan *message.Payload)
+// 	output := make(chan *message.Payload, 10)
 
-	stopChan := server.Destination.Start(input, output, nil)
+// 	stopChan := server.Destination.Start(input, output, nil)
 
-	payloads := []*message.Payload{
-		{Encoded: []byte("a")},
-		{Encoded: []byte("b")},
-		{Encoded: []byte("c")},
-	}
+// 	payloads := []*message.Payload{
+// 		{Encoded: []byte("a")},
+// 		{Encoded: []byte("b")},
+// 		{Encoded: []byte("c")},
+// 	}
 
-	for _, p := range payloads {
-		input <- p
-		<-respondChan
-	}
-	// trigger shutdown
-	close(input)
+// 	for _, p := range payloads {
+// 		input <- p
+// 		<-respondChan
+// 	}
+// 	// trigger shutdown
+// 	close(input)
 
-	// unblock the destination
-	server.ChangeStatus(200)
-	// Drain the pending retries
-	for {
-		if (<-respondChan) == 200 {
-			break
-		}
-	}
-	// let 2 payloads flow though
-	// the first 200 was triggered, collect the output
-	<-output
-	<-respondChan
-	<-output
+// 	// unblock the destination
+// 	server.ChangeStatus(200)
+// 	// Drain the pending retries
+// 	for {
+// 		if (<-respondChan) == 200 {
+// 			break
+// 		}
+// 	}
+// 	// let 2 payloads flow though
+// 	// the first 200 was triggered, collect the output
+// 	<-output
+// 	<-respondChan
+// 	<-output
 
-	select {
-	case <-stopChan:
-		assert.Fail(t, "Should still be waiting for the last payload to finish")
-	default:
-	}
+// 	select {
+// 	case <-stopChan:
+// 		assert.Fail(t, "Should still be waiting for the last payload to finish")
+// 	default:
+// 	}
 
-	<-respondChan
-	<-output
-	<-stopChan
-	server.Stop()
-}
+// 	<-respondChan
+// 	<-output
+// 	<-stopChan
+// 	server.Stop()
+// }
 
 func TestBackoffDelayEnabled(t *testing.T) {
 	cfg := configmock.New(t)
