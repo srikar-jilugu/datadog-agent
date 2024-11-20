@@ -151,18 +151,26 @@ func makeTcpStates(synPkt testCapture) *network.ConnectionStats {
 }
 
 type tcpTestFixture struct {
-	t                           *testing.T
-	tcp                         *TCPProcessor
-	conn                        *network.ConnectionStats
+	t    *testing.T
+	tcp  *TCPProcessor
+	conn *network.ConnectionStats
+	pb   packetBuilder
+}
+
+type packetBuilder struct {
 	localSeqBase, remoteSeqBase uint32
 }
 
-const TCP_HEADER_SIZE = 20
+const tcpHeaderSize = 20
 
-func (fixture *tcpTestFixture) incoming(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
-	ipv4 := ipv4Packet(remoteIP, localhost, minIhl*4+TCP_HEADER_SIZE+payloadLen)
-	seq := relSeq + fixture.localSeqBase
-	ack := relAck + fixture.remoteSeqBase
+func newPacketBuilder(localSeqBase, remoteSeqBase uint32) packetBuilder {
+	return packetBuilder{localSeqBase: localSeqBase, remoteSeqBase: remoteSeqBase}
+}
+
+func (pb packetBuilder) incoming(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
+	ipv4 := ipv4Packet(remoteIP, localhost, minIhl*4+tcpHeaderSize+payloadLen)
+	seq := relSeq + pb.localSeqBase
+	ack := relAck + pb.remoteSeqBase
 	tcp := tcpPacket(defaultRemotePort, defaultLocalPort, seq, ack, flags)
 	return testCapture{
 		pktType: unix.PACKET_HOST,
@@ -172,10 +180,10 @@ func (fixture *tcpTestFixture) incoming(payloadLen uint16, relSeq, relAck uint32
 	}
 }
 
-func (fixture *tcpTestFixture) outgoing(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
-	ipv4 := ipv4Packet(localhost, remoteIP, minIhl*4+TCP_HEADER_SIZE+payloadLen)
-	seq := relSeq + fixture.remoteSeqBase
-	ack := relAck + fixture.localSeqBase
+func (pb packetBuilder) outgoing(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
+	ipv4 := ipv4Packet(localhost, remoteIP, minIhl*4+tcpHeaderSize+payloadLen)
+	seq := relSeq + pb.remoteSeqBase
+	ack := relAck + pb.localSeqBase
 	tcp := tcpPacket(defaultLocalPort, defaultRemotePort, seq, ack, flags)
 	return testCapture{
 		pktType: unix.PACKET_OUTGOING,
@@ -185,13 +193,19 @@ func (fixture *tcpTestFixture) outgoing(payloadLen uint16, relSeq, relAck uint32
 	}
 }
 
-func newTcpTestFixture(t *testing.T, localSeqBase, remoteSeqBase uint32) *tcpTestFixture {
+func (fixture *tcpTestFixture) incoming(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
+	return fixture.pb.incoming(payloadLen, relSeq, relAck, flags)
+}
+
+func (fixture *tcpTestFixture) outgoing(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
+	return fixture.pb.outgoing(payloadLen, relSeq, relAck, flags)
+}
+
+func newTcpTestFixture(t *testing.T) *tcpTestFixture {
 	return &tcpTestFixture{
-		t:             t,
-		tcp:           NewTCPProcessor(),
-		conn:          nil,
-		localSeqBase:  localSeqBase,
-		remoteSeqBase: remoteSeqBase,
+		t:    t,
+		tcp:  NewTCPProcessor(),
+		conn: nil,
 	}
 }
 
@@ -225,25 +239,24 @@ func (fixture *tcpTestFixture) runAgainstState(packets []testCapture, expected [
 	require.Equal(fixture.t, expectedStrs, actualStrs)
 }
 
-func testBasicHandshake(t *testing.T, f *tcpTestFixture) {
-
+func testBasicHandshake(t *testing.T, pb packetBuilder) {
 	basicHandshake := []testCapture{
-		f.outgoing(0, 0, 0, SYN),
-		f.incoming(0, 0, 1, SYN|ACK),
+		pb.outgoing(0, 0, 0, SYN),
+		pb.incoming(0, 0, 1, SYN|ACK),
 		// separate ack and first send of data
-		f.outgoing(0, 1, 1, ACK),
-		f.outgoing(123, 1, 1, ACK),
+		pb.outgoing(0, 1, 1, ACK),
+		pb.outgoing(123, 1, 1, ACK),
 		// acknowledge data separately
-		f.incoming(0, 1, 124, ACK),
-		f.incoming(345, 1, 124, ACK),
+		pb.incoming(0, 1, 124, ACK),
+		pb.incoming(345, 1, 124, ACK),
 		// remote FINs separately
-		f.incoming(0, 346, 124, FIN|ACK),
+		pb.incoming(0, 346, 124, FIN|ACK),
 		// local acknowledges data, (not the FIN)
-		f.outgoing(0, 124, 346, ACK),
+		pb.outgoing(0, 124, 346, ACK),
 		// local acknowledges FIN and sends their own
-		f.outgoing(0, 124, 347, FIN|ACK),
+		pb.outgoing(0, 124, 347, FIN|ACK),
 		// remote sends final ACK
-		f.incoming(0, 347, 125, ACK),
+		pb.incoming(0, 347, 125, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -262,6 +275,7 @@ func testBasicHandshake(t *testing.T, f *tcpTestFixture) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
@@ -284,34 +298,34 @@ var higherSeq uint32 = 2973263073
 
 func TestBasicHandshake(t *testing.T) {
 	t.Run("localSeq lt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, lowerSeq, higherSeq)
-		testBasicHandshake(t, f)
+		pb := newPacketBuilder(lowerSeq, higherSeq)
+		testBasicHandshake(t, pb)
 	})
 
 	t.Run("localSeq gt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, higherSeq, lowerSeq)
-		testBasicHandshake(t, f)
+		pb := newPacketBuilder(higherSeq, lowerSeq)
+		testBasicHandshake(t, pb)
 	})
 }
 
-func testReversedBasicHandshake(t *testing.T, f *tcpTestFixture) {
+func testReversedBasicHandshake(t *testing.T, pb packetBuilder) {
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
 		// separate ack and first send of data
-		f.incoming(0, 1, 1, ACK),
-		f.incoming(123, 1, 1, ACK),
+		pb.incoming(0, 1, 1, ACK),
+		pb.incoming(123, 1, 1, ACK),
 		// acknowledge data separately
-		f.outgoing(0, 1, 124, ACK),
-		f.outgoing(345, 1, 124, ACK),
+		pb.outgoing(0, 1, 124, ACK),
+		pb.outgoing(345, 1, 124, ACK),
 		// local FINs separately
-		f.outgoing(0, 346, 124, FIN|ACK),
+		pb.outgoing(0, 346, 124, FIN|ACK),
 		// remote acknowledges data, (not the FIN)
-		f.incoming(0, 124, 346, ACK),
+		pb.incoming(0, 124, 346, ACK),
 		// remote acknowledges FIN and sends their own
-		f.incoming(0, 124, 347, FIN|ACK),
+		pb.incoming(0, 124, 347, FIN|ACK),
 		// local sends final ACK
-		f.outgoing(0, 347, 125, ACK),
+		pb.outgoing(0, 347, 125, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -329,6 +343,7 @@ func testReversedBasicHandshake(t *testing.T, f *tcpTestFixture) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
@@ -347,37 +362,37 @@ func testReversedBasicHandshake(t *testing.T, f *tcpTestFixture) {
 
 func TestReversedBasicHandshake(t *testing.T) {
 	t.Run("localSeq lt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, lowerSeq, higherSeq)
-		testReversedBasicHandshake(t, f)
+		pb := newPacketBuilder(lowerSeq, higherSeq)
+		testReversedBasicHandshake(t, pb)
 	})
 
 	t.Run("localSeq gt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, higherSeq, lowerSeq)
-		testReversedBasicHandshake(t, f)
+		pb := newPacketBuilder(higherSeq, lowerSeq)
+		testReversedBasicHandshake(t, pb)
 	})
 }
 
-func testCloseWaitState(t *testing.T, f *tcpTestFixture) {
+func testCloseWaitState(t *testing.T, pb packetBuilder) {
 	// test the CloseWait state, which is when the local client still has data left
 	// to send during a passive close
 
 	basicHandshake := []testCapture{
-		f.outgoing(0, 0, 0, SYN),
-		f.incoming(0, 0, 1, SYN|ACK),
+		pb.outgoing(0, 0, 0, SYN),
+		pb.incoming(0, 0, 1, SYN|ACK),
 		// local sends data right out the gate with ACK
-		f.outgoing(123, 1, 1, ACK),
+		pb.outgoing(123, 1, 1, ACK),
 		// remote acknowledges and sends data back
-		f.incoming(345, 1, 124, ACK),
+		pb.incoming(345, 1, 124, ACK),
 		// remote FINs separately
-		f.incoming(0, 346, 124, FIN|ACK),
+		pb.incoming(0, 346, 124, FIN|ACK),
 		// local acknowledges FIN, but keeps sending data for a bit
-		f.outgoing(100, 124, 347, ACK),
+		pb.outgoing(100, 124, 347, ACK),
 		// client finally FINACKs
-		f.outgoing(42, 224, 347, FIN|ACK),
+		pb.outgoing(42, 224, 347, FIN|ACK),
 		// remote acknowledges data but not including the FIN
-		f.incoming(0, 347, 224, ACK),
+		pb.incoming(0, 347, 224, ACK),
 		// server sends final ACK
-		f.incoming(0, 347, 224+42+1, ACK),
+		pb.incoming(0, 347, 224+42+1, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -394,6 +409,7 @@ func testCloseWaitState(t *testing.T, f *tcpTestFixture) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
@@ -412,39 +428,39 @@ func testCloseWaitState(t *testing.T, f *tcpTestFixture) {
 
 func TestCloseWaitState(t *testing.T) {
 	t.Run("localSeq lt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, lowerSeq, higherSeq)
-		testCloseWaitState(t, f)
+		pb := newPacketBuilder(lowerSeq, higherSeq)
+		testCloseWaitState(t, pb)
 	})
 
 	t.Run("localSeq gt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, higherSeq, lowerSeq)
+		f := newPacketBuilder(higherSeq, lowerSeq)
 		testCloseWaitState(t, f)
 	})
 }
 
-func testFinWait2State(t *testing.T, f *tcpTestFixture) {
+func testFinWait2State(t *testing.T, pb packetBuilder) {
 	// test the FinWait2 state, which is when the remote still has data left
 	// to send during an active close
 
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
 		// separate ack and first send of data
-		f.incoming(0, 1, 1, ACK),
-		f.incoming(123, 1, 1, ACK),
+		pb.incoming(0, 1, 1, ACK),
+		pb.incoming(123, 1, 1, ACK),
 		// acknowledge data separately
-		f.outgoing(0, 1, 124, ACK),
-		f.outgoing(345, 1, 124, ACK),
+		pb.outgoing(0, 1, 124, ACK),
+		pb.outgoing(345, 1, 124, ACK),
 		// local FINs separately
-		f.outgoing(0, 346, 124, FIN|ACK),
+		pb.outgoing(0, 346, 124, FIN|ACK),
 		// remote acknowledges the FIN but keeps sending data
-		f.incoming(100, 124, 347, ACK),
+		pb.incoming(100, 124, 347, ACK),
 		// local acknowledges this data
-		f.outgoing(0, 347, 224, ACK),
+		pb.outgoing(0, 347, 224, ACK),
 		// remote sends their own FIN
-		f.incoming(0, 224, 347, FIN|ACK),
+		pb.incoming(0, 224, 347, FIN|ACK),
 		// local sends final ACK
-		f.outgoing(0, 347, 225, ACK),
+		pb.outgoing(0, 347, 225, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -463,6 +479,7 @@ func testFinWait2State(t *testing.T, f *tcpTestFixture) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
@@ -481,29 +498,28 @@ func testFinWait2State(t *testing.T, f *tcpTestFixture) {
 
 func TestFinWait2State(t *testing.T) {
 	t.Run("localSeq lt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, lowerSeq, higherSeq)
-		testFinWait2State(t, f)
+		pb := newPacketBuilder(lowerSeq, higherSeq)
+		testFinWait2State(t, pb)
 	})
 
 	t.Run("localSeq gt remoteSeq", func(t *testing.T) {
-		f := newTcpTestFixture(t, higherSeq, lowerSeq)
-		testFinWait2State(t, f)
+		pb := newPacketBuilder(higherSeq, lowerSeq)
+		testFinWait2State(t, pb)
 	})
 }
 
 func TestImmediateFin(t *testing.T) {
 	// originally captured from TestTCPConnsReported which closes connections right as it gets them
 
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
-		f.incoming(0, 1, 1, ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 1, 1, ACK),
 		// active close after sending no data
-		f.outgoing(0, 1, 1, FIN|ACK),
-		f.incoming(0, 1, 2, FIN|ACK),
-		f.outgoing(0, 2, 2, ACK),
+		pb.outgoing(0, 1, 1, FIN|ACK),
+		pb.incoming(0, 1, 2, FIN|ACK),
+		pb.outgoing(0, 2, 2, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -516,6 +532,7 @@ func TestImmediateFin(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
@@ -533,11 +550,10 @@ func TestImmediateFin(t *testing.T) {
 }
 
 func TestConnRefusedSyn(t *testing.T) {
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 0, RST|ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 0, RST|ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -545,6 +561,7 @@ func TestConnRefusedSyn(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
@@ -564,12 +581,11 @@ func TestConnRefusedSyn(t *testing.T) {
 }
 
 func TestConnRefusedSynAck(t *testing.T) {
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
-		f.outgoing(0, 0, 0, RST|ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
+		pb.outgoing(0, 0, 0, RST|ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -578,6 +594,7 @@ func TestConnRefusedSynAck(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
@@ -597,14 +614,13 @@ func TestConnRefusedSynAck(t *testing.T) {
 }
 
 func TestConnReset(t *testing.T) {
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
-		f.incoming(0, 1, 1, ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 1, 1, ACK),
 		// handshake done, now blow up
-		f.outgoing(0, 1, 1, RST|ACK),
+		pb.outgoing(0, 1, 1, RST|ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -615,6 +631,7 @@ func TestConnReset(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
@@ -634,15 +651,14 @@ func TestConnReset(t *testing.T) {
 }
 
 func TestRstRetransmit(t *testing.T) {
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
-		f.incoming(0, 1, 1, ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 1, 1, ACK),
 		// handshake done, now blow up
-		f.outgoing(0, 1, 1, RST|ACK),
-		f.outgoing(0, 1, 1, RST|ACK),
+		pb.outgoing(0, 1, 1, RST|ACK),
+		pb.outgoing(0, 1, 1, RST|ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -654,6 +670,7 @@ func TestRstRetransmit(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	// should count as a single failure
@@ -677,16 +694,15 @@ func TestRstRetransmit(t *testing.T) {
 func TestConnectTwice(t *testing.T) {
 	// same as TestImmediateFin but everything happens twice
 
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
-		f.incoming(0, 1, 1, ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 1, 1, ACK),
 		// active close after sending no data
-		f.outgoing(0, 1, 1, FIN|ACK),
-		f.incoming(0, 1, 2, FIN|ACK),
-		f.outgoing(0, 2, 2, ACK),
+		pb.outgoing(0, 1, 1, FIN|ACK),
+		pb.incoming(0, 1, 2, FIN|ACK),
+		pb.outgoing(0, 2, 2, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -699,6 +715,7 @@ func TestConnectTwice(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	state := f.tcp.conns[f.conn.ConnectionTuple]
@@ -725,17 +742,16 @@ func TestConnectTwice(t *testing.T) {
 }
 
 func TestSimultaneousClose(t *testing.T) {
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
-		f.outgoing(0, 0, 1, SYN|ACK),
-		f.incoming(0, 1, 1, ACK),
+		pb.incoming(0, 0, 0, SYN),
+		pb.outgoing(0, 0, 1, SYN|ACK),
+		pb.incoming(0, 1, 1, ACK),
 		// active close after sending no data
-		f.outgoing(0, 1, 1, FIN|ACK),
-		f.incoming(0, 1, 1, FIN|ACK),
-		f.outgoing(0, 2, 2, ACK),
-		f.incoming(0, 2, 2, ACK),
+		pb.outgoing(0, 1, 1, FIN|ACK),
+		pb.incoming(0, 1, 1, FIN|ACK),
+		pb.outgoing(0, 2, 2, ACK),
+		pb.incoming(0, 2, 2, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -749,6 +765,7 @@ func TestSimultaneousClose(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
@@ -767,18 +784,17 @@ func TestSimultaneousClose(t *testing.T) {
 
 func TestUnusualAckSyn(t *testing.T) {
 	// according to zeek, some unusual clients such as ftp.microsoft.com do the ACK and SYN separately
-	f := newTcpTestFixture(t, lowerSeq, higherSeq)
-
+	pb := newPacketBuilder(lowerSeq, higherSeq)
 	basicHandshake := []testCapture{
-		f.incoming(0, 0, 0, SYN),
+		pb.incoming(0, 0, 0, SYN),
 		// ACK the first SYN before even sending your own SYN
-		f.outgoing(0, 0, 1, ACK),
-		f.outgoing(0, 0, 1, SYN),
-		f.incoming(0, 1, 1, ACK),
+		pb.outgoing(0, 0, 1, ACK),
+		pb.outgoing(0, 0, 1, SYN),
+		pb.incoming(0, 1, 1, ACK),
 		// active close after sending no data
-		f.outgoing(0, 1, 1, FIN|ACK),
-		f.incoming(0, 1, 2, FIN|ACK),
-		f.outgoing(0, 2, 2, ACK),
+		pb.outgoing(0, 1, 1, FIN|ACK),
+		pb.incoming(0, 1, 2, FIN|ACK),
+		pb.outgoing(0, 2, 2, ACK),
 	}
 
 	expectedClientStates := []ConnStatus{
@@ -792,6 +808,7 @@ func TestUnusualAckSyn(t *testing.T) {
 		ConnStatClosed,
 	}
 
+	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	require.Empty(t, f.conn.TCPFailures)
