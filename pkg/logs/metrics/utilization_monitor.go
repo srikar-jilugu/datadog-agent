@@ -7,15 +7,12 @@ package metrics
 
 import (
 	"time"
-
-	"github.com/DataDog/datadog-agent/pkg/util/utilizationtracker"
 )
 
 // UtilizationMonitor is an interface for monitoring the utilization of a component.
 type UtilizationMonitor interface {
 	Start()
 	Stop()
-	Cancel()
 }
 
 // NoopUtilizationMonitor is a no-op implementation of UtilizationMonitor.
@@ -27,33 +24,34 @@ func (n *NoopUtilizationMonitor) Start() {}
 // Stop does nothing.
 func (n *NoopUtilizationMonitor) Stop() {}
 
-// Cancel does nothing.
-func (n *NoopUtilizationMonitor) Cancel() {}
-
 // TelemetryUtilizationMonitor is a UtilizationMonitor that reports utilization metrics as telemetry.
 type TelemetryUtilizationMonitor struct {
-	name     string
-	instance string
-	started  bool
-	ut       *utilizationtracker.UtilizationTracker
-	cancel   func()
+	inUse      time.Duration
+	idle       time.Duration
+	startIdle  time.Time
+	startInUse time.Time
+	avg        float64
+	name       string
+	instance   string
+	started    bool
+	tickChan   <-chan time.Time
 }
 
 // NewTelemetryUtilizationMonitor creates a new TelemetryUtilizationMonitor.
 func NewTelemetryUtilizationMonitor(name, instance string) *TelemetryUtilizationMonitor {
+	return newTelemetryUtilizationMonitorWithTick(name, instance, time.NewTicker(1*time.Second).C)
+}
 
-	utilizationTracker := utilizationtracker.NewUtilizationTracker(1*time.Second, ewmaAlpha, false)
-	cancel := startTrackerTicker(utilizationTracker, 1*time.Second)
-
-	t := &TelemetryUtilizationMonitor{
-		name:     name,
-		instance: instance,
-		started:  false,
-		ut:       utilizationTracker,
-		cancel:   cancel,
+func newTelemetryUtilizationMonitorWithTick(name, instance string, tickChan <-chan time.Time) *TelemetryUtilizationMonitor {
+	return &TelemetryUtilizationMonitor{
+		name:       name,
+		instance:   instance,
+		startIdle:  time.Now(),
+		startInUse: time.Now(),
+		avg:        0,
+		started:    false,
+		tickChan:   tickChan,
 	}
-	t.startUtilizationUpdater()
-	return t
 }
 
 // Start tracks a start event in the utilization tracker.
@@ -62,7 +60,9 @@ func (u *TelemetryUtilizationMonitor) Start() {
 		return
 	}
 	u.started = true
-	u.ut.Started()
+	u.idle += time.Since(u.startIdle)
+	u.startInUse = time.Now()
+	u.reportIfNeeded()
 }
 
 // Stop tracks a finish event in the utilization tracker.
@@ -71,43 +71,18 @@ func (u *TelemetryUtilizationMonitor) Stop() {
 		return
 	}
 	u.started = false
-	u.ut.Finished()
+	u.inUse += time.Since(u.startInUse)
+	u.startIdle = time.Now()
+	u.reportIfNeeded()
 }
 
-// Cancel stops the monitor.
-func (u *TelemetryUtilizationMonitor) Cancel() {
-	u.cancel()
-	u.ut.Stop()
-}
-
-func startTrackerTicker(ut *utilizationtracker.UtilizationTracker, interval time.Duration) func() {
-	ticker := time.NewTicker(interval)
-	cancel := make(chan struct{}, 1)
-	done := make(chan struct{})
-	go func() {
-		defer ticker.Stop()
-		defer close(done)
-		for {
-			select {
-			case <-ticker.C:
-				ut.Tick()
-			case <-cancel:
-				return
-			}
-		}
-	}()
-
-	return func() {
-		cancel <- struct{}{}
-		<-done // make sure Tick will not be called after we return.
+func (u *TelemetryUtilizationMonitor) reportIfNeeded() {
+	select {
+	case <-u.tickChan:
+		u.avg = ewma(float64(u.inUse)/float64(u.idle+u.inUse), u.avg)
+		TlmUtilizationRatio.Set(u.avg, u.name, u.instance)
+		u.idle = 0
+		u.inUse = 0
+	default:
 	}
-}
-
-func (u *TelemetryUtilizationMonitor) startUtilizationUpdater() {
-	TlmUtilizationRatio.Set(0, u.name, u.instance)
-	go func() {
-		for value := range u.ut.Output {
-			TlmUtilizationRatio.Set(value, u.name, u.instance)
-		}
-	}()
 }

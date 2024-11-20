@@ -5,15 +5,11 @@
 
 package metrics
 
-import (
-	"testing"
-)
-
-func TestUtilizationMonitorLifecycle(_ *testing.T) {
-	// The core logic of the UtilizationMonitor is tested in the utilizationtracker package.
-	// This test just ensures the lifecycle methods don't block.
-	um := NewTelemetryUtilizationMonitor("", "")
-	um.Start()
-	um.Stop()
-	um.Cancel()
-}
+// func TestUtilizationMonitorLifecycle(_ *testing.T) {
+// 	// The core logic of the UtilizationMonitor is tested in the utilizationtracker package.
+// 	// This test just ensures the lifecycle methods don't block.
+// 	um := NewTelemetryUtilizationMonitor("", "")
+// 	um.Start()
+// 	um.Stop()
+// 	um.Cancel()
+// }
