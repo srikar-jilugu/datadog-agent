@@ -555,9 +555,9 @@ func TestConnRefusedSyn(t *testing.T) {
 	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
-	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
+	require.Equal(t, map[uint16]uint32{
 		uint16(syscall.ECONNREFUSED): 1,
-	})
+	}, f.conn.TCPFailures)
 
 	expectedStats := network.StatCounters{
 		SentBytes:      0,
@@ -588,9 +588,9 @@ func TestConnRefusedSynAck(t *testing.T) {
 	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
-	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
+	require.Equal(t, map[uint16]uint32{
 		uint16(syscall.ECONNREFUSED): 1,
-	})
+	}, f.conn.TCPFailures)
 
 	expectedStats := network.StatCounters{
 		SentBytes:      0,
@@ -625,9 +625,9 @@ func TestConnReset(t *testing.T) {
 	f := newTcpTestFixture(t)
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
-	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
+	require.Equal(t, map[uint16]uint32{
 		uint16(syscall.ECONNRESET): 1,
-	})
+	}, f.conn.TCPFailures)
 
 	expectedStats := network.StatCounters{
 		SentBytes:      0,
@@ -665,9 +665,9 @@ func TestRstRetransmit(t *testing.T) {
 	f.runAgainstState(basicHandshake, expectedClientStates)
 
 	// should count as a single failure
-	require.Equal(t, f.conn.TCPFailures, map[uint16]uint32{
+	require.Equal(t, map[uint16]uint32{
 		uint16(syscall.ECONNRESET): 1,
-	})
+	}, f.conn.TCPFailures)
 
 	expectedStats := network.StatCounters{
 		SentBytes:      0,
