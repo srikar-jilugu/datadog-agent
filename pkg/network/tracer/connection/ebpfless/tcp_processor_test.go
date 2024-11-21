@@ -154,7 +154,6 @@ type tcpTestFixture struct {
 	t    *testing.T
 	tcp  *TCPProcessor
 	conn *network.ConnectionStats
-	pb   packetBuilder
 }
 
 type packetBuilder struct {
@@ -191,14 +190,6 @@ func (pb packetBuilder) outgoing(payloadLen uint16, relSeq, relAck uint32, flags
 		ipv6:    nil,
 		tcp:     &tcp,
 	}
-}
-
-func (fixture *tcpTestFixture) incoming(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
-	return fixture.pb.incoming(payloadLen, relSeq, relAck, flags)
-}
-
-func (fixture *tcpTestFixture) outgoing(payloadLen uint16, relSeq, relAck uint32, flags uint8) testCapture {
-	return fixture.pb.outgoing(payloadLen, relSeq, relAck, flags)
 }
 
 func newTcpTestFixture(t *testing.T) *tcpTestFixture {
