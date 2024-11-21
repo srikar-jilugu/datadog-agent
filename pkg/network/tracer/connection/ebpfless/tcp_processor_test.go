@@ -77,36 +77,6 @@ type testCapture struct {
 	tcp     *layers.TCP
 }
 
-func (tc testCapture) reverse() testCapture {
-	ret := tc
-	if tc.pktType == unix.PACKET_HOST {
-		ret.pktType = unix.PACKET_OUTGOING
-	} else {
-		ret.pktType = unix.PACKET_HOST
-	}
-	if tc.ipv4 != nil {
-		ipv4 := *tc.ipv4
-		ipv4.SrcIP, ipv4.DstIP = ipv4.DstIP, ipv4.SrcIP
-		ret.ipv4 = &ipv4
-	}
-	if tc.ipv6 != nil {
-		ipv6 := *tc.ipv6
-		ipv6.SrcIP, ipv6.DstIP = ipv6.DstIP, ipv6.SrcIP
-		ret.ipv6 = &ipv6
-	}
-	tcp := *tc.tcp
-	tcp.SrcPort, tcp.DstPort = tcp.DstPort, tcp.SrcPort
-	ret.tcp = &tcp
-	return ret
-}
-func reversePkts(tc []testCapture) []testCapture {
-	var ret []testCapture
-	for _, t := range tc {
-		ret = append(ret, t.reverse())
-	}
-	return ret
-}
-
 // TODO can this be merged with the logic creating scratchConns in ebpfless tracer?
 func makeTcpStates(synPkt testCapture) *network.ConnectionStats {
 	var family network.ConnectionFamily
