@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/benbjohnson/clock"
+
 	"github.com/DataDog/datadog-agent/comp/logs/agent/config"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
@@ -34,7 +36,7 @@ func NewSyncDestination(endpoint config.Endpoint,
 	cfg pkgconfigmodel.Reader) *SyncDestination {
 
 	return &SyncDestination{
-		destination:    newDestination(endpoint, contentType, destinationsContext, time.Second*10, 1, false, destMeta, cfg, metrics.NewNoopPipelineMonitor("0")),
+		destination:    newDestination(endpoint, contentType, destinationsContext, time.Second*10, 1, 0, clock.New(), false, destMeta, cfg, metrics.NewNoopPipelineMonitor("0")),
 		senderDoneChan: senderDoneChan,
 	}
 }

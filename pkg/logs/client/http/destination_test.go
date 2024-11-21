@@ -94,7 +94,7 @@ func testNoRetry(t *testing.T, statusCode int) {
 func retryTest(t *testing.T, statusCode int) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(statusCode, 0, true, respondChan, cfg)
+	server := NewTestServerWithOptions(statusCode, 0, 0, 0, true, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -124,7 +124,7 @@ func retryTest(t *testing.T, statusCode int) {
 func TestDestinationContextCancel(t *testing.T) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(429, 0, true, respondChan, cfg)
+	server := NewTestServerWithOptions(429, 0, 0, 0, true, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -193,7 +193,7 @@ func TestDestinationSendsTimestampHeaders(t *testing.T) {
 	cfg := configmock.New(t)
 	server := NewTestServer(200, cfg)
 	defer server.httpServer.Close()
-	currentTimestamp := time.Now().UnixMilli()
+	currentTimestamp := server.clock.Now().UnixMilli()
 
 	err := server.Destination.unconditionalSend(&message.Payload{Messages: []*message.Message{{
 		IngestionTimestamp: 1234567890_999_999,
@@ -216,11 +216,71 @@ func TestDestinationSendsUserAgent(t *testing.T) {
 	assert.Regexp(t, regexp.MustCompile("datadog-agent/.*"), server.request.Header.Values("user-agent"))
 }
 
+func TestDestinationConcurrentSends(t *testing.T) {
+	cfg := configmock.New(t)
+	respondChan := make(chan int)
+
+	output := make(chan *message.Payload, 10)
+
+	testSenderScaling := func(count int) {
+		server := NewTestServerWithOptions(200, count, 0, 5*time.Second, true, respondChan, cfg)
+		// Always start with 1 sender
+		assert.Equal(t, 1, server.Destination.inUseSenders)
+		input := make(chan *message.Payload)
+		stopChan := server.Destination.Start(input, output, nil)
+
+		// Scale up the number of senders 1 by 1
+		for i := 0; i < count; i++ {
+			// Send a batch of messages that is always num senders + 1.
+			// When the last payload blocks waiting for a sender, virtual latency is recomputed
+			// and the number of senders is scaled up.
+			for j := 0; j < i+1; j++ {
+				input <- &message.Payload{Encoded: []byte("a")}
+			}
+			for j := 0; j < i+1; j++ {
+				<-respondChan
+				<-output
+			}
+		}
+
+		close(input)
+		<-stopChan
+		assert.Equal(t, count, server.Destination.inUseSenders)
+	}
+
+	// testSenderScaling(1)
+	// testSenderScaling(2)
+	// testSenderScaling(3)
+	// testSenderScaling(4)
+	testSenderScaling(5)
+
+	// input <- &message.Payload{Encoded: []byte("a")}
+	// <-respondChan
+	// <-output
+
+	// input <- &message.Payload{Encoded: []byte("a")}
+	// input <- &message.Payload{Encoded: []byte("a")}
+	// <-respondChan
+	// <-respondChan
+
+	// input <- &message.Payload{Encoded: []byte("a")}
+	// input <- &message.Payload{Encoded: []byte("a")}
+	// input <- &message.Payload{Encoded: []byte("a")}
+	// <-respondChan
+	// <-respondChan
+	// <-respondChan
+	// close(input)
+	// <-stopChan
+
+	// assert.Equal(t, 2, server.Destination.inUseSenders)
+
+}
+
 // func TestDestinationConcurrentSends(t *testing.T) {
 // 	cfg := configmock.New(t)
 // 	// make the server return 500, so the payloads get stuck retrying
 // 	respondChan := make(chan int)
-// 	server := NewTestServerWithOptions(500, 2, true, respondChan, cfg)
+// 	server := NewTestServerWithOptions(200, 2, 0, 1*time.Second, true, respondChan, cfg)
 // 	input := make(chan *message.Payload)
 // 	output := make(chan *message.Payload, 10)
 // 	server.Destination.Start(input, output, nil)
@@ -233,6 +293,14 @@ func TestDestinationSendsUserAgent(t *testing.T) {
 // 		// first two concurrent sends to complete
 // 		{Encoded: []byte("c")},
 // 	}
+
+// 	for _, p := range payloads {
+// 		input <- p
+// 		<-respondChan
+// 	}
+
+// 	// make the server return 500, so the payloads get stuck retrying
+// 	server.ChangeStatus(500)
 
 // 	for _, p := range payloads {
 // 		input <- p
@@ -323,7 +391,7 @@ func TestDestinationSendsUserAgent(t *testing.T) {
 func TestBackoffDelayEnabled(t *testing.T) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(500, 0, true, respondChan, cfg)
+	server := NewTestServerWithOptions(500, 0, 0, 0, true, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -340,7 +408,7 @@ func TestBackoffDelayEnabled(t *testing.T) {
 func TestBackoffDelayDisabled(t *testing.T) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(500, 0, false, respondChan, cfg)
+	server := NewTestServerWithOptions(500, 0, 0, 0, false, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -361,7 +429,7 @@ func TestDestinationHA(t *testing.T) {
 		}
 		isEndpointMRF := endpoint.IsMRF
 
-		dest := NewDestination(endpoint, JSONContentType, client.NewDestinationsContext(), 1, false, client.NewNoopDestinationMetadata(), configmock.New(t), metrics.NewNoopPipelineMonitor(""))
+		dest := NewDestination(endpoint, JSONContentType, client.NewDestinationsContext(), 1, 0.0, false, client.NewNoopDestinationMetadata(), configmock.New(t), metrics.NewNoopPipelineMonitor(""))
 		isDestMRF := dest.IsMRF()
 
 		assert.Equal(t, isEndpointMRF, isDestMRF)
