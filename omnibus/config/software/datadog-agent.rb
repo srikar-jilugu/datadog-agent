@@ -49,8 +49,8 @@ build do
   elsif !windows_target? && fips_mode?
     env = {
         'GOPATH' => gopath.to_path,
-        'GOROOT' => msgopath.to_path,
-        'PATH' => "#{msgopath.to_path}/bin:#{ENV['PATH']}",
+        'GOROOT' => msgoroot.to_path,
+        'PATH' => "#{msgoroot.to_path}/bin:#{ENV['PATH']}",
         "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
         "CGO_CFLAGS" => "-I. -I#{install_dir}/embedded/include",
         "CGO_LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib"
