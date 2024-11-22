@@ -239,10 +239,17 @@ func (r *Resolver) Start(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case sbom := <-r.scannerChan:
-				if err := retry.Do(func() error {
+				lastErr := retry.Do(func() error {
 					return r.analyzeWorkload(sbom)
-				}, retry.Attempts(maxSBOMGenerationRetries), retry.Delay(200*time.Millisecond)); err != nil {
-					seclog.Warnf("%s", err.Error())
+				}, retry.Attempts(maxSBOMGenerationRetries),
+					retry.Delay(200*time.Millisecond),
+					retry.LastErrorOnly(true),
+					retry.OnRetry(func(n uint, err error) {
+						seclog.Warnf("Retrying SBOM generation (#%d) for '%s': %v", n, sbom.ContainerID, err)
+					}),
+				)
+				if lastErr != nil {
+					seclog.Warnf("Failed to generate SBOM for '%s': %v", sbom.ContainerID, lastErr)
 				}
 			}
 		}
