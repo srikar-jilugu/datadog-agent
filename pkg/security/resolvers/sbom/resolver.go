@@ -45,6 +45,8 @@ const SBOMSource = "runtime-security-agent"
 
 const maxSBOMGenerationRetries = 3
 
+var errNoProcessForContainerID = errors.New("found no running process matching the given container ID")
+
 // SBOM defines an SBOM
 type SBOM struct {
 	sync.RWMutex
@@ -239,17 +241,14 @@ func (r *Resolver) Start(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case sbom := <-r.scannerChan:
-				lastErr := retry.Do(func() error {
+				if err := retry.Do(func() error {
 					return r.analyzeWorkload(sbom)
-				}, retry.Attempts(maxSBOMGenerationRetries),
-					retry.Delay(200*time.Millisecond),
-					retry.LastErrorOnly(true),
-					retry.OnRetry(func(n uint, err error) {
-						seclog.Warnf("Retrying SBOM generation (#%d) for '%s': %v", n, sbom.ContainerID, err)
-					}),
-				)
-				if lastErr != nil {
-					seclog.Warnf("Failed to generate SBOM for '%s': %v", sbom.ContainerID, lastErr)
+				}, retry.Attempts(maxSBOMGenerationRetries), retry.Delay(200*time.Millisecond)); err != nil {
+					if errors.Is(err, errNoProcessForContainerID) {
+						seclog.Debugf("Couldn't generate SBOM for '%s': %v", sbom.ContainerID, err)
+					} else {
+						seclog.Warnf("Failed to generate SBOM for '%s': %v", sbom.ContainerID, err)
+					}
 				}
 			}
 		}
@@ -351,7 +350,7 @@ func (r *Resolver) doScan(sbom *SBOM) (*trivy.Report, error) {
 		return nil, lastErr
 	}
 	if !scanned {
-		return nil, fmt.Errorf("couldn't generate sbom: all root candidates failed")
+		return nil, errNoProcessForContainerID
 	}
 	return report, nil
 }
