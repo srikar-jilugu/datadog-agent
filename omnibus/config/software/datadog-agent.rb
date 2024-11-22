@@ -37,7 +37,7 @@ build do
 
   # set GOPATH on the omnibus source dir for this software
   gopath = Pathname.new(project_dir) + '../../../..'
-  msgopath = Pathname.new(project_dir) + '../../../../../msgo'
+  msgoroot = "/usr/local/msgo"
   flavor_arg = ENV['AGENT_FLAVOR']
   fips_arg = fips_mode? ? "--fips-mode" : ""
   if windows_target?
@@ -48,7 +48,8 @@ build do
     major_version_arg = "%MAJOR_VERSION%"
   elsif !windows_target? && fips_mode?
     env = {
-        'GOPATH' => msgopath.to_path,
+        'GOPATH' => gopath.to_path,
+        'GOROOT' => msgopath.to_path,
         'PATH' => "#{msgopath.to_path}/bin:#{ENV['PATH']}",
         "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
         "CGO_CFLAGS" => "-I. -I#{install_dir}/embedded/include",
