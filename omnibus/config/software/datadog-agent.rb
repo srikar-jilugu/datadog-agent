@@ -46,7 +46,7 @@ build do
         'PATH' => "#{gopath.to_path}/bin:#{ENV['PATH']}",
     }
     major_version_arg = "%MAJOR_VERSION%"
-  else if !windows_target? && fips_mode?
+  elsif !windows_target? && fips_mode?
     env = {
         'GOPATH' => msgopath.to_path,
         'PATH' => "#{msgopath.to_path}/bin:#{ENV['PATH']}",
