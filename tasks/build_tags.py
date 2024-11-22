@@ -28,6 +28,7 @@ ALL_TAGS = {
     "etcd",
     "fargateprocess",
     "gce",
+    "goexperiment.systemcrypto", # for fips build to use the correct crypto bindings provided by msft go toolchain
     "jmx",
     "jetson",
     "kubeapiserver",
