@@ -1,0 +1,8 @@
+init_config:
+instances:
+  [{}]
+
+logs:
+  - type: integration
+    source: first_log_source
+    service: first_log_service

@@ -34,6 +34,18 @@ var rotationCheck string
 //go:embed fixtures/rotation.yaml
 var rotationConfig string
 
+//go:embed fixtures/firstLog.py
+var firstLogCheck string
+
+//go:embed fixtures/firstLog.yaml
+var firstLogConfig string
+
+//go:embed fixtures/secondLog.py
+var secondLogCheck string
+
+//go:embed fixtures/secondLog.yaml
+var secondLogConfig string
+
 // TestLinuxFakeIntakeSuite
 func TestIntegrationsLogsSuite(t *testing.T) {
 	suiteParams := []e2e.SuiteOption{
@@ -43,7 +55,11 @@ func TestIntegrationsLogsSuite(t *testing.T) {
 			agentparams.WithFile("/etc/datadog-agent/checks.d/writeTenLogs.py", writeTenLogsCheck, true),
 			agentparams.WithFile("/etc/datadog-agent/conf.d/writeTenLogs.yaml", writeTenLogsConfig, true),
 			agentparams.WithFile("/etc/datadog-agent/checks.d/rotation.py", rotationCheck, true),
-			agentparams.WithFile("/etc/datadog-agent/conf.d/rotation.yaml", rotationConfig, true))))}
+			agentparams.WithFile("/etc/datadog-agent/conf.d/rotation.yaml", rotationConfig, true),
+			agentparams.WithFile("/etc/datadog-agent/checks.d/firstLog.py", firstLogCheck, true),
+			agentparams.WithFile("/etc/datadog-agent/conf.d/firstLog.yaml", firstLogConfig, true),
+			agentparams.WithFile("/etc/datadog-agent/checks.d/secondLog.py", secondLogCheck, true),
+			agentparams.WithFile("/etc/datadog-agent/conf.d/secondLog.yaml", secondLogConfig, true))))}
 
 	suiteParams = append(suiteParams, e2e.WithDevMode())
 
@@ -93,4 +109,13 @@ func (v *IntegrationsLogsSuite) TestIntegrationLogFileRotation() {
 		}, 2*time.Minute, 5*time.Second)
 
 	}
+}
+
+// TestTwoCustomChecks ensures the agent is able to properly receive logs from
+// two separate custom integrations
+func (v *IntegrationsLogsSuite) TestTwoCustomChecks() {
+	utils.CheckLogsExpected(v.T(), v.Env().FakeIntake, "first_log_service", "first log message", []string{"log:first"})
+	utils.CheckLogsExpected(v.T(), v.Env().FakeIntake, "second_log_service", "second log message", []string{"log:second"})
+	utils.CheckLogsExpected(v.T(), v.Env().FakeIntake, "first_log_service", "first log message", []string{"log:first"})
+	utils.CheckLogsExpected(v.T(), v.Env().FakeIntake, "second_log_service", "second log message", []string{"log:second"})
 }
