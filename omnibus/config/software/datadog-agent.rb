@@ -37,7 +37,7 @@ build do
 
   # set GOPATH on the omnibus source dir for this software
   gopath = Pathname.new(project_dir) + '../../../..'
-  msgoroot = "/usr/local/msgo"
+  msgoroot = Pathname.new("/usr/local/msgo")
   flavor_arg = ENV['AGENT_FLAVOR']
   fips_arg = fips_mode? ? "--fips-mode" : ""
   if windows_target?
