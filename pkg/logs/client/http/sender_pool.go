@@ -9,8 +9,6 @@ package http
 import (
 	"time"
 
-	"github.com/benbjohnson/clock"
-
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
 )
@@ -51,31 +49,34 @@ func (l *limitedSenderPool) Run(doWork func()) {
 
 type latencyThrottledSenderPool struct {
 	pool                     chan struct{}
-	clock                    clock.Clock
-	virtualLatency           float64
-	inUseSenders             int
-	targetVirtualLatency     float64
+	virtualLatency           time.Duration
+	inUseWorkers             int
+	targetVirtualLatency     time.Duration
 	maxWorkers               int
 	virtualLatencyLastSample time.Time
 	destMeta                 *client.DestinationMetadata
+	windowSum                float64
+	samples                  int
+	ewmaSampleInterval       time.Duration
 }
 
 // NewLatencyThrottledSenderPool returns a new senderPool implementation that limits the number of concurrent senders.
-func NewLatencyThrottledSenderPool(maxWorkers int, targetLatency float64, destMeta *client.DestinationMetadata) SenderPool {
-	return newLatencyThrottledSenderPoolWithClick(clock.New(), maxWorkers, targetLatency, destMeta)
+func NewLatencyThrottledSenderPool(maxWorkers int, targetLatency time.Duration, destMeta *client.DestinationMetadata) SenderPool {
+	return newLatencyThrottledSenderPoolWithClick(concurrentSendersEwmaSampleInterval, maxWorkers, targetLatency, destMeta)
 }
 
-func newLatencyThrottledSenderPoolWithClick(clock clock.Clock, maxWorkers int, targetLatency float64, destMeta *client.DestinationMetadata) *latencyThrottledSenderPool {
+func newLatencyThrottledSenderPoolWithClick(ewmaSampleInterval time.Duration, maxWorkers int, targetLatency time.Duration, destMeta *client.DestinationMetadata) *latencyThrottledSenderPool {
 	if maxWorkers <= 0 {
 		maxWorkers = 1
 	}
 	sp := &latencyThrottledSenderPool{
 		pool:                 make(chan struct{}, maxWorkers),
-		clock:                clock,
 		maxWorkers:           maxWorkers,
 		targetVirtualLatency: targetLatency,
-		inUseSenders:         1,
+		inUseWorkers:         1,
 		destMeta:             destMeta,
+		samples:              0,
+		ewmaSampleInterval:   ewmaSampleInterval,
 	}
 	// Start with 1 sender
 	sp.pool <- struct{}{}
@@ -83,7 +84,7 @@ func newLatencyThrottledSenderPoolWithClick(clock clock.Clock, maxWorkers int, t
 }
 
 func (l *latencyThrottledSenderPool) Run(doWork func()) {
-	now := l.clock.Now()
+	now := time.Now()
 	<-l.pool
 	go func() {
 		doWork()
@@ -98,24 +99,28 @@ func (l *latencyThrottledSenderPool) Run(doWork func()) {
 // This ensures the payload egress rate remains fair no matter how long the HTTP transaction takes
 // (up to maxConcurrentBackgroundSends)
 func (l *latencyThrottledSenderPool) resizePoolIfNeeded(then time.Time) {
-	// Update the virtual latency every sample interval - an EWMA sampled every 1 second.
-	since := l.clock.Since(l.virtualLatencyLastSample)
-	if since >= concurrentSendersEwmaSampleInterval {
-		latency := float64(l.clock.Since(then).Milliseconds())
-		l.virtualLatency = l.virtualLatency*(1.0-ewmaAlpha) + (latency * ewmaAlpha)
-		l.virtualLatencyLastSample = l.clock.Now()
+	l.windowSum += float64(time.Since(then))
+	l.samples++
+
+	// Update the virtual latency every sample interval - an EWMA sampled every 1 second by default.
+	if time.Since(l.virtualLatencyLastSample) >= l.ewmaSampleInterval {
+		avgLatency := l.windowSum / float64(l.samples)
+		l.virtualLatency = time.Duration(float64(l.virtualLatency)*(1.0-ewmaAlpha) + (avgLatency * ewmaAlpha))
+		l.virtualLatencyLastSample = time.Now()
+		l.windowSum = 0
+		l.samples = 0
 	}
 
 	// If the virtual latency is above the target, add a sender to the pool.
-	if l.virtualLatency > l.targetVirtualLatency && l.inUseSenders < l.maxWorkers {
+	if l.virtualLatency > l.targetVirtualLatency && l.inUseWorkers < l.maxWorkers {
 		l.pool <- struct{}{}
-		l.inUseSenders++
+		l.inUseWorkers++
 
-	} else if l.inUseSenders > 1 {
+	} else if l.inUseWorkers > 1 {
 		// else if the virtual latency is below the target, remove a sender from the pool if there are more than 1.
 		<-l.pool
-		l.inUseSenders--
+		l.inUseWorkers--
 	}
-	metrics.TlmNumSenders.Set(float64(l.inUseSenders), l.destMeta.TelemetryName())
-	metrics.TlmVirtualLatency.Set(l.virtualLatency, l.destMeta.TelemetryName())
+	metrics.TlmNumSenders.Set(float64(l.inUseWorkers), l.destMeta.TelemetryName())
+	metrics.TlmVirtualLatency.Set(float64(l.virtualLatency/time.Millisecond), l.destMeta.TelemetryName())
 }
