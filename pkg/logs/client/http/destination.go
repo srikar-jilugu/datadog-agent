@@ -19,8 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/benbjohnson/clock"
-
 	"github.com/DataDog/datadog-agent/comp/logs/agent/config"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
@@ -35,11 +33,9 @@ import (
 
 // ContentType options,
 const (
-	TextContentType                     = "text/plain"
-	JSONContentType                     = "application/json"
-	ProtobufContentType                 = "application/x-protobuf"
-	ewmaAlpha                           = 0.064
-	concurrentSendersEwmaSampleInterval = 1 * time.Second
+	TextContentType     = "text/plain"
+	JSONContentType     = "application/json"
+	ProtobufContentType = "application/x-protobuf"
 )
 
 // HTTP errors.
@@ -74,8 +70,8 @@ type Destination struct {
 	isMRF               bool
 
 	// Concurrency
-	climit chan struct{} // semaphore for limiting concurrent background sends
-	wg     sync.WaitGroup
+	senderPool SenderPool
+	wg         sync.WaitGroup
 
 	// Retry
 	backoff        backoff.Policy
@@ -89,14 +85,6 @@ type Destination struct {
 	destMeta        *client.DestinationMetadata
 	pipelineMonitor metrics.PipelineMonitor
 	utilization     metrics.UtilizationMonitor
-
-	// Sender concurrency
-	clock                        clock.Clock
-	virtualLatency               float64
-	inUseSenders                 int
-	targetVirtualLatency         float64
-	maxConcurrentBackgroundSends int
-	virtualLatencyLastSample     time.Time
 }
 
 // NewDestination returns a new Destination.
@@ -106,8 +94,7 @@ type Destination struct {
 func NewDestination(endpoint config.Endpoint,
 	contentType string,
 	destinationsContext *client.DestinationsContext,
-	maxConcurrentBackgroundSends int,
-	targetVirtualLatency float64,
+	senderPool SenderPool,
 	shouldRetry bool,
 	destMeta *client.DestinationMetadata,
 	cfg pkgconfigmodel.Reader,
@@ -117,9 +104,7 @@ func NewDestination(endpoint config.Endpoint,
 		contentType,
 		destinationsContext,
 		time.Second*10,
-		maxConcurrentBackgroundSends,
-		targetVirtualLatency,
-		clock.New(),
+		senderPool,
 		shouldRetry,
 		destMeta,
 		cfg,
@@ -130,17 +115,12 @@ func newDestination(endpoint config.Endpoint,
 	contentType string,
 	destinationsContext *client.DestinationsContext,
 	timeout time.Duration,
-	maxConcurrentBackgroundSends int,
-	targetVirtualLatency float64,
-	clock clock.Clock,
+	senderPool SenderPool,
 	shouldRetry bool,
 	destMeta *client.DestinationMetadata,
 	cfg pkgconfigmodel.Reader,
 	pipelineMonitor metrics.PipelineMonitor) *Destination {
 
-	if maxConcurrentBackgroundSends <= 0 {
-		maxConcurrentBackgroundSends = 1
-	}
 	policy := backoff.NewExpBackoffPolicy(
 		endpoint.BackoffFactor,
 		endpoint.BackoffBase,
@@ -158,31 +138,25 @@ func newDestination(endpoint config.Endpoint,
 	}
 
 	return &Destination{
-		host:                         endpoint.Host,
-		url:                          buildURL(endpoint),
-		endpoint:                     endpoint,
-		contentType:                  contentType,
-		client:                       httputils.NewResetClient(endpoint.ConnectionResetInterval, httpClientFactory(timeout, cfg)),
-		destinationsContext:          destinationsContext,
-		climit:                       make(chan struct{}, maxConcurrentBackgroundSends),
-		wg:                           sync.WaitGroup{},
-		backoff:                      policy,
-		protocol:                     endpoint.Protocol,
-		origin:                       endpoint.Origin,
-		lastRetryError:               nil,
-		retryLock:                    sync.Mutex{},
-		shouldRetry:                  shouldRetry,
-		expVars:                      expVars,
-		destMeta:                     destMeta,
-		isMRF:                        endpoint.IsMRF,
-		pipelineMonitor:              pipelineMonitor,
-		utilization:                  pipelineMonitor.MakeUtilizationMonitor(destMeta.MonitorTag()),
-		clock:                        clock,
-		virtualLatency:               0,
-		inUseSenders:                 1,
-		targetVirtualLatency:         targetVirtualLatency,
-		maxConcurrentBackgroundSends: maxConcurrentBackgroundSends,
-		virtualLatencyLastSample:     clock.Now(),
+		host:                endpoint.Host,
+		url:                 buildURL(endpoint),
+		endpoint:            endpoint,
+		contentType:         contentType,
+		client:              httputils.NewResetClient(endpoint.ConnectionResetInterval, httpClientFactory(timeout, cfg)),
+		destinationsContext: destinationsContext,
+		senderPool:          senderPool,
+		wg:                  sync.WaitGroup{},
+		backoff:             policy,
+		protocol:            endpoint.Protocol,
+		origin:              endpoint.Origin,
+		lastRetryError:      nil,
+		retryLock:           sync.Mutex{},
+		shouldRetry:         shouldRetry,
+		expVars:             expVars,
+		destMeta:            destMeta,
+		isMRF:               endpoint.IsMRF,
+		pipelineMonitor:     pipelineMonitor,
+		utilization:         pipelineMonitor.MakeUtilizationMonitor(destMeta.MonitorTag()),
 	}
 }
 
@@ -221,9 +195,6 @@ func (d *Destination) Start(input chan *message.Payload, output chan *message.Pa
 func (d *Destination) run(input chan *message.Payload, output chan *message.Payload, stopChan chan struct{}, isRetrying chan bool) {
 	var startIdle = time.Now()
 
-	// start with at least one sender.
-	d.climit <- struct{}{}
-
 	for p := range input {
 		d.utilization.Start()
 		idle := float64(time.Since(startIdle) / time.Millisecond)
@@ -249,46 +220,10 @@ func (d *Destination) run(input chan *message.Payload, output chan *message.Payl
 
 func (d *Destination) sendConcurrent(payload *message.Payload, output chan *message.Payload, isRetrying chan bool) {
 	d.wg.Add(1)
-
-	now := d.clock.Now()
-	<-d.climit
-	go func() {
-		defer func() {
-			d.climit <- struct{}{}
-			d.wg.Done()
-		}()
+	d.senderPool.Run(func() {
 		d.sendAndRetry(payload, output, isRetrying)
-	}()
-	d.adjustSenderConcurrency(now)
-}
-
-// Concurrency is scaled by attempting to converge on a target virtual latency.
-// Latency is the amount of time it takes an HTTP transaction to complete.
-// Virtual latency is the amount of time it takes to submit a payload to the sender pool.
-// If Latency is above the target, more senders are added to the pool until the virtual latency is reached.
-// This ensures the payload egress rate remains fair no matter how long the HTTP transaction takes
-// (up to maxConcurrentBackgroundSends)
-func (d *Destination) adjustSenderConcurrency(then time.Time) {
-	// Update the virtual latency every sample interval - an EWMA sampled every 1 second.
-	since := d.clock.Since(d.virtualLatencyLastSample)
-	if since >= concurrentSendersEwmaSampleInterval {
-		l := float64(d.clock.Since(then).Milliseconds())
-		d.virtualLatency = d.virtualLatency*(1.0-ewmaAlpha) + (l * ewmaAlpha)
-		d.virtualLatencyLastSample = d.clock.Now()
-	}
-
-	// If the virtual latency is above the target, add a sender to the pool.
-	if d.virtualLatency > d.targetVirtualLatency && d.inUseSenders < d.maxConcurrentBackgroundSends {
-		d.climit <- struct{}{}
-		d.inUseSenders++
-
-	} else if d.inUseSenders > 1 {
-		// else if the virtual latency is below the target, remove a sender from the pool if there are more than 1.
-		<-d.climit
-		d.inUseSenders--
-	}
-	metrics.TlmNumSenders.Set(float64(d.inUseSenders), d.destMeta.TelemetryName())
-	metrics.TlmVirtualLatency.Set(d.virtualLatency, d.destMeta.TelemetryName())
+		d.wg.Done()
+	})
 }
 
 // Send sends a payload over HTTP,
@@ -299,8 +234,8 @@ func (d *Destination) sendAndRetry(payload *message.Payload, output chan *messag
 		nbErrors := d.nbErrors
 		d.retryLock.Unlock()
 		backoffDuration := d.backoff.GetBackoffDuration(nbErrors)
-		blockedUntil := d.clock.Now().Add(backoffDuration)
-		if blockedUntil.After(d.clock.Now()) {
+		blockedUntil := time.Now().Add(backoffDuration)
+		if blockedUntil.After(time.Now()) {
 			log.Warnf("%s: sleeping until %v before retrying. Backoff duration %s due to %d errors", d.url, blockedUntil, backoffDuration.String(), nbErrors)
 			d.waitForBackoff(blockedUntil)
 			metrics.RetryTimeSpent.Add(int64(backoffDuration))
@@ -376,13 +311,13 @@ func (d *Destination) unconditionalSend(payload *message.Payload) (err error) {
 		req.Header.Set("DD-EVP-ORIGIN-VERSION", version.AgentVersion)
 	}
 	req.Header.Set("dd-message-timestamp", strconv.FormatInt(getMessageTimestamp(payload.Messages), 10))
-	then := d.clock.Now()
+	then := time.Now()
 	req.Header.Set("dd-current-timestamp", strconv.FormatInt(then.UnixMilli(), 10))
 
 	req = req.WithContext(ctx)
 	resp, err := d.client.Do(req)
 
-	latency := d.clock.Since(then).Milliseconds()
+	latency := time.Since(then).Milliseconds()
 	metrics.TlmSenderLatency.Observe(float64(latency))
 	metrics.SenderLatency.Set(latency)
 
@@ -497,7 +432,7 @@ func getMessageTimestamp(messages []*message.Message) int64 {
 func prepareCheckConnectivity(endpoint config.Endpoint, cfg pkgconfigmodel.Reader) (*client.DestinationsContext, *Destination) {
 	ctx := client.NewDestinationsContext()
 	// Lower the timeout to 5s because HTTP connectivity test is done synchronously during the agent bootstrap sequence
-	destination := newDestination(endpoint, JSONContentType, ctx, time.Second*5, 0, 0, clock.New(), false, client.NewNoopDestinationMetadata(), cfg, metrics.NewNoopPipelineMonitor(""))
+	destination := newDestination(endpoint, JSONContentType, ctx, time.Second*5, NewLimitedMaxSenderPool(0), false, client.NewNoopDestinationMetadata(), cfg, metrics.NewNoopPipelineMonitor(""))
 	return ctx, destination
 }
 

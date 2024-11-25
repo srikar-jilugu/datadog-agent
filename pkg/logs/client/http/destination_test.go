@@ -94,7 +94,7 @@ func testNoRetry(t *testing.T, statusCode int) {
 func retryTest(t *testing.T, statusCode int) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(statusCode, 0, 0, 0, true, respondChan, cfg)
+	server := NewTestServerWithOptions(statusCode, NewLimitedMaxSenderPool(0), true, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -124,7 +124,7 @@ func retryTest(t *testing.T, statusCode int) {
 func TestDestinationContextCancel(t *testing.T) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(429, 0, 0, 0, true, respondChan, cfg)
+	server := NewTestServerWithOptions(429, NewLimitedMaxSenderPool(0), true, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -193,7 +193,7 @@ func TestDestinationSendsTimestampHeaders(t *testing.T) {
 	cfg := configmock.New(t)
 	server := NewTestServer(200, cfg)
 	defer server.httpServer.Close()
-	currentTimestamp := server.clock.Now().UnixMilli()
+	currentTimestamp := time.Now().UnixMilli()
 
 	err := server.Destination.unconditionalSend(&message.Payload{Messages: []*message.Message{{
 		IngestionTimestamp: 1234567890_999_999,
@@ -218,180 +218,112 @@ func TestDestinationSendsUserAgent(t *testing.T) {
 
 func TestDestinationConcurrentSends(t *testing.T) {
 	cfg := configmock.New(t)
+	// make the server return 500, so the payloads get stuck retrying
 	respondChan := make(chan int)
-
+	server := NewTestServerWithOptions(500, NewLimitedMaxSenderPool(2), true, respondChan, cfg)
+	input := make(chan *message.Payload)
 	output := make(chan *message.Payload, 10)
+	server.Destination.Start(input, output, nil)
 
-	testSenderScaling := func(count int) {
-		server := NewTestServerWithOptions(200, count, 0, 5*time.Second, true, respondChan, cfg)
-		// Always start with 1 sender
-		assert.Equal(t, 1, server.Destination.inUseSenders)
-		input := make(chan *message.Payload)
-		stopChan := server.Destination.Start(input, output, nil)
-
-		// Scale up the number of senders 1 by 1
-		for i := 0; i < count; i++ {
-			// Send a batch of messages that is always num senders + 1.
-			// When the last payload blocks waiting for a sender, virtual latency is recomputed
-			// and the number of senders is scaled up.
-			for j := 0; j < i+1; j++ {
-				input <- &message.Payload{Encoded: []byte("a")}
-			}
-			for j := 0; j < i+1; j++ {
-				<-respondChan
-				<-output
-			}
-		}
-
-		close(input)
-		<-stopChan
-		assert.Equal(t, count, server.Destination.inUseSenders)
+	payloads := []*message.Payload{
+		// the first two messages will be blocked in concurrent send goroutines
+		{Encoded: []byte("a")},
+		{Encoded: []byte("b")},
+		// the third message will be read out by the main batch sender loop and will be blocked waiting for one of the
+		// first two concurrent sends to complete
+		{Encoded: []byte("c")},
 	}
 
-	// testSenderScaling(1)
-	// testSenderScaling(2)
-	// testSenderScaling(3)
-	// testSenderScaling(4)
-	testSenderScaling(5)
+	for _, p := range payloads {
+		input <- p
+		<-respondChan
+	}
 
-	// input <- &message.Payload{Encoded: []byte("a")}
-	// <-respondChan
-	// <-output
+	select {
+	case input <- &message.Payload{Encoded: []byte("a")}:
+		assert.Fail(t, "should not have been able to write into the channel as the input channel is expected to be backed up due to reaching max concurrent sends")
+	default:
+	}
 
-	// input <- &message.Payload{Encoded: []byte("a")}
-	// input <- &message.Payload{Encoded: []byte("a")}
-	// <-respondChan
-	// <-respondChan
+	close(input)
 
-	// input <- &message.Payload{Encoded: []byte("a")}
-	// input <- &message.Payload{Encoded: []byte("a")}
-	// input <- &message.Payload{Encoded: []byte("a")}
-	// <-respondChan
-	// <-respondChan
-	// <-respondChan
-	// close(input)
-	// <-stopChan
+	// unblock the destination
+	server.ChangeStatus(200)
+	// Drain the pending retries
+	for {
+		if (<-respondChan) == 200 {
+			break
+		}
+	}
 
-	// assert.Equal(t, 2, server.Destination.inUseSenders)
+	var receivedPayloads []*message.Payload
 
+	for p := range output {
+		receivedPayloads = append(receivedPayloads, p)
+		if len(receivedPayloads) == len(payloads) {
+			break
+		}
+		<-respondChan
+	}
+
+	// order in which messages are received here is not deterministic so compare values
+	assert.ElementsMatch(t, payloads, receivedPayloads)
 }
 
-// func TestDestinationConcurrentSends(t *testing.T) {
-// 	cfg := configmock.New(t)
-// 	// make the server return 500, so the payloads get stuck retrying
-// 	respondChan := make(chan int)
-// 	server := NewTestServerWithOptions(200, 2, 0, 1*time.Second, true, respondChan, cfg)
-// 	input := make(chan *message.Payload)
-// 	output := make(chan *message.Payload, 10)
-// 	server.Destination.Start(input, output, nil)
-
-// 	payloads := []*message.Payload{
-// 		// the first two messages will be blocked in concurrent send goroutines
-// 		{Encoded: []byte("a")},
-// 		{Encoded: []byte("b")},
-// 		// the third message will be read out by the main batch sender loop and will be blocked waiting for one of the
-// 		// first two concurrent sends to complete
-// 		{Encoded: []byte("c")},
-// 	}
-
-// 	for _, p := range payloads {
-// 		input <- p
-// 		<-respondChan
-// 	}
-
-// 	// make the server return 500, so the payloads get stuck retrying
-// 	server.ChangeStatus(500)
-
-// 	for _, p := range payloads {
-// 		input <- p
-// 		<-respondChan
-// 	}
-
-// 	select {
-// 	case input <- &message.Payload{Encoded: []byte("a")}:
-// 		assert.Fail(t, "should not have been able to write into the channel as the input channel is expected to be backed up due to reaching max concurrent sends")
-// 	default:
-// 	}
-
-// 	close(input)
-
-// 	// unblock the destination
-// 	server.ChangeStatus(200)
-// 	// Drain the pending retries
-// 	for {
-// 		if (<-respondChan) == 200 {
-// 			break
-// 		}
-// 	}
-
-// 	var receivedPayloads []*message.Payload
-
-// 	for p := range output {
-// 		receivedPayloads = append(receivedPayloads, p)
-// 		if len(receivedPayloads) == len(payloads) {
-// 			break
-// 		}
-// 		<-respondChan
-// 	}
-
-// 	// order in which messages are received here is not deterministic so compare values
-// 	assert.ElementsMatch(t, payloads, receivedPayloads)
-// }
-
 // This test ensure the destination's final state is isRetrying = false even if there are pending concurrent sends.
-// func TestDestinationConcurrentSendsShutdownIsHandled(t *testing.T) {
-// 	cfg := configmock.New(t)
-// 	// make the server return 500, so the payloads get stuck retrying
-// 	respondChan := make(chan int)
-// 	server := NewTestServerWithOptions(500, 2, true, respondChan, cfg)
-// 	input := make(chan *message.Payload)
-// 	output := make(chan *message.Payload, 10)
+func TestDestinationConcurrentSendsShutdownIsHandled(t *testing.T) {
+	cfg := configmock.New(t)
+	// make the server return 500, so the payloads get stuck retrying
+	respondChan := make(chan int)
+	server := NewTestServerWithOptions(500, NewLimitedMaxSenderPool(2), true, respondChan, cfg)
+	input := make(chan *message.Payload)
+	output := make(chan *message.Payload, 10)
 
-// 	stopChan := server.Destination.Start(input, output, nil)
+	stopChan := server.Destination.Start(input, output, nil)
 
-// 	payloads := []*message.Payload{
-// 		{Encoded: []byte("a")},
-// 		{Encoded: []byte("b")},
-// 		{Encoded: []byte("c")},
-// 	}
+	payloads := []*message.Payload{
+		{Encoded: []byte("a")},
+		{Encoded: []byte("b")},
+		{Encoded: []byte("c")},
+	}
 
-// 	for _, p := range payloads {
-// 		input <- p
-// 		<-respondChan
-// 	}
-// 	// trigger shutdown
-// 	close(input)
+	for _, p := range payloads {
+		input <- p
+		<-respondChan
+	}
+	// trigger shutdown
+	close(input)
 
-// 	// unblock the destination
-// 	server.ChangeStatus(200)
-// 	// Drain the pending retries
-// 	for {
-// 		if (<-respondChan) == 200 {
-// 			break
-// 		}
-// 	}
-// 	// let 2 payloads flow though
-// 	// the first 200 was triggered, collect the output
-// 	<-output
-// 	<-respondChan
-// 	<-output
+	// unblock the destination
+	server.ChangeStatus(200)
+	// Drain the pending retries
+	for {
+		if (<-respondChan) == 200 {
+			break
+		}
+	}
+	// let 2 payloads flow though
+	// the first 200 was triggered, collect the output
+	<-output
+	<-respondChan
+	<-output
 
-// 	select {
-// 	case <-stopChan:
-// 		assert.Fail(t, "Should still be waiting for the last payload to finish")
-// 	default:
-// 	}
+	select {
+	case <-stopChan:
+		assert.Fail(t, "Should still be waiting for the last payload to finish")
+	default:
+	}
 
-// 	<-respondChan
-// 	<-output
-// 	<-stopChan
-// 	server.Stop()
-// }
+	<-respondChan
+	<-output
+	<-stopChan
+	server.Stop()
+}
 
 func TestBackoffDelayEnabled(t *testing.T) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(500, 0, 0, 0, true, respondChan, cfg)
+	server := NewTestServerWithOptions(500, NewLimitedMaxSenderPool(0), true, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -408,7 +340,7 @@ func TestBackoffDelayEnabled(t *testing.T) {
 func TestBackoffDelayDisabled(t *testing.T) {
 	cfg := configmock.New(t)
 	respondChan := make(chan int)
-	server := NewTestServerWithOptions(500, 0, 0, 0, false, respondChan, cfg)
+	server := NewTestServerWithOptions(500, NewLimitedMaxSenderPool(0), false, respondChan, cfg)
 	input := make(chan *message.Payload)
 	output := make(chan *message.Payload)
 	isRetrying := make(chan bool, 1)
@@ -429,7 +361,7 @@ func TestDestinationHA(t *testing.T) {
 		}
 		isEndpointMRF := endpoint.IsMRF
 
-		dest := NewDestination(endpoint, JSONContentType, client.NewDestinationsContext(), 1, 0.0, false, client.NewNoopDestinationMetadata(), configmock.New(t), metrics.NewNoopPipelineMonitor(""))
+		dest := NewDestination(endpoint, JSONContentType, client.NewDestinationsContext(), NewLimitedMaxSenderPool(0), false, client.NewNoopDestinationMetadata(), configmock.New(t), metrics.NewNoopPipelineMonitor(""))
 		isDestMRF := dest.IsMRF()
 
 		assert.Equal(t, isEndpointMRF, isDestMRF)

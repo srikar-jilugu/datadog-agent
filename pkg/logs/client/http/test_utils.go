@@ -11,9 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/benbjohnson/clock"
 
 	"github.com/DataDog/datadog-agent/comp/logs/agent/config"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
@@ -36,22 +33,20 @@ type TestServer struct {
 	request             *http.Request
 	statusCodeContainer *StatusCodeContainer
 	stopChan            chan struct{}
-	clock               *clock.Mock
 }
 
 // NewTestServer creates a new test server
 func NewTestServer(statusCode int, cfg pkgconfigmodel.Reader) *TestServer {
-	return NewTestServerWithOptions(statusCode, 0, 0, 0, true, nil, cfg)
+	return NewTestServerWithOptions(statusCode, NewLimitedMaxSenderPool(0), true, nil, cfg)
 }
 
 // NewTestServerWithOptions creates a new test server with concurrency and response control
-func NewTestServerWithOptions(statusCode int, senders int, targetLatency float64, requestDelay time.Duration, retryDestination bool, respondChan chan int, cfg pkgconfigmodel.Reader) *TestServer {
+func NewTestServerWithOptions(statusCode int, senderPool SenderPool, retryDestination bool, respondChan chan int, cfg pkgconfigmodel.Reader) *TestServer {
 	statusCodeContainer := &StatusCodeContainer{statusCode: statusCode}
 	var request http.Request
 	var mu = sync.Mutex{}
 	var stopChan = make(chan struct{}, 1)
 	stopped := false
-	clock := clock.NewMock()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCodeContainer.Lock()
@@ -68,7 +63,6 @@ func NewTestServerWithOptions(statusCode int, senders int, targetLatency float64
 		if respondChan != nil {
 			select {
 			case respondChan <- code:
-				clock.Add(requestDelay)
 			case <-stopChan:
 				stopped = true
 			}
@@ -86,7 +80,7 @@ func NewTestServerWithOptions(statusCode int, senders int, targetLatency float64
 	endpoint.BackoffMax = 10
 	endpoint.RecoveryInterval = 1
 
-	dest := newDestination(endpoint, JSONContentType, destCtx, time.Second*10, senders, targetLatency, clock, retryDestination, client.NewNoopDestinationMetadata(), cfg, metrics.NewNoopPipelineMonitor(""))
+	dest := NewDestination(endpoint, JSONContentType, destCtx, senderPool, retryDestination, client.NewNoopDestinationMetadata(), cfg, metrics.NewNoopPipelineMonitor(""))
 	return &TestServer{
 		httpServer:          ts,
 		DestCtx:             destCtx,
@@ -95,7 +89,6 @@ func NewTestServerWithOptions(statusCode int, senders int, targetLatency float64
 		request:             &request,
 		statusCodeContainer: statusCodeContainer,
 		stopChan:            stopChan,
-		clock:               clock,
 	}
 }
 
