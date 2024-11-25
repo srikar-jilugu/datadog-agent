@@ -37,7 +37,7 @@ build do
 
   # set GOPATH on the omnibus source dir for this software
   gopath = Pathname.new(project_dir) + '../../../..'
-  msgoroot = Pathname.new("/usr/local/msgo")
+  msgoroot = "/usr/local/msgo"
   flavor_arg = ENV['AGENT_FLAVOR']
   fips_arg = fips_mode? ? "--fips-mode" : ""
   if windows_target?
@@ -46,16 +46,6 @@ build do
         'PATH' => "#{gopath.to_path}/bin:#{ENV['PATH']}",
     }
     major_version_arg = "%MAJOR_VERSION%"
-  elsif !windows_target? && fips_mode?
-    env = {
-        'GOPATH' => gopath.to_path,
-        'GOROOT' => msgoroot.to_path,
-        'PATH' => "#{msgoroot.to_path}/bin:#{ENV['PATH']}",
-        "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
-        "CGO_CFLAGS" => "-I. -I#{install_dir}/embedded/include",
-        "CGO_LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib"
-    }
-    major_version_arg = "$MAJOR_VERSION"
   else
     env = {
         'GOPATH' => gopath.to_path,
@@ -74,6 +64,13 @@ build do
 
   # include embedded path (mostly for `pkg-config` binary)
   env = with_standard_compiler_flags(with_embedded_path(env))
+
+  # Use msgo toolchain when fips mode is enabled
+  if fips_mode? && !windows_target?
+    env["GOROOT"] = msgoroot
+    env["PATH"] = "#{msgoroot}/bin:#{env['PATH']}"
+  end
+
   default_install_dir = "/opt/datadog-agent"
   if Omnibus::Config.host_distribution == "ociru"
     default_install_dir = "#{install_dir}"
