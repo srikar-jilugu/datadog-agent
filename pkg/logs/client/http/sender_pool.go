@@ -96,16 +96,16 @@ func (l *latencyThrottledSenderPool) Run(doWork func()) {
 }
 
 // Concurrency is scaled by attempting to converge on a target virtual latency.
-// Virtual latency is the amount of time it takes to submit a payload to the sender pool.
-// If Latency is above the target, more senders are added to the pool until the virtual latency is reached.
+// Virtual latency is the amount of time it takes to submit a payload to the worker pool.
+// If Latency is above the target, more workers are added to the pool until the virtual latency is reached.
 // This ensures the payload egress rate remains fair no matter how long the HTTP transaction takes
-// (up to maxConcurrentBackgroundSends)
+// (up to maxWorkers)
 func (l *latencyThrottledSenderPool) resizePoolIfNeeded(then time.Time) {
 	l.windowSum += float64(time.Since(then))
 	l.samples++
 
 	// Update the virtual latency every sample interval - an EWMA sampled every 1 second by default.
-	if time.Since(l.virtualLatencyLastSample) >= l.ewmaSampleInterval {
+	if time.Since(l.virtualLatencyLastSample) >= l.ewmaSampleInterval && l.samples > 0 {
 		avgLatency := l.windowSum / float64(l.samples)
 		l.virtualLatency = time.Duration(float64(l.virtualLatency)*(1.0-ewmaAlpha) + (avgLatency * l.alpha))
 		l.virtualLatencyLastSample = time.Now()
@@ -113,13 +113,12 @@ func (l *latencyThrottledSenderPool) resizePoolIfNeeded(then time.Time) {
 		l.samples = 0
 	}
 
-	// If the virtual latency is above the target, add a sender to the pool.
+	// If the virtual latency is above the target, add a worker to the pool.
 	if l.virtualLatency > l.targetVirtualLatency && l.inUseWorkers < l.maxWorkers {
 		l.pool <- struct{}{}
 		l.inUseWorkers++
-
 	} else if l.inUseWorkers > 1 {
-		// else if the virtual latency is below the target, remove a sender from the pool if there are more than 1.
+		// else if the virtual latency is below the target, remove a worker from the pool if there is more than 1.
 		<-l.pool
 		l.inUseWorkers--
 	}
