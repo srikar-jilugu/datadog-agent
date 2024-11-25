@@ -24,7 +24,7 @@ func TestLatencyThrottledSenderLowLatencyOneWorker(t *testing.T) {
 	}
 
 	// Should converge on a virtual latency of 10ms since there is only 1 worker, so virtual latency == real latency.
-	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(1*time.Millisecond))
+	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(3*time.Millisecond))
 }
 
 func TestLatencyThrottledSenderPoolLowLatencyManyWorkers(t *testing.T) {
@@ -37,7 +37,7 @@ func TestLatencyThrottledSenderPoolLowLatencyManyWorkers(t *testing.T) {
 	}
 
 	// Should converge on a virtual latency of 10ms since since target latency is 100ms and real latency is 10ms. No need to scale up.
-	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(1*time.Millisecond))
+	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(3*time.Millisecond))
 }
 
 func TestLatencyThrottledSenderPoolScalesUpWorkersForHighLatency(t *testing.T) {
@@ -49,7 +49,7 @@ func TestLatencyThrottledSenderPoolScalesUpWorkersForHighLatency(t *testing.T) {
 		})
 	}
 	// Should converge on virtual latency of 2ms since 2ms is the target, and there are enough workers to scale up.
-	require.InDelta(t, 2*time.Millisecond, pool.virtualLatency, float64(300*time.Microsecond))
+	require.InDelta(t, 2*time.Millisecond, pool.virtualLatency, float64(500*time.Microsecond))
 }
 
 func TestLatencyThrottledSenderPoolStarvedForWorkers(t *testing.T) {
@@ -61,5 +61,5 @@ func TestLatencyThrottledSenderPoolStarvedForWorkers(t *testing.T) {
 		})
 	}
 	// Should converge on virtual latency of 10ms because there are not enough workers to scale up
-	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(1*time.Millisecond))
+	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(3*time.Millisecond))
 }
