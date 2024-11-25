@@ -7,7 +7,6 @@
 package http
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
@@ -112,7 +111,6 @@ func (l *latencyThrottledSenderPool) resizePoolIfNeeded(then time.Time) {
 		l.virtualLatencyLastSample = time.Now()
 		l.windowSum = 0
 		l.samples = 0
-		fmt.Println(l.virtualLatency)
 	}
 
 	// If the virtual latency is above the target, add a sender to the pool.
