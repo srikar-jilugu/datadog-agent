@@ -15,7 +15,7 @@ import (
 )
 
 func TestLatencyThrottledSenderLowLatencyOneWorker(t *testing.T) {
-	pool := newLatencyThrottledSenderPoolWithClick(10*time.Millisecond, 1, 100*time.Millisecond, client.NewNoopDestinationMetadata())
+	pool := newLatencyThrottledSenderPoolWithOptions(10*time.Millisecond, 0.055, 1, 100*time.Millisecond, client.NewNoopDestinationMetadata())
 
 	for i := 0; i < 100; i++ {
 		pool.Run(func() {
@@ -23,11 +23,11 @@ func TestLatencyThrottledSenderLowLatencyOneWorker(t *testing.T) {
 		})
 	}
 
-	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(2*time.Millisecond))
+	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(1*time.Millisecond))
 }
 
 func TestLatencyThrottledSenderPoolLowLatencyManyWorkers(t *testing.T) {
-	pool := newLatencyThrottledSenderPoolWithClick(10*time.Millisecond, 10, 100*time.Millisecond, client.NewNoopDestinationMetadata())
+	pool := newLatencyThrottledSenderPoolWithOptions(10*time.Millisecond, 0.055, 10, 100*time.Millisecond, client.NewNoopDestinationMetadata())
 
 	for i := 0; i < 100; i++ {
 		pool.Run(func() {
@@ -35,11 +35,11 @@ func TestLatencyThrottledSenderPoolLowLatencyManyWorkers(t *testing.T) {
 		})
 	}
 
-	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(2*time.Millisecond))
+	require.InDelta(t, 10*time.Millisecond, pool.virtualLatency, float64(1*time.Millisecond))
 }
 
 func TestLatencyThrottledSenderPoolScalesUpWorkersForHighLatency(t *testing.T) {
-	pool := newLatencyThrottledSenderPoolWithClick(10*time.Millisecond, 10, 2*time.Millisecond, client.NewNoopDestinationMetadata())
+	pool := newLatencyThrottledSenderPoolWithOptions(10*time.Millisecond, 0.055, 10, 2*time.Millisecond, client.NewNoopDestinationMetadata())
 
 	for i := 0; i < 1000; i++ {
 		pool.Run(func() {

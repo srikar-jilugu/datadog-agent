@@ -7,6 +7,7 @@
 package http
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
@@ -58,14 +59,15 @@ type latencyThrottledSenderPool struct {
 	windowSum                float64
 	samples                  int
 	ewmaSampleInterval       time.Duration
+	alpha                    float64
 }
 
 // NewLatencyThrottledSenderPool returns a new senderPool implementation that limits the number of concurrent senders.
 func NewLatencyThrottledSenderPool(maxWorkers int, targetLatency time.Duration, destMeta *client.DestinationMetadata) SenderPool {
-	return newLatencyThrottledSenderPoolWithClick(concurrentSendersEwmaSampleInterval, maxWorkers, targetLatency, destMeta)
+	return newLatencyThrottledSenderPoolWithOptions(concurrentSendersEwmaSampleInterval, ewmaAlpha, maxWorkers, targetLatency, destMeta)
 }
 
-func newLatencyThrottledSenderPoolWithClick(ewmaSampleInterval time.Duration, maxWorkers int, targetLatency time.Duration, destMeta *client.DestinationMetadata) *latencyThrottledSenderPool {
+func newLatencyThrottledSenderPoolWithOptions(ewmaSampleInterval time.Duration, alpha float64, maxWorkers int, targetLatency time.Duration, destMeta *client.DestinationMetadata) *latencyThrottledSenderPool {
 	if maxWorkers <= 0 {
 		maxWorkers = 1
 	}
@@ -77,6 +79,7 @@ func newLatencyThrottledSenderPoolWithClick(ewmaSampleInterval time.Duration, ma
 		destMeta:             destMeta,
 		samples:              0,
 		ewmaSampleInterval:   ewmaSampleInterval,
+		alpha:                alpha,
 	}
 	// Start with 1 sender
 	sp.pool <- struct{}{}
@@ -105,10 +108,11 @@ func (l *latencyThrottledSenderPool) resizePoolIfNeeded(then time.Time) {
 	// Update the virtual latency every sample interval - an EWMA sampled every 1 second by default.
 	if time.Since(l.virtualLatencyLastSample) >= l.ewmaSampleInterval {
 		avgLatency := l.windowSum / float64(l.samples)
-		l.virtualLatency = time.Duration(float64(l.virtualLatency)*(1.0-ewmaAlpha) + (avgLatency * ewmaAlpha))
+		l.virtualLatency = time.Duration(float64(l.virtualLatency)*(1.0-ewmaAlpha) + (avgLatency * l.alpha))
 		l.virtualLatencyLastSample = time.Now()
 		l.windowSum = 0
 		l.samples = 0
+		fmt.Println(l.virtualLatency)
 	}
 
 	// If the virtual latency is above the target, add a sender to the pool.

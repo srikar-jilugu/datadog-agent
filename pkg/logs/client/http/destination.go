@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-// Package http provides an HTTP destination for logs.
+//nolint:revive // TODO(AML) Fix revive linter
 package http
 
 import (
