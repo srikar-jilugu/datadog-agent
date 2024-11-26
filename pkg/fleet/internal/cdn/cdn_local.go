@@ -7,7 +7,6 @@ package cdn
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,23 +18,22 @@ type cdnLocal struct {
 	dirPath string
 }
 
-// newLocal creates a new local CDN.
-func newLocal(env *env.Env) (CDN, error) {
+// newCDNLocal creates a new local CDN.
+func newCDNLocal(env *env.Env) (CDN, error) {
 	return &cdnLocal{
 		dirPath: env.CDNLocalDirPath,
 	}, nil
 }
 
 // Get gets the configuration from the CDN.
-func (c *cdnLocal) Get(_ context.Context) (_ *Config, err error) {
-	files, err := os.ReadDir(c.dirPath)
+func (c *cdnLocal) Get(_ context.Context, pkg string) (cfg Config, err error) {
+	f, err := os.ReadDir(c.dirPath)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read directory %s: %w", c.dirPath, err)
 	}
 
-	var configOrder *orderConfig
-	var configLayers = make(map[string]*layer)
-	for _, file := range files {
+	files := map[string][]byte{}
+	for _, file := range f {
 		if file.IsDir() {
 			continue
 		}
@@ -45,26 +43,30 @@ func (c *cdnLocal) Get(_ context.Context) (_ *Config, err error) {
 			return nil, fmt.Errorf("couldn't read file %s: %w", file.Name(), err)
 		}
 
-		if file.Name() == configOrderID {
-			err = json.Unmarshal(contents, &configOrder)
-			if err != nil {
-				return nil, fmt.Errorf("couldn't unmarshal config order %s: %w", file.Name(), err)
-			}
-		} else {
-			configLayer := &layer{}
-			err = json.Unmarshal(contents, configLayer)
-			if err != nil {
-				return nil, fmt.Errorf("couldn't unmarshal file %s: %w", file.Name(), err)
-			}
-			configLayers[file.Name()] = configLayer
+		files[file.Name()] = contents
+	}
+
+	layers, err := getOrderedScopedLayers(files, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	switch pkg {
+	case "datadog-agent":
+		cfg, err = newAgentConfig(layers...)
+		if err != nil {
+			return nil, err
 		}
+	case "datadog-apm-inject":
+		cfg, err = newAPMConfig([]string{}, layers...)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, ErrProductNotSupported
 	}
 
-	if configOrder == nil {
-		return nil, fmt.Errorf("no configuration_order found")
-	}
-
-	return newConfig(orderLayers(*configOrder, configLayers)...)
+	return cfg, nil
 }
 
 func (c *cdnLocal) Close() error {

@@ -15,9 +15,12 @@ import (
 
 	"github.com/DataDog/datadog-agent/comp/core"
 	"github.com/DataDog/datadog-agent/comp/core/status"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	taggerMock "github.com/DataDog/datadog-agent/comp/core/tagger/mock"
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/eventplatformimpl"
 	"github.com/DataDog/datadog-agent/comp/forwarder/orchestrator/orchestratorimpl"
+	haagentmock "github.com/DataDog/datadog-agent/comp/haagent/mock"
 	"github.com/DataDog/datadog-agent/comp/serializer/compression/compressionimpl"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 )
@@ -53,12 +56,18 @@ func TestStatusOutPut(t *testing.T) {
 		}},
 	}
 
+	mockTagger := taggerMock.SetupFakeTagger(t)
+
 	deps := fxutil.Test[dependencies](t, fx.Options(
 		core.MockBundle(),
 		compressionimpl.MockModule(),
 		defaultforwarder.MockModule(),
+		haagentmock.Module(),
 		orchestratorimpl.MockModule(),
 		eventplatformimpl.MockModule(),
+		fx.Provide(func() tagger.Component {
+			return mockTagger
+		}),
 		fx.Supply(
 			Params{
 				continueOnMissingHostname: true,

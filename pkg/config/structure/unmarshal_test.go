@@ -6,13 +6,17 @@
 package structure
 
 import (
+	"bytes"
 	"math"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/DataDog/datadog-agent/pkg/config/mock"
+	"github.com/DataDog/datadog-agent/pkg/config/model"
+	"github.com/DataDog/datadog-agent/pkg/config/nodetreemodel"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Struct that is used within the config
@@ -34,6 +38,17 @@ type trapsConfig struct {
 	BindHost         string   `yaml:"bind_host"`
 	StopTimeout      int      `yaml:"stop_timeout"`
 	Namespace        string   `yaml:"namespace"`
+}
+
+// We don't use config mock here to not create cycle dependencies (same reason why config mock are not used in
+// pkg/config/{setup/model})
+func newConfigFromYaml(t *testing.T, yaml string) model.Config {
+	conf := model.NewConfig("datadog", "DD", strings.NewReplacer(".", "_")) // nolint: forbidigo // legitimate use of NewConfig
+
+	conf.SetConfigType("yaml")
+	err := conf.ReadConfig(bytes.NewBuffer([]byte(yaml)))
+	require.NoError(t, err)
+	return conf
 }
 
 func TestUnmarshalKeyTrapsConfig(t *testing.T) {
@@ -58,10 +73,10 @@ network_devices:
     stop_timeout: 4
     namespace: abc
 `
-	mockConfig := mock.NewFromYAML(t, confYaml)
+	mockConfig := newConfigFromYaml(t, confYaml)
 
 	var trapsCfg = trapsConfig{}
-	err := UnmarshalKey(mockConfig, "network_devices.snmp_traps", &trapsCfg)
+	err := unmarshalKeyReflection(mockConfig, "network_devices.snmp_traps", &trapsCfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, trapsCfg.Enabled, true)
@@ -83,11 +98,6 @@ network_devices:
 	assert.Equal(t, trapsCfg.BindHost, "ok")
 	assert.Equal(t, trapsCfg.StopTimeout, 4)
 	assert.Equal(t, trapsCfg.Namespace, "abc")
-}
-
-type serviceDescription struct {
-	Host     string
-	Endpoint endpoint `mapstructure:",squash"`
 }
 
 type endpoint struct {
@@ -135,11 +145,11 @@ endpoints:
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			mockConfig := mock.NewFromYAML(t, tc.conf)
+			mockConfig := newConfigFromYaml(t, tc.conf)
 			mockConfig.SetKnown("endpoints")
 
 			var endpoints = []endpoint{}
-			err := UnmarshalKey(mockConfig, "endpoints", &endpoints)
+			err := unmarshalKeyReflection(mockConfig, "endpoints", &endpoints)
 			assert.NoError(t, err, "%s failed to marshal: %s", tc.name, err)
 
 			assert.Equal(t, len(endpoints), len(tc.want), "%s marshalled unexepected length of slices, wanted: %s got: %s", tc.name, len(tc.want), len(endpoints))
@@ -149,31 +159,6 @@ endpoints:
 			}
 		})
 	}
-}
-
-func TestUnmarshalKeyWithSquash(t *testing.T) {
-	confYaml := `
-service:
-  host: datad0g.com
-  name: intake
-  apikey: abc1
-`
-	mockConfig := mock.NewFromYAML(t, confYaml)
-	mockConfig.SetKnown("service")
-
-	var svc = serviceDescription{}
-	// fails without EnableSquash being given
-	err := UnmarshalKey(mockConfig, "service", &svc)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "EnableSquash")
-
-	// succeeds
-	err = UnmarshalKey(mockConfig, "service", &svc, EnableSquash)
-	assert.NoError(t, err)
-
-	assert.Equal(t, svc.Host, "datad0g.com")
-	assert.Equal(t, svc.Endpoint.Name, "intake")
-	assert.Equal(t, svc.Endpoint.APIKey, "abc1")
 }
 
 type featureConfig struct {
@@ -278,6 +263,15 @@ feature:
 			skip: false,
 		},
 		{
+			name: "float 1.0 value is true",
+			conf: `
+feature:
+  enabled: 1.0
+`,
+			want: true,
+			skip: false,
+		},
+		{
 			name: "string 'n' value is false",
 			conf: `
 feature:
@@ -330,11 +324,11 @@ feature:
 				t.Skip("Skipping test case")
 			}
 
-			mockConfig := mock.NewFromYAML(t, tc.conf)
+			mockConfig := newConfigFromYaml(t, tc.conf)
 			mockConfig.SetKnown("feature")
 
 			var feature = featureConfig{}
-			err := UnmarshalKey(mockConfig, "feature", &feature)
+			err := unmarshalKeyReflection(mockConfig, "feature", &feature)
 			assert.NoError(t, err, "%s failed to marshal: %s", tc.name, err)
 
 			assert.Equal(t, feature.Enabled, tc.want, "%s unexpected marshal value, want: %s got: %s", tc.name, tc.want, feature.Enabled)
@@ -492,11 +486,11 @@ feature:
 				t.Skip("Skipping test case")
 			}
 
-			mockConfig := mock.NewFromYAML(t, tc.conf)
+			mockConfig := newConfigFromYaml(t, tc.conf)
 			mockConfig.SetKnown("feature")
 
 			var feature = uintConfig{}
-			err := UnmarshalKey(mockConfig, "feature", &feature)
+			err := unmarshalKeyReflection(mockConfig, "feature", &feature)
 			assert.NoError(t, err, "%s failed to marshal: %s", tc.name, err)
 			if err != nil {
 				t.FailNow()
@@ -599,11 +593,11 @@ feature:
 				t.Skip("Skipping test case")
 			}
 
-			mockConfig := mock.NewFromYAML(t, tc.conf)
+			mockConfig := newConfigFromYaml(t, tc.conf)
 			mockConfig.SetKnown("feature")
 
 			var feature = floatConfig{}
-			err := UnmarshalKey(mockConfig, "feature", &feature)
+			err := unmarshalKeyReflection(mockConfig, "feature", &feature)
 			assert.NoError(t, err, "%s failed to marshal: %s", tc.name, err)
 			if err != nil {
 				t.FailNow()
@@ -751,11 +745,11 @@ feature:
 				t.Skip("Skipping test case")
 			}
 
-			mockConfig := mock.NewFromYAML(t, tc.conf)
+			mockConfig := newConfigFromYaml(t, tc.conf)
 			mockConfig.SetKnown("feature")
 
 			var feature = stringConfig{}
-			err := UnmarshalKey(mockConfig, "feature", &feature)
+			err := unmarshalKeyReflection(mockConfig, "feature", &feature)
 			assert.NoError(t, err, "%s failed to marshal: %s", tc.name, err)
 			if err != nil {
 				t.FailNow()
@@ -783,17 +777,17 @@ func TestUnmarshalKeyCaseInsensitive(t *testing.T) {
 feature:
   EnABLeD: "true"
 `
-	mockConfig := mock.NewFromYAML(t, confYaml)
+	mockConfig := newConfigFromYaml(t, confYaml)
 	mockConfig.SetKnown("feature")
 
 	var feature = featureConfig{}
-	err := UnmarshalKey(mockConfig, "feature", &feature)
+	err := unmarshalKeyReflection(mockConfig, "feature", &feature)
 	assert.NoError(t, err)
 
 	assert.Equal(t, feature.Enabled, true)
 
 	var diffcase = featureConfigDiffCase{}
-	err = UnmarshalKey(mockConfig, "feature", &diffcase)
+	err = unmarshalKeyReflection(mockConfig, "feature", &diffcase)
 	assert.NoError(t, err)
 
 	assert.Equal(t, diffcase.ENaBLEd, true)
@@ -804,32 +798,498 @@ func TestUnmarshalKeyMissing(t *testing.T) {
 feature:
   enabled: "true"
 `
-	mockConfig := mock.NewFromYAML(t, confYaml)
+	mockConfig := newConfigFromYaml(t, confYaml)
 	mockConfig.SetKnown("feature")
 
 	// If the data from the config is missing, UnmarshalKey is a no-op, does
 	// nothing, and returns no error
 	var endpoints = []endpoint{}
-	err := UnmarshalKey(mockConfig, "config_providers", &endpoints)
+	err := unmarshalKeyReflection(mockConfig, "config_providers", &endpoints)
 	assert.NoError(t, err)
 }
 
+func TestUnmarshalKeyConversionErrors(t *testing.T) {
+	t.Run("errors on string to int", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: "true"
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled int
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "unable to cast \"true\" of type string to int64")
+	})
+
+	t.Run("errors on string to float", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: "true"
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled float64
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "unable to cast \"true\" of type string to float64")
+	})
+
+	t.Run("errors on bad string to bool", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: elderberries
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled bool
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "could not convert \"elderberries\" to bool")
+	})
+
+	t.Run("errors on empty string bool ", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: ""
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled bool
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "could not convert \"\" to bool")
+	})
+
+	t.Run("errors on negative to uint", func(t *testing.T) {
+		t.Skip("not implemented")
+		confYaml := `
+feature:
+  enabled: -1
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled uint
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "could not convert to uint")
+	})
+
+	t.Run("errors on bool to int", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: test
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled int
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "unable to cast \"test\" of type string to int64")
+	})
+
+	t.Run("errors on bool to float", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: test
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled float64
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "unable to cast \"test\" of type string to float64")
+	})
+
+	t.Run("errors on bool to string", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled: [1]
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled string
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "unable to cast []interface {}{1} of type []interface {} to string")
+	})
+
+	t.Run("errors on map to scalar type", func(t *testing.T) {
+		confYaml := `
+feature:
+  enabled:
+    key: value
+`
+
+		mockConfig := newConfigFromYaml(t, confYaml)
+		mockConfig.SetKnown("feature")
+
+		feature := struct {
+			Enabled string
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "can't copy into target: scalar required")
+	})
+}
+
+// A flag is provided as a struct tag after a field name separated by a comma that
+// alters the decoding behavior, eg. struct { Foo string `json:"field1,omitempty"` }
+//
+// List of common package flags we take into consideration:
+// * yaml.v2 flags:  omitempty, flow, inline
+// * json flags: omitempty
+// * mapstructure flags: squash, remain, omitempty
+func TestUnmarshalKeyStructTagFlags(t *testing.T) {
+	confYaml := `
+feature:
+  enabled: "true"
+`
+	want := "true"
+
+	mockConfig := newConfigFromYaml(t, confYaml)
+	mockConfig.SetKnown("feature")
+
+	t.Run("json omitempty", func(t *testing.T) {
+		feature := struct {
+			Enabled string `json:"enabled,omitempty"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "json omitempty flag", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("yaml omitempty", func(t *testing.T) {
+		feature := struct {
+			Enabled string `yaml:"enabled,omitempty"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "yaml omitempty flag", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("yaml flow", func(t *testing.T) {
+		feature := struct {
+			Enabled string `yaml:"enabled,flow"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "yaml flow flag", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("yaml inline", func(t *testing.T) {
+		feature := struct {
+			Enabled string `yaml:"enabled,inline"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "yaml inline flag", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("yaml multiple flags", func(t *testing.T) {
+		feature := struct {
+			Enabled string `yaml:"enabled,inline,flow"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "yaml multiple flags", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("mapstructure remain", func(t *testing.T) {
+		feature := struct {
+			Enabled string `mapstructure:"enabled,remain"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "mapstructure omitempty flag", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("mapstructure squash errors without option", func(t *testing.T) {
+		feature := struct {
+			Enabled string `mapstructure:"enabled,squash"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "EnableSquash")
+	})
+
+	t.Run("mapstructure omitempty", func(t *testing.T) {
+		feature := struct {
+			Enabled string `mapstructure:"enabled,omitempty"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "mapstructure omitempty flag", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("mapstructure multiple flags", func(t *testing.T) {
+		feature := struct {
+			Enabled string `mapstructure:"enabled,remain,omitempty"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		assert.NoError(t, err, "%s failed to marshal: %s", "mapstructure multiple flags", err)
+
+		assert.Equal(t, feature.Enabled, want, "unexpected marshal value, want: %s got: %s", want, feature.Enabled)
+	})
+
+	t.Run("mapstructure squash multiple flags errors without option", func(t *testing.T) {
+		t.Skip("FIXME")
+
+		feature := struct {
+			Enabled string `mapstructure:"enabled,remain,squash"`
+		}{}
+
+		err := unmarshalKeyReflection(mockConfig, "feature", &feature)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "EnableSquash")
+	})
+}
+
+type expectation struct {
+	fieldName    string
+	specifierSet map[string]struct{}
+	skip         bool
+}
+
+func TestFieldNameToKey(t *testing.T) {
+	target := struct {
+		A string `json:"a,omitempty"`
+		B string `yaml:"b,omitempty"`
+		C string `yaml:"c,flow"`
+		D string `yaml:"d,inline"`
+		E string `yaml:"e,inline,omitempty"`
+		F string `mapstructure:"f,squash"`
+		G string `mapstructure:"g,remain"`
+		H string `mapstructure:"h,omitempty"`
+		I string `mapstructure:"i,remain,squash"`
+		J string `mapstructure:",squash"`
+		// tags that aren't yaml, json, or mapstructure are ignored
+		K string `apple:"orange" mapstructure:"k,squash"`
+	}{}
+
+	expectedSelectorSet := []expectation{
+		{
+			fieldName:    "a",
+			specifierSet: map[string]struct{}{"omitempty": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "b",
+			specifierSet: map[string]struct{}{"omitempty": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "c",
+			specifierSet: map[string]struct{}{"flow": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "d",
+			specifierSet: map[string]struct{}{"inline": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "e",
+			specifierSet: map[string]struct{}{"inline": {}, "omitempty": {}},
+			skip:         true,
+		},
+		{
+			fieldName:    "f",
+			specifierSet: map[string]struct{}{"squash": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "g",
+			specifierSet: map[string]struct{}{"remain": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "h",
+			specifierSet: map[string]struct{}{"omitempty": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "i",
+			specifierSet: map[string]struct{}{"remain": {}, "omitempty": {}},
+			skip:         true,
+		},
+		{
+			fieldName:    "j",
+			specifierSet: map[string]struct{}{"squash": {}},
+			skip:         false,
+		},
+		{
+			fieldName:    "k",
+			specifierSet: map[string]struct{}{"squash": {}},
+		},
+	}
+	targetType := reflect.ValueOf(target).Type()
+	assert.Equal(t, targetType.NumField(), len(expectedSelectorSet), "test cases and expectations are not equal length")
+	for i := 0; i < targetType.NumField(); i++ {
+		f := targetType.Field(i)
+
+		t.Run(string(f.Tag), func(t *testing.T) {
+			if expectedSelectorSet[i].skip {
+				t.Skip("Skipping test case")
+			}
+
+			actualName, actualSpecifiers := fieldNameToKey(f)
+
+			assert.Equal(t, actualName, expectedSelectorSet[i].fieldName)
+			for k := range expectedSelectorSet[i].specifierSet {
+				assert.Contains(t, actualSpecifiers, k)
+			}
+		})
+	}
+}
+
+type squashConfig struct {
+	Host     string
+	Endpoint endpoint `mapstructure:",squash"`
+}
+
+func TestUnmarshalKeyWithSquash(t *testing.T) {
+	confYaml := `
+service:
+  host: datad0g.com
+  name: intake
+  apikey: abc1
+`
+	mockConfig := newConfigFromYaml(t, confYaml)
+	mockConfig.SetKnown("service")
+	var svc = squashConfig{}
+
+	t.Run("squash flag succeeds with option", func(t *testing.T) {
+		err := unmarshalKeyReflection(mockConfig, "service", &svc, EnableSquash)
+		assert.NoError(t, err)
+
+		assert.Equal(t, svc.Host, "datad0g.com")
+		assert.Equal(t, svc.Endpoint.Name, "intake")
+		assert.Equal(t, svc.Endpoint.APIKey, "abc1")
+	})
+}
+
+func TestUnmarshalKeysToMapOfString(t *testing.T) {
+	confYaml := `
+service:
+  host: datad0g.com
+  name: intake
+  apikey: abc1
+  the_great_question: 42
+  enabled: true
+  disabled: f
+`
+	mockConfig := newConfigFromYaml(t, confYaml)
+	mockConfig.SetKnown("service")
+	var svc = make(map[string]string)
+
+	err := unmarshalKeyReflection(mockConfig, "service", &svc)
+	assert.NoError(t, err)
+
+	assert.Equal(t, svc["host"], "datad0g.com")
+	assert.Equal(t, svc["name"], "intake")
+	assert.Equal(t, svc["apikey"], "abc1")
+	assert.Equal(t, svc["the_great_question"], "42")
+	assert.Equal(t, svc["enabled"], "true")
+	assert.Equal(t, svc["disabled"], "f")
+}
+
+func TestUnmarshalKeysToMapOfBool(t *testing.T) {
+	confYaml := `
+service:
+  enabled: true
+  disabled: false
+`
+	mockConfig := newConfigFromYaml(t, confYaml)
+	mockConfig.SetKnown("service")
+	var svc = make(map[string]bool)
+
+	err := unmarshalKeyReflection(mockConfig, "service", &svc)
+	assert.NoError(t, err)
+
+	assert.Equal(t, svc["enabled"], true)
+	assert.Equal(t, svc["disabled"], false)
+
+	err = UnmarshalKey(mockConfig, "service", &svc)
+	assert.NoError(t, err)
+
+	assert.Equal(t, svc["enabled"], true)
+	assert.Equal(t, svc["disabled"], false)
+}
+
 func TestMapGetChildNotFound(t *testing.T) {
-	m := map[string]string{"a": "apple", "b": "banana"}
-	n, err := newNode(reflect.ValueOf(m))
+	m := map[string]interface{}{"a": "apple", "b": "banana"}
+	n, err := nodetreemodel.NewNodeTree(m, model.SourceDefault)
 	assert.NoError(t, err)
 
 	val, err := n.GetChild("a")
 	assert.NoError(t, err)
-	str, err := val.(leafNode).GetString()
+	str, err := cast.ToStringE(val.(nodetreemodel.LeafNode).Get())
 	assert.NoError(t, err)
 	assert.Equal(t, str, "apple")
 
 	_, err = n.GetChild("c")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, err.Error(), "not found")
 
-	keys, err := n.ChildrenKeys()
-	assert.NoError(t, err)
-	assert.Equal(t, keys, []string{"a", "b"})
+	inner, ok := n.(nodetreemodel.InnerNode)
+	assert.True(t, ok)
+	assert.Equal(t, inner.ChildrenKeys(), []string{"a", "b"})
 }

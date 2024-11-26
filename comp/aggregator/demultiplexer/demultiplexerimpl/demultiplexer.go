@@ -16,9 +16,11 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	log "github.com/DataDog/datadog-agent/comp/core/log/def"
 	"github.com/DataDog/datadog-agent/comp/core/status"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform"
 	orchestratorforwarder "github.com/DataDog/datadog-agent/comp/forwarder/orchestrator"
+	haagent "github.com/DataDog/datadog-agent/comp/haagent/def"
 	"github.com/DataDog/datadog-agent/comp/serializer/compression"
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/sender"
@@ -41,7 +43,9 @@ type dependencies struct {
 	SharedForwarder        defaultforwarder.Component
 	OrchestratorForwarder  orchestratorforwarder.Component
 	EventPlatformForwarder eventplatform.Component
+	HaAgent                haagent.Component
 	Compressor             compression.Component
+	Tagger                 tagger.Component
 
 	Params Params
 }
@@ -84,8 +88,11 @@ func newDemultiplexer(deps dependencies) (provides, error) {
 		deps.OrchestratorForwarder,
 		options,
 		deps.EventPlatformForwarder,
+		deps.HaAgent,
 		deps.Compressor,
-		hostnameDetected)
+		deps.Tagger,
+		hostnameDetected,
+	)
 	demultiplexer := demultiplexer{
 		AgentDemultiplexer: agentDemultiplexer,
 	}

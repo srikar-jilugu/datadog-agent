@@ -18,6 +18,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/envs"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/language"
 	"github.com/DataDog/datadog-agent/pkg/network/protocols/http/testutil"
 )
@@ -162,6 +163,14 @@ func TestExtractServiceMetadata(t *testing.T) {
 			expectedGeneratedName: "myservice",
 		},
 		{
+			name: "java using the -jar flag to point to a .war",
+			cmdline: []string{
+				"java", "-Duser.home=/var/jenkins_home", "-Dhudson.lifecycle=hudson.lifecycle.ExitLifecycle", "-jar", "/usr/share/jenkins/jenkins.war", "--httpPort=8000",
+			},
+			lang:                  language.Java,
+			expectedGeneratedName: "jenkins",
+		},
+		{
 			name: "java class name as service",
 			cmdline: []string{
 				"java", "-Xmx4000m", "-Xms4000m", "-XX:ReservedCodeCacheSize=256m", "com.datadog.example.HelloWorld",
@@ -213,10 +222,21 @@ func TestExtractServiceMetadata(t *testing.T) {
 			name: "node js with a broken package.json",
 			cmdline: []string{
 				"/usr/bin/node",
-				"./testdata/inner/index.js",
+				"./testdata/inner/app.js",
 			},
 			lang:                  language.Node,
-			expectedGeneratedName: "node",
+			expectedGeneratedName: "app",
+			fs:                    &subUsmTestData,
+		},
+		{
+			name: "node js with a broken package.json",
+			cmdline: []string{
+				"/usr/bin/node",
+				"./testdata/inner/link",
+			},
+			lang:                  language.Node,
+			expectedGeneratedName: "link",
+			fs:                    &subUsmTestData,
 		},
 		{
 			name: "node js with a valid package.json",
@@ -452,7 +472,8 @@ func TestExtractServiceMetadata(t *testing.T) {
 				"swoole-server.php",
 			},
 			lang:                  language.PHP,
-			expectedGeneratedName: "foo",
+			expectedDDService:     "foo",
+			expectedGeneratedName: "php",
 		},
 		{
 			name: "PHP with version number",
@@ -524,6 +545,17 @@ func TestExtractServiceMetadata(t *testing.T) {
 			},
 			lang:                  language.Python,
 			expectedGeneratedName: "test",
+		},
+		{
+			name: "gunicorn simple with python",
+			cmdline: []string{
+				"/usr/bin/python3",
+				"/usr/bin/gunicorn",
+				"--workers=2",
+				"foo:create_app()",
+			},
+			lang:                  language.Python,
+			expectedGeneratedName: "foo",
 		},
 		{
 			name: "gunicorn from name",
@@ -623,7 +655,9 @@ func TestExtractServiceMetadata(t *testing.T) {
 			if tt.fs != nil {
 				fs = *tt.fs
 			}
-			meta, ok := ExtractServiceMetadata(tt.cmdline, tt.envs, fs, tt.lang, make(DetectorContextMap))
+			ctx := NewDetectionContext(tt.cmdline, envs.NewVariables(tt.envs), fs)
+			ctx.ContextMap = make(DetectorContextMap)
+			meta, ok := ExtractServiceMetadata(tt.lang, ctx)
 			if len(tt.expectedGeneratedName) == 0 && len(tt.expectedDDService) == 0 {
 				require.False(t, ok)
 			} else {

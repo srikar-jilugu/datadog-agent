@@ -12,8 +12,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/DataDog/datadog-agent/pkg/fleet/installer/repository"
-	"github.com/DataDog/datadog-agent/pkg/fleet/internal/cdn"
 	"github.com/DataDog/datadog-agent/pkg/fleet/internal/winregistry"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
@@ -100,27 +98,19 @@ func RemoveAgent(ctx context.Context) (err error) {
 	return removeAgentIfInstalled(ctx)
 }
 
-// ConfigureAgent noop
-func ConfigureAgent(_ context.Context, _ cdn.CDN, _ *repository.Repositories) error {
-	return nil
-}
-
-// WriteAgentConfig noop
-func WriteAgentConfig(_ *cdn.Config, _ string) error {
-	return nil
-}
-
 func installAgentPackage(target string, args []string) error {
-	// Lookup stored Agent user and pass it to the Agent MSI
-	// TODO: bootstrap doesn't have a command-line agent user parameter yet,
-	//       might need to update this when it does.
+	// Lookup Agent user stored in registry by the Installer MSI
+	// and pass it to the Agent MSI
 	agentUser, err := winregistry.GetAgentUserName()
 	if err != nil {
 		return fmt.Errorf("failed to get Agent user: %w", err)
 	}
 	args = append(args, fmt.Sprintf("DDAGENTUSER_NAME=%s", agentUser))
 
-	err = msiexec(target, datadogAgent, "/i", args)
+	cmd, err := msiexec(target, datadogAgent, "/i", args)
+	if err == nil {
+		err = cmd.Run()
+	}
 	if err != nil {
 		return fmt.Errorf("failed to install Agent %s: %w", target, err)
 	}
