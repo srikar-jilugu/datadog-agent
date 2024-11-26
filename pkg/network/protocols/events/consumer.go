@@ -32,7 +32,7 @@ const (
 
 var errInvalidPerfEvent = errors.New("invalid perf event")
 
-// Consumer provides a standardized abstraction for consuming (batched) events from eBPF
+// Consumer provides a standardized abstraction for consuming (batched) events from eBPF.
 type Consumer[V any] struct {
 	mux         sync.Mutex
 	proto       string
