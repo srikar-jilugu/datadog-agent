@@ -417,7 +417,6 @@ func (pl *ProcessList) deleteCachedProcess(key interface{}, imageTag string) (en
 			childkey := pl.owner.GetProcessCacheKey(&child.CurrentExec.Process)
 
 			childProcess := pl.GetCacheProcess(childkey)
-
 			pl.ResolveFromProcfs(childProcess)
 		}
 	}
@@ -604,7 +603,6 @@ func (pl *ProcessList) Debug(w io.Writer) {
 
 // ResolveFromProcfs resolves the entry from procfs
 func (pl *ProcessList) ResolveFromProcfs(process *ProcessNode) *ProcessNode {
-
 	pl.Lock()
 	defer pl.Unlock()
 
@@ -655,6 +653,7 @@ func (pl *ProcessList) resolveFromProcfs(processNode *ProcessNode, maxDepth int)
 				parent.AppendChild(entry, true)
 			}
 		}
+
 	}
 
 	return entry

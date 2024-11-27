@@ -19,12 +19,23 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func newFakeExecEvent(ppid, pid int, pathname string) *model.Event {
+func newFakeForkEvent(ppid, pid int, pathname string) *model.Event {
 	e := model.NewFakeEvent()
-	e.Type = uint32(model.ExecEventType)
+	e.Type = uint32(model.ForkEventType)
 	e.ProcessContext = &model.ProcessContext{}
 	e.ProcessContext.PPid = uint32(ppid)
 	e.ProcessContext.Pid = uint32(pid)
+	e.ProcessContext.ForkTime = time.Now()
+	e.ProcessContext.FileEvent.PathnameStr = pathname
+	return e
+}
+
+func newFakeExecEvent(event *model.Event, pathname string) *model.Event {
+	e := model.NewFakeEvent()
+	e.Type = uint32(model.ExecEventType)
+	e.ProcessContext = &model.ProcessContext{}
+	e.ProcessContext.PPid = uint32(event.ProcessContext.PPid)
+	e.ProcessContext.Pid = uint32(event.ProcessContext.Pid)
 	e.ProcessContext.ForkTime = time.Now()
 	e.ProcessContext.FileEvent.PathnameStr = pathname
 	return e
@@ -171,7 +182,7 @@ func TestFork1st(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	inserted, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -185,7 +196,7 @@ func TestFork1st(t *testing.T) {
 
 	// parent
 	//     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	inserted, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -239,7 +250,7 @@ func TestFork2nd(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	new, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -254,7 +265,7 @@ func TestFork2nd(t *testing.T) {
 
 	// // parent
 	// //     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	new, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -308,7 +319,7 @@ func TestForkExec(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	new, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -322,7 +333,7 @@ func TestForkExec(t *testing.T) {
 
 	// parent
 	//     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	new, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -336,7 +347,7 @@ func TestForkExec(t *testing.T) {
 
 	// parent
 	//     \ child -> exec
-	exec := newFakeExecEvent(1, 2, "bin/exec")
+	exec := newFakeExecEvent(child, "bin/exec")
 	new, err = processList.Insert(exec, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -380,7 +391,7 @@ func TestForkExecExec(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	new, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -394,7 +405,7 @@ func TestForkExecExec(t *testing.T) {
 
 	// parent
 	//     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	new, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -408,7 +419,7 @@ func TestForkExecExec(t *testing.T) {
 
 	// parent
 	//     \ child -> exec1
-	exec1 := newFakeExecEvent(1, 2, "bin/exec1")
+	exec1 := newFakeExecEvent(child, "bin/exec1")
 	new, err = processList.Insert(exec1, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -425,7 +436,8 @@ func TestForkExecExec(t *testing.T) {
 
 	// [parent]
 	//     \ child -> exec1 -> exec2
-	exec2 := newFakeExecEvent(1, 2, "bin/exec2")
+	exec2 := newFakeExecEvent(child, "bin/exec2")
+
 	new, err = processList.Insert(exec2, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -469,7 +481,7 @@ func TestOrphanExec(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	new, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -483,7 +495,7 @@ func TestOrphanExec(t *testing.T) {
 
 	// parent
 	//     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	new, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -516,7 +528,8 @@ func TestOrphanExec(t *testing.T) {
 
 	// [parent]
 	//     \ child -> exec
-	exec := newFakeExecEvent(1, 2, "bin/exec")
+	exec := newFakeExecEvent(child, "bin/exec")
+
 	new, err = processList.Insert(exec, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -553,7 +566,7 @@ func TestForkReuse(t *testing.T) {
 	stats := testStats{}
 
 	// parent1
-	parent1 := newFakeExecEvent(0, 1, "/bin/parent1")
+	parent1 := newFakeForkEvent(0, 1, "/bin/parent1")
 	new, err := processList.Insert(parent1, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -567,7 +580,7 @@ func TestForkReuse(t *testing.T) {
 
 	// parent1
 	//     \ child1
-	child1 := newFakeExecEvent(1, 2, "/bin/child1")
+	child1 := newFakeForkEvent(1, 2, "/bin/child1")
 	new, err = processList.Insert(child1, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -599,7 +612,8 @@ func TestForkReuse(t *testing.T) {
 
 	// [parent1]
 	//     \ child1 -> exec1
-	exec1 := newFakeExecEvent(1, 2, "bin/exec1")
+	exec1 := newFakeExecEvent(child1, "bin/exec1")
+
 	new, err = processList.Insert(exec1, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -615,7 +629,7 @@ func TestForkReuse(t *testing.T) {
 	//     \ child1 -> exec1
 	//
 	// parent2:pid1
-	parent2 := newFakeExecEvent(0, 1, "/bin/parent2")
+	parent2 := newFakeForkEvent(0, 1, "/bin/parent2")
 	new, err = processList.Insert(parent2, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -632,7 +646,7 @@ func TestForkReuse(t *testing.T) {
 	//
 	// parent2:pid1
 	//     \ child2
-	child2 := newFakeExecEvent(1, 3, "/bin/child1")
+	child2 := newFakeForkEvent(1, 3, "/bin/child1")
 	new, err = processList.Insert(child2, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -699,7 +713,7 @@ func TestForkForkExec(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	new, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -713,7 +727,7 @@ func TestForkForkExec(t *testing.T) {
 
 	// parent
 	//     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	new, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -728,7 +742,7 @@ func TestForkForkExec(t *testing.T) {
 	// parent
 	//     \ child
 	//          \ grandChild
-	grandChild := newFakeExecEvent(2, 3, "/bin/grandChild")
+	grandChild := newFakeForkEvent(2, 3, "/bin/grandChild")
 	new, err = processList.Insert(grandChild, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -743,7 +757,8 @@ func TestForkForkExec(t *testing.T) {
 	// parent
 	//     \ child -> childExec
 	//          \ grandChild
-	childExec := newFakeExecEvent(1, 2, "bin/childExec")
+	childExec := newFakeExecEvent(child, "bin/childExec")
+
 	new, err = processList.Insert(childExec, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -810,7 +825,7 @@ func TestExecBomb(t *testing.T) {
 	stats := testStats{}
 
 	// parent
-	parent := newFakeExecEvent(0, 1, "/bin/parent")
+	parent := newFakeForkEvent(0, 1, "/bin/parent")
 	new, err := processList.Insert(parent, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -824,7 +839,7 @@ func TestExecBomb(t *testing.T) {
 
 	// parent
 	//     \ child
-	child := newFakeExecEvent(1, 2, "/bin/child")
+	child := newFakeForkEvent(1, 2, "/bin/child")
 	new, err = processList.Insert(child, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -838,7 +853,8 @@ func TestExecBomb(t *testing.T) {
 
 	// parent
 	//     \ child -> exec1
-	exec1 := newFakeExecEvent(1, 2, "bin/exec1")
+	exec1 := newFakeExecEvent(child, "bin/exec1")
+
 	new, err = processList.Insert(exec1, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -855,7 +871,8 @@ func TestExecBomb(t *testing.T) {
 
 	// parent
 	//     \ child -> exec1 -> exec2
-	exec2 := newFakeExecEvent(1, 2, "bin/exec1")
+	exec2 := newFakeExecEvent(child, "bin/exec1")
+
 	new, err = processList.Insert(exec2, true, "")
 	if err != nil {
 		t.Fatal(err)
