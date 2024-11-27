@@ -871,9 +871,21 @@ func TestExecBomb(t *testing.T) {
 	stats.ValidateCounters(t, processList)
 
 }
+
+// No order between execs
 func TestExecLostFork(t *testing.T) {
 
 }
+
+// No order between execs
 func TestExecLostExec(t *testing.T) {
 
+}
+
+// No concept of exec exec
+func TestIsExecExecRuntime(t *testing.T) {
+}
+
+// No concept of exec exec
+func TestIsExecExecSnapshot(t *testing.T) {
 }
