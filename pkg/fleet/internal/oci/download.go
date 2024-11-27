@@ -20,12 +20,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/awslabs/amazon-ecr-credential-helper/ecr-login"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	oci "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
-	"github.com/google/go-containerregistry/pkg/v1/google"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
@@ -151,10 +149,6 @@ func (d *Downloader) Download(ctx context.Context, packageURL string) (*Download
 
 func getKeychain(auth string, username string, password string) authn.Keychain {
 	switch auth {
-	case RegistryAuthGCR:
-		return google.Keychain
-	case RegistryAuthECR:
-		return authn.NewKeychainFromHelper(ecr.NewECRHelper())
 	case RegistryAuthPassword:
 		return usernamePasswordKeychain{
 			username: username,

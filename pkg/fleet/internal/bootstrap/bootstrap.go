@@ -8,6 +8,7 @@ package bootstrap
 
 import (
 	"context"
+
 	"github.com/DataDog/datadog-agent/pkg/fleet/env"
 )
 
