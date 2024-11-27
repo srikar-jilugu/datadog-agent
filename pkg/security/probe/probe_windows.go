@@ -470,7 +470,6 @@ func (p *WindowsProbe) auditEtw(ecb etwCallback) error {
 			switch e.EventHeader.EventDescriptor.ID {
 			case idObjectPermsChange:
 				if pc, err := p.parseObjectPermsChange(e); err == nil {
-					log.Tracef("Received objectPermsChange event %d %s\n", e.EventHeader.EventDescriptor.ID, pc)
 					ecb(pc, e.EventHeader.ProcessID)
 				}
 			}
@@ -494,7 +493,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 			switch e.EventHeader.EventDescriptor.ID {
 			case idNameCreate:
 				if ca, err := p.parseNameCreateArgs(e); err == nil {
-					log.Tracef("Received nameCreate event %d %s\n", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -505,7 +503,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 			case idNameDelete:
 				if ca, err := p.parseNameDeleteArgs(e); err == nil {
-					log.Tracef("Received nameDelete event %d %s\n", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -516,7 +513,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 			case idCreate:
 				if ca, err := p.parseCreateHandleArgs(e); err == nil {
-					log.Tracef("Received idCreate event %d %s\n", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -526,7 +522,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idCreateNewFile:
 				if ca, err := p.parseCreateNewFileArgs(e); err == nil {
-					log.Tracef("Received idCreateNewFile event %d %s\n", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -536,7 +531,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idCleanup:
 				if ca, err := p.parseCleanupArgs(e); err == nil {
-					log.Tracef("Received cleanup event %d %s\n", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -546,7 +540,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idClose:
 				if ca, err := p.parseCloseArgs(e); err == nil {
-					log.Tracef("Received Close event %d %s\n", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -569,7 +562,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 			case idWrite:
 				if wa, err := p.parseWriteArgs(e); err == nil {
 					//fmt.Printf("Received Write event %d %s\n", e.EventHeader.EventDescriptor.ID, wa)
-					log.Tracef("Received Write event %d %s\n", e.EventHeader.EventDescriptor.ID, wa)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -580,7 +572,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 			case idSetInformation:
 				if si, err := p.parseInformationArgs(e); err == nil {
-					log.Tracef("Received SetInformation event %d %s\n", e.EventHeader.EventDescriptor.ID, si)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -591,7 +582,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 			case idSetDelete:
 				if sd, err := p.parseSetDeleteArgs(e); err == nil {
-					log.Tracef("Received SetDelete event %d %s\n", e.EventHeader.EventDescriptor.ID, sd)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -601,7 +591,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idDeletePath:
 				if dp, err := p.parseDeletePathArgs(e); err == nil {
-					log.Tracef("Received DeletePath event %d %s\n", e.EventHeader.EventDescriptor.ID, dp)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -612,7 +601,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 			case idRename:
 				if rn, err := p.parseRenameArgs(e); err == nil {
-					log.Tracef("Received Rename event %d %s\n", e.EventHeader.EventDescriptor.ID, rn)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -622,7 +610,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idRenamePath:
 				if rn, err := p.parseRenamePathArgs(e); err == nil {
-					log.Tracef("Received RenamePath event %d %s\n", e.EventHeader.EventDescriptor.ID, rn)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -632,7 +619,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idFSCTL:
 				if fs, err := p.parseFsctlArgs(e); err == nil {
-					log.Tracef("Received FSCTL event %d %s\n", e.EventHeader.EventDescriptor.ID, fs)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -643,7 +629,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 			case idRename29:
 				if rn, err := p.parseRename29Args(e); err == nil {
-					log.Tracef("Received Rename29 event %d %s\n", e.EventHeader.EventDescriptor.ID, rn)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -660,7 +645,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 			switch e.EventHeader.EventDescriptor.ID {
 			case idRegCreateKey:
 				if cka, err := p.parseCreateRegistryKey(e); err == nil {
-					log.Tracef("Got idRegCreateKey %s", cka)
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -671,7 +655,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idRegOpenKey:
 				if cka, err := p.parseOpenRegistryKey(e); err == nil {
-					log.Tracef("Got idRegOpenKey %s", cka)
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -681,7 +664,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idRegDeleteKey:
 				if dka, err := p.parseDeleteRegistryKey(e); err == nil {
-					log.Tracef("Got idRegDeleteKey %v", dka)
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -691,7 +673,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idRegFlushKey:
 				if dka, err := p.parseFlushKey(e); err == nil {
-					log.Tracef("Got idRegFlushKey %v", dka)
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -699,7 +680,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idRegCloseKey:
 				if dka, err := p.parseCloseKeyArgs(e); err == nil {
-					log.Tracef("Got idRegCloseKey %s", dka)
 
 					p.regPathResolver.Remove(dka.keyObject)
 					p.stats.rpnLock.Lock()
@@ -709,7 +689,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idQuerySecurityKey:
 				if dka, err := p.parseQuerySecurityKeyArgs(e); err == nil {
-					log.Tracef("Got idQuerySecurityKey %v", dka.keyName)
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -717,7 +696,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idSetSecurityKey:
 				if dka, err := p.parseSetSecurityKeyArgs(e); err == nil {
-					log.Tracef("Got idSetSecurityKey %v", dka.keyName)
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -725,7 +703,6 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 				}
 			case idRegSetValueKey:
 				if svk, err := p.parseSetValueKey(e); err == nil {
-					log.Tracef("Got idRegSetValueKey %s", svk)
 
 					ecb(svk, e.EventHeader.ProcessID)
 					p.stats.rpnLock.Lock()
