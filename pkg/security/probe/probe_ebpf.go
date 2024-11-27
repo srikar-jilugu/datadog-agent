@@ -1166,11 +1166,17 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 			seclog.Errorf("failed to decode net_device event: %s (offset %d, len %d)", err, offset, len(data))
 			return
 		}
+		if event.NetDevice.Device.IfIndex > 9999 {
+			seclog.Warnf("Got NetDevice event with invalid ifindex %+v", event.NetDevice.Device)
+		}
 		p.pushNewTCClassifierRequest(event.NetDevice.Device)
 	case model.VethPairEventType:
 		if _, err = event.VethPair.UnmarshalBinary(data[offset:]); err != nil {
 			seclog.Errorf("failed to decode veth_pair event: %s (offset %d, len %d)", err, offset, len(data))
 			return
+		}
+		if event.VethPair.PeerDevice.IfIndex > 9999 {
+			seclog.Warnf("Got VethPair event with invalid peer device ifindex %+v", event.VethPair.PeerDevice)
 		}
 		p.pushNewTCClassifierRequest(event.VethPair.PeerDevice)
 	case model.DNSEventType:
