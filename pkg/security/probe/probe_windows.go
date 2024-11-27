@@ -672,7 +672,7 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 					ecb(dka, e.EventHeader.ProcessID)
 				}
 			case idRegFlushKey:
-				if dka, err := p.parseFlushKey(e); err == nil {
+				if _, err := p.parseFlushKey(e); err == nil {
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
@@ -688,14 +688,14 @@ func (p *WindowsProbe) setupEtw(ecb etwCallback) error {
 
 				}
 			case idQuerySecurityKey:
-				if dka, err := p.parseQuerySecurityKeyArgs(e); err == nil {
+				if _, err := p.parseQuerySecurityKeyArgs(e); err == nil {
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
 					p.stats.rpnLock.Unlock()
 				}
 			case idSetSecurityKey:
-				if dka, err := p.parseSetSecurityKeyArgs(e); err == nil {
+				if _, err := p.parseSetSecurityKeyArgs(e); err == nil {
 
 					p.stats.rpnLock.Lock()
 					p.stats.regProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
