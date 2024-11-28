@@ -272,20 +272,26 @@ const (
 
 func getCWSInstrumentationFullImagePath() string {
 	if fullImagePath := os.Getenv("CWS_INSTRUMENTATION_FULLIMAGEPATH"); fullImagePath != "" {
+		fmt.Printf(">> Using CWS instrumentation full image path from env: %s\n", fullImagePath)
 		return fullImagePath
 	}
+	fmt.Printf(">> Using default CWS instrumentation full image path: %s\n", cwsInstrumentationDefaultImagePath)
 	return cwsInstrumentationDefaultImagePath
 }
 
 func getAgentFullImagePath(e *configCommon.CommonEnvironment) string {
 	if fullImagePath := e.AgentFullImagePath(); fullImagePath != "" {
+		fmt.Printf(">> Using agent full image path from path: %s\n", fullImagePath)
 		return fullImagePath
 	}
 
 	if e.PipelineID() != "" && e.CommitSHA() != "" {
-		return fmt.Sprintf("669783387624.dkr.ecr.us-east-1.amazonaws.com/agent:%s-%s", e.PipelineID(), e.CommitSHA())
+		fullImagePath := fmt.Sprintf("669783387624.dkr.ecr.us-east-1.amazonaws.com/agent:%s-%s", e.PipelineID(), e.CommitSHA())
+		fmt.Printf(">> Using agent full image path from pipeline: %s\n", fullImagePath)
+		return fullImagePath
 	}
 
+	fmt.Printf(">> Using default agent full image path: %s\n", agentDefaultImagePath)
 	return agentDefaultImagePath
 }
 
