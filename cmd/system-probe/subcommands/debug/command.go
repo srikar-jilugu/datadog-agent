@@ -40,9 +40,9 @@ func Commands(globalParams *command.GlobalParams) []*cobra.Command {
 		GlobalParams: globalParams,
 	}
 	debugCommand := &cobra.Command{
-		Use:   "debug [module] [state]",
-		Short: "Print the runtime state of a running system-probe",
-		Long:  ``,
+		Use:   "debug [module] [path]",
+		Short: "Print the debug info of a running system-probe",
+		Long:  `Example: system-probe debug network_tracer connections, system-probe debug network_tracer debug/net_maps`,
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			cliParams.args = args
@@ -66,12 +66,10 @@ func debugRuntime(sysprobeconfig sysprobeconfig.Component, cliParams *cliParams)
 	cfg := sysprobeconfig.SysProbeObject()
 	client := client.Get(cfg.SocketAddress)
 
-	var path string
-	if len(cliParams.args) == 1 {
-		path = fmt.Sprintf("http://localhost/debug/%s", cliParams.args[0])
-	} else {
-		path = fmt.Sprintf("http://localhost/%s/debug/%s", cliParams.args[0], cliParams.args[1])
+	if len(cliParams.args) != 2 {
+		return fmt.Errorf("Expected exactly 2 arguments: args = %v", cliParams.args)
 	}
+	path := fmt.Sprintf("http://localhost/%s/%s", cliParams.args[0], cliParams.args[1])
 
 	// TODO rather than allowing arbitrary query params, use cobra flags
 	r, err := util.DoGet(client, path, util.CloseConnection)
