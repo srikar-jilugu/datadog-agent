@@ -218,6 +218,7 @@ func (c *Consumer[V]) process(b *batch, syncing bool) {
 	// part of this batch before during a Sync() call
 	begin, end := c.offsets.Get(cpu, b, syncing)
 	length := end - begin
+	log.Info("[USM] Get returned: begin=%d, end=%d, length=%d", begin, end, length)
 
 	// This can happen in the context of a low-traffic host
 	// (that is, when no events are enqueued in a batch between two consecutive

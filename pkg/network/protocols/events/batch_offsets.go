@@ -10,6 +10,8 @@ package events
 
 import (
 	"sync"
+
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 // offsetManager is responsible for keeping track of which chunks of data we
@@ -46,13 +48,20 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool) (begin, end int
 	state := o.stateByCPU[cpu]
 	batchID := int(batch.Idx)
 
+	// Log state and batch info
+	log.Info("[USM] Get called: cpu=%d, batchID=%d, batchLen=%d, syncing=%v", cpu, batchID, batch.Len, syncing)
+	log.Info("[USM] State for cpu %d: nextBatchID=%d, partialBatchID=%d, partialOffset=%d", cpu, state.nextBatchID, state.partialBatchID, state.partialOffset)
+
 	if batchID < state.nextBatchID {
+		// metric
 		// we have already consumed this data
+		log.Info("[USM] Skipping batch: batchID %d is less than nextBatchID %d", batchID, state.nextBatchID)
 		return 0, 0
 	}
 
 	if batchComplete(batch) {
 		state.nextBatchID = batchID + 1
+		log.Info("[USM] Batch complete: updating nextBatchID to %d", state.nextBatchID)
 	}
 
 	// determining the begin offset
@@ -60,12 +69,14 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool) (begin, end int
 	// we need to take that into account
 	if int(batch.Idx) == state.partialBatchID {
 		begin = state.partialOffset
+		log.Info("[USM] Partial batch detected: setting begin offset to %d", begin)
 	}
 
 	// determining the end offset
 	// usually this is the full batch size but it can be less
 	// in the context of a forced (partial) read
 	end = int(batch.Len)
+	log.Info("[USM] End offset set to: %d", end)
 
 	// if this is part of a forced read (that is, we're reading a batch before
 	// it's complete) we need to keep track of which entries we're reading
@@ -73,6 +84,7 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool) (begin, end int
 	if syncing {
 		state.partialBatchID = int(batch.Idx)
 		state.partialOffset = end
+		log.Info("[USM] Syncing: updating partialBatchID to %d and partialOffset to %d", state.partialBatchID, state.partialOffset)
 	}
 
 	return
