@@ -76,15 +76,15 @@
 # build Agent 7 binaries for x86_64
 datadog-agent-7-x64:
   extends: [.agent_build_common, .agent_build_x86, .agent_7_build]
+
+datadog-agent-7-x64-musl:
+  extends: [.agent_build_common, .agent_build_x86, .agent_7_build]
   image: registry.ddbuild.io/ci/datadog-agent-buildimages/linux-x64-zig$CI_IMAGE_LINUX_ZIG_X64_SUFFIX:$CI_IMAGE_LINUX_ZIG_X64
   variables:
     PACKAGE_ARCH: amd64
     DD_CC: "zig cc -target x86_64-linux-musl"
     DD_CXX: "zig c++ -target x86_64-linux-musl"
-    DD_CMAKE_TOOLCHAIN: "/opt/cmake/x86_64-unknown-linux-gnu.toolchain.cmake"
-
-datadog-agent-7-x64-musl:
-  extends: [.agent_build_common, .agent_build_x86, .agent_7_build]
+    DD_CMAKE_TOOLCHAIN: "/opt/cmake/zigcc.toolchain.cmake"
 
 # build Agent 7 binaries for arm64
 datadog-agent-7-arm64:
