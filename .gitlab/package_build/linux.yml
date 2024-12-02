@@ -76,7 +76,7 @@
 # build Agent 7 binaries for x86_64
 datadog-agent-7-x64:
   extends: [.agent_build_common, .agent_build_x86, .agent_7_build]
-  image: registry.ddbuild.io/ci/datadog-agent-buildimages/linux-x64-zig$DATADOG_AGENT_BUILDIMAGES_SUFFIX:$DATADOG_AGENT_BUILDIMAGES
+  image: registry.ddbuild.io/ci/datadog-agent-buildimages/linux-x64-zig$CI_IMAGE_LINUX_ZIG_X64_SUFFIX:$CI_IMAGE_LINUX_ZIG_X64
   variables:
     PACKAGE_ARCH: amd64
     DD_CC: "zig cc -target x86_64-linux-musl"
