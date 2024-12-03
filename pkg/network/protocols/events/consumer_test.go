@@ -71,7 +71,7 @@ func TestConsumer(t *testing.T) {
 	program.Stop(manager.CleanAll)
 	consumer.Stop()
 
-	// ensure that we have received each event exactly once
+	// ensure that we have received each event exactly once.
 	for i := 0; i < numEvents; i++ {
 		actual := result[uint64(i)]
 		assert.Equalf(t, 1, actual, "eventID=%d should have 1 occurrence. got %d", i, actual)
