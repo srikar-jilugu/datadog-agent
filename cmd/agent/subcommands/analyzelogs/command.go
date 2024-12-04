@@ -9,6 +9,7 @@ package analyzelogs
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"go.uber.org/fx"
@@ -18,8 +19,11 @@ import (
 	"github.com/DataDog/datadog-agent/cmd/agent/command"
 
 	"github.com/DataDog/datadog-agent/comp/core"
+	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
+	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/providers/names"
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	"github.com/DataDog/datadog-agent/comp/logs/agent/agentimpl"
+	"github.com/DataDog/datadog-agent/pkg/logs/schedulers/ad"
 	"github.com/DataDog/datadog-agent/pkg/logs/sources"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 )
@@ -69,16 +73,31 @@ func Commands(globalParams *command.GlobalParams) []*cobra.Command {
 
 // runAnalyzeLogs initializes the launcher and sends the log config file path to the source provider.
 func runAnalyzeLogs(cliParams *CliParams, config config.Component) error {
-
 	configSource := sources.NewConfigSources()
-	// Send paths to source provider
-	if err := configSource.AddFileSource(cliParams.LogConfigPath); err != nil {
-		return fmt.Errorf("failed to add log config source: %w", err)
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	absolutePath := wd + "/" + cliParams.LogConfigPath
+	data, err := os.ReadFile(absolutePath)
+	if err != nil {
+		return err
+	}
+	sources, err := ad.CreateSources(integration.Config{
+		Provider:   names.File,
+		LogsConfig: data,
+	})
+
+	if err != nil {
+		return err
 	}
 
-	// Add core config source
-	if err := configSource.AddFileSource(cliParams.CoreConfigPath); err != nil {
-		return fmt.Errorf("failed to add core config source: %w", err)
+	for _, source := range sources {
+		if source.Config.TailingMode == "" {
+			source.Config.TailingMode = "beginning"
+		}
+		configSource.AddSource(source)
 	}
 
 	outputChan := agentimpl.SetUpLaunchers(config, configSource)
