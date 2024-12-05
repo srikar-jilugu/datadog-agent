@@ -62,8 +62,8 @@ agent_dmg-arm64-a7:
   before_script:
     - export RELEASE_VERSION=$RELEASE_VERSION_7
     - export OMNIBUS_BASE_DIR=~/omnibus
-    - export INSTALL_DIR= ~/datadog-agent
-    - export CONFIG_DIR= ~/datadog-config
+    - export INSTALL_DIR=~/datadog-agent
+    - export CONFIG_DIR=~/datadog-config
     - mkdir -p $CONFIG_DIR $INSTALL_DIR
   script:
     - !reference [.macos_agent_build_setup_arm64] 
