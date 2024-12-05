@@ -32,3 +32,42 @@ agent_dmg-x64-a7:
   timeout: 6h
   before_script:
     - export RELEASE_VERSION=$RELEASE_VERSION_7
+
+
+.macos_agent_build_setup_arm64:
+  - python3 -m venv .venv
+  - source .venv/bin/activate
+  - python3 -m pip install -r requirements.txt
+  - export INSTALL_DIR=~/datadog-agent
+  - export CONFIG_DIR=~/config-files
+  - sudo mkdir -p $INSTALL_DIR /var/cache/omnibus && sudo chown "$USER" $INSTALL_DIR /var/cache/omnibus
+  - echo "About to build for $RELEASE_VERSION"
+  - !reference [.retrieve_linux_go_deps]
+  - !reference [.cache_omnibus_ruby_deps, setup]
+  # remove artifacts from previous pipelines that may come from the cache
+  - rm -rf $OMNIBUS_PACKAGE_DIR/*
+  - mkdir -p $OMNIBUS_PACKAGE_DIR
+  - $S3_CP_CMD $S3_ARTIFACTS_URI/agent-version.cache .
+
+agent_dmg-arm64-a7:
+  tags: ["macos:sonoma"]
+  rules:
+    - !reference [.on_macos_gui_change]
+    - !reference [.on_packaging_change]
+    - !reference [.on_main_or_release_branch]
+    - !reference [.on_all_builds]
+    - !reference [.manual]
+  stage: package_build
+  needs: ["go_mod_tidy_check","go_deps"]
+  before_script:
+    - export RELEASE_VERSION=$RELEASE_VERSION_7
+    - export OMNIBUS_BASE_DIR=~/omnibus
+    - export INSTALL_DIR= ~/datadog-agent
+    - export CONFIG_DIR= ~/datadog-config
+    - mkdir -p $CONFIG_DIR $INSTALL_DIR
+  script:
+    - !reference [.macos_agent_build_setup_arm64] 
+    - inv -e omnibus.build --release-version "$RELEASE_VERSION" --skip-sign --major-version "$AGENT_MAJOR_VERSION" --install-directory "$INSTALL_DIR" --config-directory "$CONFIG_DIR" --go-mod-cache="$GOPATH/pkg/mod"
+    - ls -la $OMNIBUS_PACKAGE_DIR
+    - ls -la $INSTALL_DIR
+    - !reference [.upload_sbom_artifacts]
