@@ -259,6 +259,7 @@ func TestGetOTelResource(t *testing.T) {
 		name       string
 		rattrs     map[string]string
 		sattrs     map[string]string
+		spanKind   ptrace.SpanKind
 		normalize  bool
 		expectedV1 string
 		expectedV2 string
@@ -293,10 +294,29 @@ func TestGetOTelResource(t *testing.T) {
 			expectedV1: strings.Repeat("a", MaxResourceLen),
 			expectedV2: strings.Repeat("a", MaxResourceLen),
 		},
+		{
+			name:       "db resource span semconv",
+			sattrs:     map[string]string{"db.system": "postgres", "db.statement": "SELECT * FROM table"},
+			spanKind:   ptrace.SpanKindClient,
+			normalize:  true,
+			expectedV1: "span_name",
+			expectedV2: "SELECT * FROM table",
+		},
+		{
+			name:       "db resource span semconv 1.27",
+			sattrs:     map[string]string{"db.system": "postgres", "db.query.text": "SELECT * FROM table"},
+			spanKind:   ptrace.SpanKindClient,
+			normalize:  true,
+			expectedV1: "span_name",
+			expectedV2: "SELECT * FROM table",
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			span := ptrace.NewSpan()
 			span.SetName("span_name")
+			if tt.spanKind != ptrace.SpanKindUnspecified {
+				span.SetKind(tt.spanKind)
+			}
 			for k, v := range tt.sattrs {
 				span.Attributes().PutStr(k, v)
 			}

@@ -10,14 +10,16 @@ import (
 	"encoding/binary"
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/trace/log"
 	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes/source"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv117 "go.opentelemetry.io/collector/semconv/v1.17.0"
+	semconv127 "go.opentelemetry.io/collector/semconv/v1.27.0"
 	semconv "go.opentelemetry.io/collector/semconv/v1.6.1"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/DataDog/datadog-agent/pkg/trace/log"
 )
 
 // Util functions for converting OTel semantics to DD semantics.
@@ -246,6 +248,17 @@ func GetOTelResourceV2(span ptrace.Span, res pcommon.Resource) (resName string) 
 		if svc := GetOTelAttrValInResAndSpanAttrs(span, res, false, semconv.AttributeRPCService); m != "" {
 			// ...and service if available
 			resName = resName + " " + svc
+		}
+		return
+	}
+
+	// if span has db query attribute, use that as resource name
+	if spanType := GetOTelSpanType(span, res); spanType == "db" {
+		if stmt := GetOTelAttrValInResAndSpanAttrs(span, res, false, semconv.AttributeDBStatement); stmt != "" {
+			resName = stmt
+		}
+		if stmt := GetOTelAttrValInResAndSpanAttrs(span, res, false, semconv127.AttributeDBQueryText); stmt != "" {
+			resName = stmt
 		}
 		return
 	}
