@@ -8,6 +8,9 @@ name "datadog-windows-apminject"
 
 
 default_version "master"
+
+always_build true
+
 #
 # this should only ever be included by a windows build.
 if ohai["platform"] == "windows"
