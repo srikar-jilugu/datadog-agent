@@ -144,7 +144,7 @@ func GetOTelSpanType(span ptrace.Span, res pcommon.Resource) string {
 		if db == "redis" || db == "memcached" {
 			typ = "cache"
 		} else if db != "" {
-			typ = "db"
+			typ = "sql"
 		} else {
 			typ = "http"
 		}
@@ -253,7 +253,7 @@ func GetOTelResourceV2(span ptrace.Span, res pcommon.Resource) (resName string) 
 	}
 
 	// if span has db query attribute, use that as resource name
-	if spanType := GetOTelSpanType(span, res); spanType == "db" {
+	if spanType := GetOTelSpanType(span, res); spanType == "sql" {
 		if stmt := GetOTelAttrValInResAndSpanAttrs(span, res, false, semconv.AttributeDBStatement); stmt != "" {
 			resName = stmt
 		}

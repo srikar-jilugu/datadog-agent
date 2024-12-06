@@ -188,7 +188,7 @@ func TestGetOTelSpanType(t *testing.T) {
 			name:     "other db client span",
 			spanKind: ptrace.SpanKindClient,
 			rattrs:   map[string]string{semconv.AttributeDBSystem: "postgres"},
-			expected: "db",
+			expected: "sql",
 		},
 		{
 			name:     "http client span",
