@@ -282,6 +282,7 @@ func (e *EventHandler) AfterInit(_ *manager.Manager, _ names.ModuleName, _ *mana
 	return nil
 }
 
+// PreStart implements the Modifier interface
 func (e *EventHandler) PreStart() error {
 	go e.readLoop()
 	return nil
