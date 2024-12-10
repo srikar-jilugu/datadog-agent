@@ -344,7 +344,8 @@ func initClosedConnEventHandler(config *config.Config, closedCallback func(*netw
 
 	return perf.NewEventHandler(probes.ConnCloseEventMap, handler, mode,
 		perf.SendTelemetry(config.InternalTelemetryEnabled),
-		perf.RingBufferConstantName("ringbuffers_enabled"))
+		perf.RingBufferEnabledConstantName("ringbuffers_enabled"),
+		perf.RingBufferWakeupSize("ringbuffer_wakeup_size", uint64(config.ClosedBufferWakeupCount)))
 }
 
 func boolConst(name string, value bool) manager.ConstantEditor {
