@@ -321,14 +321,8 @@ func ResizeRingBuffer(mgrOpts *manager.Options, mapName string, bufferSize int) 
 func (e *EventHandler) initPerfBuffer(mgr *manager.Manager) {
 	e.perfChan = make(chan *perf.Record, 500)
 	e.readLoop = func() {
-		for {
-			select {
-			case record, ok := <-e.perfChan:
-				if !ok {
-					return
-				}
-				e.perfLoopHandler(record)
-			}
+		for record := range e.perfChan {
+			e.perfLoopHandler(record)
 		}
 	}
 
@@ -366,14 +360,8 @@ func (e *EventHandler) perfLoopHandler(record *perf.Record) {
 func (e *EventHandler) initRingBuffer(mgr *manager.Manager) {
 	e.ringChan = make(chan *ringbuf.Record, 500)
 	e.readLoop = func() {
-		for {
-			select {
-			case record, ok := <-e.ringChan:
-				if !ok {
-					return
-				}
-				e.ringLoopHandler(record)
-			}
+		for record := range e.ringChan {
+			e.ringLoopHandler(record)
 		}
 	}
 
