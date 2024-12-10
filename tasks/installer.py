@@ -111,12 +111,16 @@ def build_linux_script(
     if version == "nightly-a7":
         version = get_commit_sha(ctx)
 
-    archs = ['amd64', 'arm64']
+    archs = ['amd', 'arm']
     for arch in archs:
-        build_downloader(ctx, flavor=flavor, version=version, os='linux', arch=arch)
+        build_downloader(ctx, flavor=flavor, version=version, os='linux', arch=f'{arch}64')
         with open(DOWNLOADER_BIN, 'rb') as f:
             encoded_bin = base64.encodebytes(f.read()).decode('utf-8')
-        install_script = install_script.replace(f'DOWNLOADER_BIN_LINUX_{arch.upper()}', encoded_bin)
+        bin_start_placeholder = f'start_{arch}=$((10#000000000000))'
+        bin_start_str = str(len(install_script) - 1)
+        new_bin_start = bin_start_placeholder[: -(2 + len(bin_start_str))] + bin_start_str + bin_start_placeholder[-2:]
+        install_script = install_script.replace(bin_start_placeholder, new_bin_start)
+        install_script += encoded_bin
 
     commit_sha = ctx.run('git rev-parse HEAD', hide=True).stdout.strip()
     install_script = install_script.replace('INSTALLER_COMMIT', commit_sha)
