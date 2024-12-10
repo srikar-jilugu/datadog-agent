@@ -139,7 +139,7 @@ var EbpfTracerTelemetry = struct { //nolint:revive // TODO
 }
 
 type ebpfTracer struct {
-	m *manager.Manager
+	m *ddebpf.Manager
 
 	conns          *maps.GenericMap[netebpf.ConnTuple, netebpf.ConnStats]
 	tcpStats       *maps.GenericMap[netebpf.ConnTuple, netebpf.TCPStats]
@@ -229,7 +229,7 @@ func newEbpfTracer(config *config.Config, _ telemetryComponent.Component) (Trace
 		return nil, err
 	}
 
-	var m *manager.Manager
+	var m *ddebpf.Manager
 	var tracerType = TracerTypeFentry
 	var closeTracerFn func()
 	m, closeTracerFn, err = fentry.LoadTracer(config, mgrOptions, connCloseEventHandler)
@@ -249,11 +249,11 @@ func newEbpfTracer(config *config.Config, _ telemetryComponent.Component) (Trace
 		tracerType = TracerType(kprobeTracerType)
 	}
 	m.DumpHandler = dumpMapsHandler
-	ddebpf.AddNameMappings(m, "npm_tracer")
+	ddebpf.AddNameMappings(m.Manager, "npm_tracer")
 
 	var flusher perf.Flusher = connCloseEventHandler
 	if config.CustomBatchingEnabled {
-		flusher, err = newConnBatchManager(m, extractor, connPool, tr.closedPerfCallback)
+		flusher, err = newConnBatchManager(m.Manager, extractor, connPool, tr.closedPerfCallback)
 		if err != nil {
 			return nil, err
 		}
@@ -273,21 +273,21 @@ func newEbpfTracer(config *config.Config, _ telemetryComponent.Component) (Trace
 	tr.closeTracer = closeTracerFn
 	tr.ebpfTracerType = tracerType
 
-	tr.setupMapCleaner(m)
+	tr.setupMapCleaner(m.Manager)
 
-	tr.conns, err = maps.GetMap[netebpf.ConnTuple, netebpf.ConnStats](m, probes.ConnMap)
+	tr.conns, err = maps.GetMap[netebpf.ConnTuple, netebpf.ConnStats](m.Manager, probes.ConnMap)
 	if err != nil {
 		tr.Stop()
 		return nil, fmt.Errorf("error retrieving the bpf %s map: %s", probes.ConnMap, err)
 	}
 
-	tr.tcpStats, err = maps.GetMap[netebpf.ConnTuple, netebpf.TCPStats](m, probes.TCPStatsMap)
+	tr.tcpStats, err = maps.GetMap[netebpf.ConnTuple, netebpf.TCPStats](m.Manager, probes.TCPStatsMap)
 	if err != nil {
 		tr.Stop()
 		return nil, fmt.Errorf("error retrieving the bpf %s map: %s", probes.TCPStatsMap, err)
 	}
 
-	if tr.tcpRetransmits, err = maps.GetMap[netebpf.ConnTuple, uint32](m, probes.TCPRetransmitsMap); err != nil {
+	if tr.tcpRetransmits, err = maps.GetMap[netebpf.ConnTuple, uint32](m.Manager, probes.TCPRetransmitsMap); err != nil {
 		tr.Stop()
 		return nil, fmt.Errorf("error retrieving the bpf %s map: %s", probes.TCPRetransmitsMap, err)
 	}
@@ -406,8 +406,8 @@ func (t *ebpfTracer) FlushPending() {
 
 func (t *ebpfTracer) Stop() {
 	t.stopOnce.Do(func() {
-		ddebpf.RemoveNameMappings(t.m)
-		ebpftelemetry.UnregisterTelemetry(t.m)
+		ddebpf.RemoveNameMappings(t.m.Manager)
+		ebpftelemetry.UnregisterTelemetry(t.m.Manager)
 		_ = t.m.Stop(manager.CleanAll)
 		t.closeConsumer.Stop()
 		t.ongoingConnectCleaner.Stop()
@@ -552,7 +552,7 @@ func (t *ebpfTracer) Remove(conn *network.ConnectionStats) error {
 
 func (t *ebpfTracer) getEBPFTelemetry() *netebpf.Telemetry {
 	var zero uint32
-	mp, err := maps.GetMap[uint32, netebpf.Telemetry](t.m, probes.TelemetryMap)
+	mp, err := maps.GetMap[uint32, netebpf.Telemetry](t.m.Manager, probes.TelemetryMap)
 	if err != nil {
 		log.Warnf("error retrieving telemetry map: %s", err)
 		return nil
@@ -682,7 +682,7 @@ func (t *ebpfTracer) initializePortBindingMaps() error {
 		return fmt.Errorf("failed to read initial TCP pid->port mapping: %s", err)
 	}
 
-	tcpPortMap, err := maps.GetMap[netebpf.PortBinding, uint32](t.m, probes.PortBindingsMap)
+	tcpPortMap, err := maps.GetMap[netebpf.PortBinding, uint32](t.m.Manager, probes.PortBindingsMap)
 	if err != nil {
 		return fmt.Errorf("failed to get TCP port binding map: %w", err)
 	}
@@ -700,7 +700,7 @@ func (t *ebpfTracer) initializePortBindingMaps() error {
 		return fmt.Errorf("failed to read initial UDP pid->port mapping: %s", err)
 	}
 
-	udpPortMap, err := maps.GetMap[netebpf.PortBinding, uint32](t.m, probes.UDPPortBindingsMap)
+	udpPortMap, err := maps.GetMap[netebpf.PortBinding, uint32](t.m.Manager, probes.UDPPortBindingsMap)
 	if err != nil {
 		return fmt.Errorf("failed to get UDP port binding map: %w", err)
 	}

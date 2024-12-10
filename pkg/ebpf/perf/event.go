@@ -46,6 +46,10 @@ type EventHandler struct {
 	mapName string
 	// handler is the callback for data received from the perf/ring buffer
 	handler func([]byte)
+
+	readLoop func()
+	perfChan chan *perf.Record
+	ringChan chan *ringbuf.Record
 }
 
 type mapMode uint8
@@ -278,6 +282,22 @@ func (e *EventHandler) AfterInit(_ *manager.Manager, _ names.ModuleName, _ *mana
 	return nil
 }
 
+func (e *EventHandler) PreStart() error {
+	go e.readLoop()
+	return nil
+}
+
+// AfterStop implements the Modifier interface
+func (e *EventHandler) AfterStop(_ manager.MapCleanupType) error {
+	if e.perfChan != nil {
+		close(e.perfChan)
+	}
+	if e.ringChan != nil {
+		close(e.ringChan)
+	}
+	return nil
+}
+
 func (e *EventHandler) String() string {
 	return "EventHandler"
 }
@@ -299,6 +319,19 @@ func ResizeRingBuffer(mgrOpts *manager.Options, mapName string, bufferSize int) 
 }
 
 func (e *EventHandler) initPerfBuffer(mgr *manager.Manager) {
+	e.perfChan = make(chan *perf.Record, 500)
+	e.readLoop = func() {
+		for {
+			select {
+			case record, ok := <-e.perfChan:
+				if !ok {
+					return
+				}
+				e.perfLoopHandler(record)
+			}
+		}
+	}
+
 	// remove any existing perf buffers from manager
 	mgr.PerfMaps = slices.DeleteFunc(mgr.PerfMaps, func(perfMap *manager.PerfMap) bool {
 		return perfMap.Name == e.mapName
@@ -321,12 +354,29 @@ func (e *EventHandler) initPerfBuffer(mgr *manager.Manager) {
 }
 
 func (e *EventHandler) perfRecordHandler(record *perf.Record, _ *manager.PerfMap, _ *manager.Manager) {
+	e.perfChan <- record
+}
+
+func (e *EventHandler) perfLoopHandler(record *perf.Record) {
 	// record is only allowed to live for the duration of the callback. Put it back into the sync.Pool once done.
 	defer perfPool.Put(record)
 	e.handler(record.RawSample)
 }
 
 func (e *EventHandler) initRingBuffer(mgr *manager.Manager) {
+	e.ringChan = make(chan *ringbuf.Record, 500)
+	e.readLoop = func() {
+		for {
+			select {
+			case record, ok := <-e.ringChan:
+				if !ok {
+					return
+				}
+				e.ringLoopHandler(record)
+			}
+		}
+	}
+
 	// remove any existing matching ring buffers from manager
 	mgr.RingBuffers = slices.DeleteFunc(mgr.RingBuffers, func(ringBuf *manager.RingBuffer) bool {
 		return ringBuf.Name == e.mapName
@@ -345,6 +395,10 @@ func (e *EventHandler) initRingBuffer(mgr *manager.Manager) {
 }
 
 func (e *EventHandler) ringRecordHandler(record *ringbuf.Record, _ *manager.RingBuffer, _ *manager.Manager) {
+	e.ringChan <- record
+}
+
+func (e *EventHandler) ringLoopHandler(record *ringbuf.Record) {
 	// record is only allowed to live for the duration of the callback. Put it back into the sync.Pool once done.
 	defer ringbufPool.Put(record)
 	e.handler(record.RawSample)
