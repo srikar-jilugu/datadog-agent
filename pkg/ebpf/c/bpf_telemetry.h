@@ -70,8 +70,8 @@ static void *(*bpf_telemetry_update_patch)(unsigned long, ...) = (void *)PATCH_T
         unsigned long telemetry_program_id;                                                     \
         LOAD_CONSTANT("telemetry_program_id_key", telemetry_program_id);                        \
         if (errno_ret < 0 && telemetry_program_id > 0) {                                        \
-            helper_err_telemetry_t *entry =                                                     \
-                bpf_map_lookup_elem(&helper_err_telemetry_map, &telemetry_program_id);          \
+            helper_err_telemetry_t* entry;                                                      \
+            asm("%0 = *(u64 *)(r10 - 8)" : "=r"(entry));                                      \
             if (entry) {                                                                        \
                 helper_indx = MK_FN_INDX(fn);                                                   \
                 errno_slot = errno_ret * -1;                                                    \
@@ -98,6 +98,15 @@ static void *(*bpf_telemetry_update_patch)(unsigned long, ...) = (void *)PATCH_T
         errno_ret;                                                                              \
     })
 
+#define helper_telemetry_preamble                                                           \
+    unsigned long _telemetry_program_id;                                                    \
+    LOAD_CONSTANT("telemetry_program_id_key", _telemetry_program_id);                       \
+    if (_telemetry_program_id > 0) {                                                        \
+        helper_err_telemetry_t* _entry =                                                        \
+            bpf_map_lookup_elem(&helper_err_telemetry_map, &_telemetry_program_id);         \
+        asm ("*(u64 *)(r10 - 8) = %0" :: "r"(_entry) : "memory");                                                   \
+    }
+
 #define __NEQ(one, two) ((one) != (two))
 #define __AND(a, b) ((a) && (b))
 
@@ -113,8 +122,7 @@ static void *(*bpf_telemetry_update_patch)(unsigned long, ...) = (void *)PATCH_T
  */
 #define __APPLY_OPx(x,...) __APPLY_OP##x(__VA_ARGS__)
 
-#define __SKIP_ERRS(x,...) \
-    (__APPLY_OPx(x, __NEQ, __AND, __VA_ARGS__))
+#define __SKIP_ERRS(x,...) (__APPLY_OPx(x, __NEQ, __AND, __VA_ARGS__))
 
 #define __nth(_, _1, _2, _3, N, ...) N
 #define NARGS(...) __nth(_, ##__VA_ARGS__, 3, 2, 1, 0)
