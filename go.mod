@@ -1101,4 +1101,4 @@ replace k8s.io/kube-state-metrics/v2 v2.13.1-0.20241025121156-110f03d7331f => gi
 // Remove once https://github.com/Iceber/iouring-go/pull/31 or equivalent is merged
 replace github.com/iceber/iouring-go => github.com/paulcacheux/iouring-go v0.0.0-20241115154236-2c7785c40a0f
 
-replace github.com/cilium/ebpf => github.com/brycekahle/ebpf v0.0.0-20241212205313-6b00c1332668
+replace github.com/cilium/ebpf => github.com/brycekahle/ebpf v0.0.0-20241212210902-8a77caaaa5e3
