@@ -19,7 +19,6 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"github.com/gorilla/mux"
@@ -208,16 +207,16 @@ func (addr) String() string {
 }
 
 // StartSpanFromEnv starts a span using the environment variables to find the parent span.
-func StartSpanFromEnv(ctx context.Context, operationName string, spanOptions ...ddtrace.StartSpanOption) (ddtrace.Span, context.Context) {
+func StartSpanFromEnv(ctx context.Context, operationName string, spanOptions ...telemetry.StartSpanOption) (telemetry.Span, context.Context) {
 	spanContext, ok := spanContextFromEnv()
 	if ok {
-		spanOptions = append([]ddtrace.StartSpanOption{tracer.ChildOf(spanContext)}, spanOptions...)
+		spanOptions = append([]telemetry.StartSpanOption{tracer.ChildOf(spanContext)}, spanOptions...)
 	}
 	return tracer.StartSpanFromContext(ctx, operationName, spanOptions...)
 }
 
 // spanContextFromEnv injects the traceID and parentID from the environment into the context if available.
-func spanContextFromEnv() (ddtrace.SpanContext, bool) {
+func spanContextFromEnv() (telemetry.SpanContext, bool) {
 	traceID, ok := os.LookupEnv(EnvTraceID)
 	if !ok {
 		traceID = strconv.FormatUint(rand.Uint64(), 10)
@@ -252,7 +251,7 @@ func EnvFromContext(ctx context.Context) []string {
 }
 
 // SpanContextFromContext extracts the span context from the context if available.
-func SpanContextFromContext(ctx context.Context) (ddtrace.SpanContext, bool) {
+func SpanContextFromContext(ctx context.Context) (tracer.SpanContext, bool) {
 	span, ok := tracer.SpanFromContext(ctx)
 	if !ok {
 		return nil, false

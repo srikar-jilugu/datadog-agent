@@ -20,9 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	"github.com/DataDog/datadog-agent/pkg/config/remote/client"
 	"github.com/DataDog/datadog-agent/pkg/config/utils"
@@ -34,6 +31,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/fleet/internal/cdn"
 	"github.com/DataDog/datadog-agent/pkg/fleet/internal/exec"
 	"github.com/DataDog/datadog-agent/pkg/fleet/internal/paths"
+	"github.com/DataDog/datadog-agent/pkg/fleet/telemetry/tracer"
 	pbgo "github.com/DataDog/datadog-agent/pkg/proto/pbgo/core"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
@@ -541,25 +539,13 @@ type requestState struct {
 	Err     *installerErrors.InstallerError
 }
 
-func newRequestContext(request remoteAPIRequest) (ddtrace.Span, context.Context) {
+func newRequestContext(request remoteAPIRequest) (tracer.Span, context.Context) {
 	ctx := context.WithValue(context.Background(), requestStateKey, &requestState{
 		Package: request.Package,
 		ID:      request.ID,
 		State:   pbgo.TaskState_RUNNING,
 	})
-
-	ctxCarrier := tracer.TextMapCarrier{
-		tracer.DefaultTraceIDHeader:  request.TraceID,
-		tracer.DefaultParentIDHeader: request.ParentSpanID,
-		tracer.DefaultPriorityHeader: "2",
-	}
-	spanCtx, err := tracer.Extract(ctxCarrier)
-	if err != nil {
-		log.Debugf("failed to extract span context from install script params: %v", err)
-		return tracer.StartSpan("remote_request"), ctx
-	}
-
-	return tracer.StartSpanFromContext(ctx, "remote_request", tracer.ChildOf(spanCtx))
+	return tracer.StartSpanFromContext(ctx, "remote_request")
 }
 
 func setRequestInvalid(ctx context.Context) {
