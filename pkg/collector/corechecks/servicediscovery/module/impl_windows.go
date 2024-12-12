@@ -22,6 +22,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/apm"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/envs"
+	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/etw"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/language"
 
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/model"
@@ -84,16 +85,32 @@ type discovery struct {
 	lastTotalSystemCPUUsage float64
 
 	scmMonitor *winutil.SCMMonitor
+
+	etwSD *etw.EtwServiceDiscovery
 }
 
 // NewDiscoveryModule creates a new discovery system probe module.
-func NewDiscoveryModule(*sysconfigtypes.Config, module.FactoryDependencies) (module.Module, error) {
-	return &discovery{
+func NewDiscoveryModule(c *sysconfigtypes.Config, _ module.FactoryDependencies) (module.Module, error) {
+	var err error
+
+	s := &discovery{
 		mux:        &sync.RWMutex{},
 		cache:      make(map[int32]*serviceInfo),
 		scrubber:   procutil.NewDefaultDataScrubber(),
 		scmMonitor: winutil.GetServiceMonitor(),
-	}, nil
+	}
+
+	s.etwSD, err = etw.NewEtwServiceDiscovery(c)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.etwSD.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 // GetStats returns the stats of the discovery module.
@@ -110,6 +127,10 @@ func (s *discovery) Register(httpMux *module.Router) error {
 
 // Close cleans resources used by the discovery module.
 func (s *discovery) Close() {
+	if s.etwSD != nil {
+		s.etwSD.Close()
+	}
+
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	clear(s.cache)
