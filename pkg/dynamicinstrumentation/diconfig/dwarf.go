@@ -188,7 +188,6 @@ func loadDWARF(binaryPath string) (*dwarf.Data, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't open elf binary: %w", err)
 	}
-
 	dwarfData, err := elfFile.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve debug info from elf: %w", err)
@@ -227,8 +226,8 @@ func expandTypeData(offset dwarf.Offset, dwarfData *dwarf.Data, seenTypes map[st
 	v, typeParsedAlready := seenTypes[typeHeader.Type]
 	if typeParsedAlready {
 		v.count++
-		if v.count >= ditypes.MaxReferenceDepth {
-			return v.parameter, nil
+		if v.count > ditypes.MaxReferenceDepth {
+			return nil, nil
 		}
 	} else {
 		seenTypes[typeHeader.Type] = &seenTypeCounter{
