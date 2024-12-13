@@ -9,6 +9,7 @@ package ebpf
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/cilium/ebpf/ringbuf"
 
@@ -31,6 +32,8 @@ type RingBufferHandler struct {
 	lostChannel chan uint64
 	once        sync.Once
 	closed      bool
+
+	chLenTelemetry *atomic.Uint64
 }
 
 // NewRingBufferHandler creates a RingBufferHandler
@@ -43,7 +46,8 @@ func NewRingBufferHandler(dataChannelSize int) *RingBufferHandler {
 		// This channel is not really used in the context of ring buffers but
 		// it's here so `RingBufferHandler` and `PerfHandler` can be used
 		// interchangeably
-		lostChannel: make(chan uint64, 1),
+		lostChannel:    make(chan uint64, 1),
+		chLenTelemetry: &atomic.Uint64{},
 	}
 }
 
@@ -54,6 +58,7 @@ func (c *RingBufferHandler) RecordHandler(record *ringbuf.Record, _ *manager.Rin
 	}
 
 	c.dataChannel <- DataEvent{Data: record.RawSample, rr: record}
+	updateMaxTelemetry(c.chLenTelemetry, uint64(len(c.dataChannel)))
 }
 
 // DataChannel returns the channel with event data
@@ -64,6 +69,11 @@ func (c *RingBufferHandler) DataChannel() <-chan DataEvent {
 // LostChannel returns the channel with lost events
 func (c *RingBufferHandler) LostChannel() <-chan uint64 {
 	return c.lostChannel
+}
+
+// Length returns max length of the data channel since last called
+func (c *RingBufferHandler) Length() int {
+	return int(c.chLenTelemetry.Swap(0))
 }
 
 // Stop stops the perf handler and closes both channels

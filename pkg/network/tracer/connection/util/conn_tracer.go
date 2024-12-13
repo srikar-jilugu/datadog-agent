@@ -74,6 +74,9 @@ func SetupHandler(eventHandler ebpf.EventHandler, mgr *ebpf.Manager, cfg *config
 		}
 		mgr.RingBuffers = append(mgr.RingBuffers, rb)
 		ebpftelemetry.ReportRingBufferTelemetry(rb)
+		ebpftelemetry.ReportRingBufferChannelLenTelemetry(rb, func() int {
+			return eventHandler.Length()
+		})
 	case *ebpf.PerfHandler:
 		log.Infof("Setting up connection handler for map %v with perf buffer", mapName)
 		pm := &manager.PerfMap{
@@ -89,6 +92,9 @@ func SetupHandler(eventHandler ebpf.EventHandler, mgr *ebpf.Manager, cfg *config
 		}
 		mgr.PerfMaps = append(mgr.PerfMaps, pm)
 		ebpftelemetry.ReportPerfMapTelemetry(pm)
+		ebpftelemetry.ReportPerfMapChannelLenTelemetry(pm, func() int {
+			return eventHandler.Length()
+		})
 		helperCallRemover := ebpf.NewHelperCallRemover(asm.FnRingbufOutput)
 		err := helperCallRemover.BeforeInit(mgr.Manager, mgr.Name, nil)
 		if err != nil {

@@ -8,6 +8,8 @@
 package ebpf
 
 import (
+	"sync/atomic"
+
 	"github.com/cilium/ebpf/perf"
 	"github.com/cilium/ebpf/ringbuf"
 )
@@ -18,6 +20,7 @@ type EventHandler interface {
 	DataChannel() <-chan DataEvent
 	LostChannel() <-chan uint64
 	Stop()
+	Length() int
 }
 
 // DataEvent encapsulates a single event read from a perf buffer
@@ -37,5 +40,17 @@ func (d *DataEvent) Done() {
 
 	if d.rr != nil {
 		ringPool.Put(d.rr)
+	}
+}
+
+func updateMaxTelemetry(a *atomic.Uint64, val uint64) {
+	for {
+		oldVal := a.Load()
+		if val <= oldVal {
+			return
+		}
+		if a.CompareAndSwap(oldVal, val) {
+			return
+		}
 	}
 }
