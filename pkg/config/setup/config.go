@@ -1927,6 +1927,11 @@ func findUnknownEnvVars(config pkgconfigmodel.Config, environ []string, addition
 		// these variables are used by source code integration
 		"DD_GIT_COMMIT_SHA":     {},
 		"DD_GIT_REPOSITORY_URL": {},
+		// these variables are used by the agent wrapper in the Heroku buildpack
+		"DD_LD_LIBRARY_PATH": {},
+		"DD_DYNO_HOST":       {},
+		"DD_PYTHONPATH":      {},
+		"DD_BIN_DIR":         {},
 	}
 	for _, key := range config.GetEnvVars() {
 		knownVars[key] = struct{}{}
