@@ -22,12 +22,13 @@ var (
 )
 
 type perfUsageCollector struct {
-	mtx        sync.Mutex
-	usage      *prometheus.GaugeVec
-	usagePct   *prometheus.GaugeVec
-	size       *prometheus.GaugeVec
-	lost       *prometheus.CounterVec
-	channelLen *prometheus.GaugeVec
+	mtx         sync.Mutex
+	usage       *prometheus.GaugeVec
+	usagePct    *prometheus.GaugeVec
+	size        *prometheus.GaugeVec
+	lost        *prometheus.CounterVec
+	channelLen  *prometheus.GaugeVec
+	wakeupCount *prometheus.CounterVec
 
 	perfMaps            []*manager.PerfMap
 	perfChannelLenFuncs map[*manager.PerfMap]func() int
@@ -81,6 +82,14 @@ func NewPerfUsageCollector() prometheus.Collector {
 			},
 			[]string{"map_name", "map_type"},
 		),
+		wakeupCount: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Subsystem: "ebpf__perf",
+				Name:      "_wakeup_count",
+				Help:      "counter tracking number of times reader was woken up",
+			},
+			[]string{"map_name", "map_type"},
+		),
 	}
 	return perfCollector
 }
@@ -101,7 +110,7 @@ func (p *perfUsageCollector) Collect(metrics chan<- prometheus.Metric) {
 	for _, pm := range p.perfMaps {
 		mapName, mapType := pm.Name, ebpf.PerfEventArray.String()
 		size := float64(pm.BufferSize())
-		usage, lost := pm.Telemetry()
+		usage, lost, wakeupCount := pm.Telemetry()
 		if usage == nil || lost == nil {
 			continue
 		}
@@ -115,6 +124,7 @@ func (p *perfUsageCollector) Collect(metrics chan<- prometheus.Metric) {
 			p.size.WithLabelValues(mapName, mapType, cpuString).Set(size)
 			p.lost.WithLabelValues(mapName, mapType, cpuString).Add(float64(lost[cpu]))
 		}
+		p.wakeupCount.WithLabelValues(mapName, mapType).Add(float64(wakeupCount))
 	}
 
 	for pm, chFunc := range p.perfChannelLenFuncs {
@@ -125,7 +135,7 @@ func (p *perfUsageCollector) Collect(metrics chan<- prometheus.Metric) {
 	for _, rb := range p.ringBuffers {
 		mapName, mapType := rb.Name, ebpf.RingBuf.String()
 		size := float64(rb.BufferSize())
-		usage, ok := rb.Telemetry()
+		usage, wakeupCount, ok := rb.Telemetry()
 		if !ok {
 			continue
 		}
@@ -135,6 +145,7 @@ func (p *perfUsageCollector) Collect(metrics chan<- prometheus.Metric) {
 		p.usage.WithLabelValues(mapName, mapType, cpuString).Set(count)
 		p.usagePct.WithLabelValues(mapName, mapType, cpuString).Set(100 * (count / size))
 		p.size.WithLabelValues(mapName, mapType, cpuString).Set(size)
+		p.wakeupCount.WithLabelValues(mapName, mapType).Add(float64(wakeupCount))
 	}
 
 	for rb, chFunc := range p.ringChannelLenFuncs {
@@ -147,6 +158,7 @@ func (p *perfUsageCollector) Collect(metrics chan<- prometheus.Metric) {
 	p.size.Collect(metrics)
 	p.lost.Collect(metrics)
 	p.channelLen.Collect(metrics)
+	p.wakeupCount.Collect(metrics)
 }
 
 // ReportPerfMapTelemetry starts reporting the telemetry for the provided PerfMap
