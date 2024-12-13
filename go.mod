@@ -997,6 +997,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/client v1.21.0 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.115.0 // indirect
 	go.opentelemetry.io/collector/config/configauth v0.115.0 // indirect
