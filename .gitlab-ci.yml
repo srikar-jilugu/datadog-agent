@@ -184,7 +184,7 @@ test_env_var:
 
 test_env_var-2:
   stage: test
-  tags: ["runner:windows"]
+  tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
     - echo "Test env var"
     - echo "CI_COMMIT_REF_NAME $CI_COMMIT_REF_NAME"
