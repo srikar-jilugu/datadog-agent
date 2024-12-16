@@ -130,7 +130,10 @@ def auto_cancel_previous_pipelines(ctx):
         raise Exit("GITLAB_TOKEN variable needed to cancel pipelines on the same ref.", 1)
 
     git_ref = os.environ["CI_COMMIT_REF_NAME"]
-    print(git_ref)
+    print("GIT_REF", git_ref)
+    if git_ref == "":
+        raise Exit("CI_COMMIT_REF_NAME not set, skipping pipeline cancelation", 0)
+
     git_sha = os.getenv("CI_COMMIT_SHA")
 
     repo = get_gitlab_repo()
