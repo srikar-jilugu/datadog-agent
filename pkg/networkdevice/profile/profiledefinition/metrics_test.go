@@ -168,3 +168,12 @@ func TestCloneMetricsConfig(t *testing.T) {
 	assert.Equal(t, unchanged, conf)
 	assert.NotEqual(t, conf, conf2)
 }
+
+func TestCloneEmpty(t *testing.T) {
+	mc := MetricsConfig{}
+	assert.Equal(t, &mc, mc.Clone())
+	sym := SymbolConfig{}
+	assert.Equal(t, sym, sym.Clone())
+	tag := MetricTagConfig{}
+	assert.Equal(t, tag, tag.Clone())
+}

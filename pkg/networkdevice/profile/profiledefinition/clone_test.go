@@ -7,55 +7,70 @@ package profiledefinition
 
 import (
 	"github.com/stretchr/testify/assert"
+	"slices"
 	"testing"
 )
 
 type cloneMe struct {
-	X int
-	Y string
+	label *string
+	ps    []int
+}
+
+func Item(label string, ps ...int) *cloneMe {
+	return &cloneMe{
+		label: &label,
+		ps:    ps,
+	}
 }
 
 func (c *cloneMe) Clone() *cloneMe {
-	return &cloneMe{X: c.X, Y: c.Y}
+	c2 := &cloneMe{
+		ps: slices.Clone(c.ps),
+	}
+	if c.label != nil {
+		var tmp string = *c.label
+		c2.label = &tmp
+	}
+	return c2
 }
 
 func TestCloneSlice(t *testing.T) {
 	items := []*cloneMe{
-		{1, "a"},
-		{2, "b"},
-		{3, "c"},
+		Item("a", 1, 2, 3, 4),
+		Item("b", 1, 2),
 	}
 	itemsCopy := CloneSlice(items)
-	itemsCopy[0].X = 100
-	itemsCopy[1] = &cloneMe{200, "bbb"}
+	*itemsCopy[0].label = "aaa"
+	itemsCopy[1] = Item("bbb", 10, 20)
+	itemsCopy = append(itemsCopy, Item("ccc", 100, 200))
+	// items is unchanged
 	assert.Equal(t, []*cloneMe{
-		{1, "a"},
-		{2, "b"},
-		{3, "c"},
+		Item("a", 1, 2, 3, 4),
+		Item("b", 1, 2),
 	}, items)
 	assert.Equal(t, []*cloneMe{
-		{100, "a"},
-		{200, "bbb"},
-		{3, "c"},
+		Item("aaa", 1, 2, 3, 4),
+		Item("bbb", 10, 20),
+		Item("ccc", 100, 200),
 	}, itemsCopy)
 }
 
 func TestCloneMap(t *testing.T) {
 	m := map[string]*cloneMe{
-		"Item A": {1, "a"},
-		"Item B": {2, "b"},
+		"Item A": Item("a", 1, 2, 3, 4),
+		"Item B": Item("b", 1, 2),
 	}
 	mCopy := CloneMap(m)
-	mCopy["Item A"].X = 100
-	mCopy["Item B"] = &cloneMe{200, "bbb"}
-	mCopy["Item C"] = &cloneMe{300, "ccc"}
+	mCopy["Item A"].ps[0] = 100
+	mCopy["Item B"] = Item("bbb", 10, 20)
+	mCopy["Item C"] = Item("ccc", 100, 200)
 	assert.Equal(t, map[string]*cloneMe{
-		"Item A": {1, "a"},
-		"Item B": {2, "b"},
+		"Item A": Item("a", 1, 2, 3, 4),
+		"Item B": Item("b", 1, 2),
 	}, m)
 	assert.Equal(t, map[string]*cloneMe{
-		"Item A": {100, "a"},
-		"Item B": {200, "bbb"},
-		"Item C": {300, "ccc"},
+		"Item A": Item("a", 100, 2, 3, 4),
+		"Item B": Item("bbb", 10, 20),
+		"Item C": Item("ccc", 100, 200),
 	}, mCopy)
 }

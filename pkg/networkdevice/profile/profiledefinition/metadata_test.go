@@ -12,6 +12,9 @@ import (
 )
 
 func makeMetadata() MetadataConfig {
+	// This is not actually a valid config, since e.g. it has ExtractValue and
+	// MatchPattern both set; this is just to check that every field gets copied
+	// properly.
 	return MetadataConfig{
 		"device": MetadataResourceConfig{
 			Fields: map[string]MetadataField{
@@ -72,9 +75,6 @@ func makeMetadata() MetadataConfig {
 }
 
 func TestCloneMetadata(t *testing.T) {
-	// This is not actually a valid config, since e.g. it has ExtractValue and
-	// MatchPattern both set; this is just to check that every field gets copied
-	// properly.
 	metadata := makeMetadata()
 	metaCopy := metadata.Clone()
 	assert.Equal(t, metadata, metaCopy)
