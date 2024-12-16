@@ -3,7 +3,7 @@ import pprint
 import re
 import sys
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import yaml
 from gitlab import GitlabError
@@ -31,7 +31,6 @@ from tasks.libs.pipeline.tools import (
     FilteredOutException,
     cancel_pipelines_with_confirmation,
     get_running_pipelines_on_same_ref,
-    gracefully_cancel_pipeline,
     trigger_agent_pipeline,
     wait_for_pipeline,
 )
@@ -131,47 +130,49 @@ def auto_cancel_previous_pipelines(ctx):
         raise Exit("GITLAB_TOKEN variable needed to cancel pipelines on the same ref.", 1)
 
     git_ref = os.environ["CI_COMMIT_REF_NAME"]
+    print(git_ref)
     git_sha = os.getenv("CI_COMMIT_SHA")
 
     repo = get_gitlab_repo()
     pipelines = get_running_pipelines_on_same_ref(repo, git_ref)
-    pipelines_without_current = [p for p in pipelines if p.sha != git_sha]
-    force_cancel_stages = [
-        "package_build",
-        # We want to cancel all KMT jobs to ensure proper cleanup of the KMT EC2 instances.
-        # If some jobs are canceled, the cleanup jobs will not run automatically, which means
-        # we must trigger the manual cleanup jobs (done in gracefully_cancel_pipeline) below.
-        # But if we trigger the cleanup manually and there are test jobs still running, those
-        # will be practically canceled (the instance they run on gets shut down) but will appear
-        # as a fail in the pipeline.
-        "kernel_matrix_testing_prepare",
-        "kernel_matrix_testing_system_probe",
-        "kernel_matrix_testing_security_agent",
-    ]
+    print(pipelines)
+    # pipelines_without_current = [p for p in pipelines if p.sha != git_sha]
+    # force_cancel_stages = [
+    #     "package_build",
+    #     # We want to cancel all KMT jobs to ensure proper cleanup of the KMT EC2 instances.
+    #     # If some jobs are canceled, the cleanup jobs will not run automatically, which means
+    #     # we must trigger the manual cleanup jobs (done in gracefully_cancel_pipeline) below.
+    #     # But if we trigger the cleanup manually and there are test jobs still running, those
+    #     # will be practically canceled (the instance they run on gets shut down) but will appear
+    #     # as a fail in the pipeline.
+    #     "kernel_matrix_testing_prepare",
+    #     "kernel_matrix_testing_system_probe",
+    #     "kernel_matrix_testing_security_agent",
+    # ]
 
-    for pipeline in pipelines_without_current:
-        # We cancel pipeline only if it correspond to a commit that is an ancestor of the current commit
-        is_ancestor = ctx.run(f'git merge-base --is-ancestor {pipeline.sha} {git_sha}', warn=True, hide="both")
-        if is_ancestor.exited == 0:
-            print(f'Gracefully canceling jobs that are not canceled on pipeline {pipeline.id} ({pipeline.web_url})')
-            gracefully_cancel_pipeline(repo, pipeline, force_cancel_stages=force_cancel_stages)
-        elif is_ancestor.exited == 1:
-            print(f'{pipeline.sha} is not an ancestor of {git_sha}, not cancelling pipeline {pipeline.id}')
-        elif is_ancestor.exited == 128:
-            min_time_before_cancel = 5
-            print(
-                f'Could not determine if {pipeline.sha} is an ancestor of {git_sha}, probably because it has been deleted from the history because of force push'
-            )
-            if datetime.strptime(pipeline.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") < datetime.now() - timedelta(
-                minutes=min_time_before_cancel
-            ):
-                print(
-                    f'Pipeline started earlier than {min_time_before_cancel} minutes ago, gracefully canceling pipeline {pipeline.id}'
-                )
-                gracefully_cancel_pipeline(repo, pipeline, force_cancel_stages=force_cancel_stages)
-        else:
-            print(is_ancestor.stderr)
-            raise Exit(code=1)
+    # for pipeline in pipelines_without_current:
+    #     # We cancel pipeline only if it correspond to a commit that is an ancestor of the current commit
+    #     is_ancestor = ctx.run(f'git merge-base --is-ancestor {pipeline.sha} {git_sha}', warn=True, hide="both")
+    #     if is_ancestor.exited == 0:
+    #         print(f'Gracefully canceling jobs that are not canceled on pipeline {pipeline.id} ({pipeline.web_url})')
+    #         gracefully_cancel_pipeline(repo, pipeline, force_cancel_stages=force_cancel_stages)
+    #     elif is_ancestor.exited == 1:
+    #         print(f'{pipeline.sha} is not an ancestor of {git_sha}, not cancelling pipeline {pipeline.id}')
+    #     elif is_ancestor.exited == 128:
+    #         min_time_before_cancel = 5
+    #         print(
+    #             f'Could not determine if {pipeline.sha} is an ancestor of {git_sha}, probably because it has been deleted from the history because of force push'
+    #         )
+    #         if datetime.strptime(pipeline.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") < datetime.now() - timedelta(
+    #             minutes=min_time_before_cancel
+    #         ):
+    #             print(
+    #                 f'Pipeline started earlier than {min_time_before_cancel} minutes ago, gracefully canceling pipeline {pipeline.id}'
+    #             )
+    #             gracefully_cancel_pipeline(repo, pipeline, force_cancel_stages=force_cancel_stages)
+    #     else:
+    #         print(is_ancestor.stderr)
+    #         raise Exit(code=1)
 
 
 @task
