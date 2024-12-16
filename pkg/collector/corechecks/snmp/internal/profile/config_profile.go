@@ -69,10 +69,22 @@ func StaticProvider(profiles ProfileConfigMap) Provider {
 // ProfileConfigMap is a set of ProfileConfig instances each identified by name.
 type ProfileConfigMap map[string]ProfileConfig
 
+func (m ProfileConfigMap) Clone() ProfileConfigMap {
+	return profiledefinition.CloneMap(m)
+}
+
 // ProfileConfig represents a profile configuration.
 type ProfileConfig struct {
 	DefinitionFile string                              `yaml:"definition_file"`
 	Definition     profiledefinition.ProfileDefinition `yaml:"definition"`
 
 	IsUserProfile bool `yaml:"-"`
+}
+
+func (p ProfileConfig) Clone() ProfileConfig {
+	return ProfileConfig{
+		DefinitionFile: p.DefinitionFile,
+		Definition:     *p.Definition.Clone(),
+		IsUserProfile:  p.IsUserProfile,
+	}
 }
