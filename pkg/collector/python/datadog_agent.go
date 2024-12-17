@@ -252,6 +252,7 @@ var (
 // because the obfuscator depends on pkgconfigsetup.Datadog and it isn't guaranteed to be initialized during package init, but
 // will definitely be initialized by the time one of the python checks runs
 func lazyInitObfuscator() *obfuscate.Obfuscator {
+	log.Debugf("initializing obfuscator")
 	obfuscatorLoader.Do(func() {
 		var cfg obfuscate.Config
 		if err := structure.UnmarshalKey(pkgconfigsetup.Datadog(), "apm_config.obfuscation", &cfg); err != nil {
@@ -267,6 +268,7 @@ func lazyInitObfuscator() *obfuscate.Obfuscator {
 		if !cfg.Mongo.Enabled {
 			cfg.Mongo = defaultMongoObfuscateSettings
 		}
+		log.Debugf("obfuscator config: %#v", cfg)
 		obfuscator = obfuscate.NewObfuscator(cfg)
 	})
 	return obfuscator
@@ -347,6 +349,7 @@ func ObfuscateSQL(rawQuery, opts *C.char, errResult **C.char) *C.char {
 		*errResult = TrackedCString(err.Error())
 	}
 	s := C.GoString(rawQuery)
+	log.Debugf("Obfuscating SQL query: %q", s)
 	obfuscatedQuery, err := lazyInitObfuscator().ObfuscateSQLStringWithOptions(s, &obfuscate.SQLConfig{
 		DBMS:                          sqlOpts.DBMS,
 		TableNames:                    sqlOpts.TableNames,
