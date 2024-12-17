@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/outcaste-io/ristretto"
 )
 
@@ -62,6 +63,7 @@ func newMeasuredCache(opts cacheOptions) *measuredCache {
 		// a nil *ristretto.Cache is a no-op cache
 		return &measuredCache{}
 	}
+	log.Debugf("starting obfuscator query cache with max size %d", opts.MaxSize)
 	cfg := &ristretto.Config{
 		MaxCost:     opts.MaxSize,
 		NumCounters: opts.MaxSize * 10, // Multiplied by 10 as per ristretto recommendation
