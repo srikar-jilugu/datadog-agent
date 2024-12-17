@@ -36,8 +36,8 @@ build do
       # ---------------- DO NOT MODIFY LINES BELOW HERE ----------------
       command "perl.exe ./Configure enable-fips"
 
-      command "make"
-      command "make install_fips"
+      command "nmake"
+      command "nmake install_fips"
       # ---------------- DO NOT MODIFY LINES ABOVE HERE ----------------
     end
 
