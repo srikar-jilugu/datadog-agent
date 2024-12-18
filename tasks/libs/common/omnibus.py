@@ -187,14 +187,13 @@ def _get_environment_for_cache() -> dict:
 
 def _last_omnibus_changes(ctx):
     omnibus_invalidating_files = ['omnibus/config/', 'omnibus/lib/', 'omnibus/omnibus.rb']
-    omnibus_last_commit = ctx.run(
-        f'git log -n 1 --pretty=format:%H {" ".join(omnibus_invalidating_files)}', hide='stdout'
-    ).stdout
+    omnibus_last_commit = ctx.run(f'git log -n 1 --pretty=format:%H {" ".join(omnibus_invalidating_files)}').stdout
     # The commit sha1 is likely to change between a PR and its merge to main
     # In order to work around this, we hash the commit diff so that the result
     # can be reproduced on different branches with different sha1
+    print(f'Comparing omibus files since commit {omnibus_last_commit}')
     omnibus_last_changes = ctx.run(
-        f'git diff {omnibus_last_commit}~ {omnibus_last_commit} {" ".join(omnibus_invalidating_files)}', hide='stdout'
+        f'git diff {omnibus_last_commit}~ {omnibus_last_commit} {" ".join(omnibus_invalidating_files)}'
     ).stdout
     hash = hashlib.sha1()
     hash.update(str.encode(omnibus_last_changes))
