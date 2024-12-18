@@ -172,6 +172,7 @@ func newEBPFProgram(c *config.Config) (*manager.Manager, error) {
 	return m, nil
 }
 
+// TestInvalidBatchCountMetric ensures that the invalidBatchCount metric is incremented
 func TestInvalidBatchCountMetric(t *testing.T) {
 	kversion, err := kernel.HostVersion()
 	require.NoError(t, err)
