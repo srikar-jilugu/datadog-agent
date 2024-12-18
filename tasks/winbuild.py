@@ -28,6 +28,7 @@ def agent_package(
         flavor=flavor,
         release_version=release_version,
         skip_deps=skip_deps,
+        log_level="internal",
     )
 
     # Package Agent into MSI
