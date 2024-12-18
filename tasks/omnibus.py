@@ -332,7 +332,8 @@ def build(
         with timed(quiet=True) as durations['Updating omnibus cache']:
             if use_remote_cache and ctx.run(f"git -C {omnibus_cache_dir} tag -l").stdout != cache_state:
                 ctx.run(f"git -C {omnibus_cache_dir} bundle create {bundle_path} --tags")
-                ctx.run(f"{aws_cmd} s3 cp --only-show-errors {bundle_path} {git_cache_url}")
+                print('skipping cache upload until debugging is complete')
+                # ctx.run(f"{aws_cmd} s3 cp --only-show-errors {bundle_path} {git_cache_url}")
                 bundle_dir.cleanup()
 
     # Output duration information for different steps
