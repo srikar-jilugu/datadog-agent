@@ -1089,6 +1089,22 @@ workflow:
         - pkg/collector/corechecks/gpu/**/*
       compare_to: main # TODO: use a variable, when this is supported https://gitlab.com/gitlab-org/gitlab/-/issues/369916
 
+.setup_macos_github_app:
+  # GitHub App rate-limits are per-app.
+  # This balances the requests made to GitHub between the two apps we have set up.
+  - |
+    if [[ "$(( RANDOM % 2 ))" == "1" ]]; then
+      GITHUB_KEY_B64=$($CI_PROJECT_DIR/tools/ci/fetch_secret.sh $MACOS_GITHUB_APP_1 key_b64) || exit $?; export GITHUB_KEY_B64
+      GITHUB_APP_ID=$($CI_PROJECT_DIR/tools/ci/fetch_secret.sh $MACOS_GITHUB_APP_1 app_id) || exit $?; export GITHUB_APP_ID
+      GITHUB_INSTALLATION_ID=$($CI_PROJECT_DIR/tools/ci/fetch_secret.sh $MACOS_GITHUB_APP_1 installation_id) || exit $?; export GITHUB_INSTALLATION_ID
+      echo "Using GitHub App instance 1"
+    else
+      GITHUB_KEY_B64=$($CI_PROJECT_DIR/tools/ci/fetch_secret.sh $MACOS_GITHUB_APP_2 key_b64) || exit $?; export GITHUB_KEY_B64
+      GITHUB_APP_ID=$($CI_PROJECT_DIR/tools/ci/fetch_secret.sh $MACOS_GITHUB_APP_2 app_id) || exit $?; export GITHUB_APP_ID
+      GITHUB_INSTALLATION_ID=$($CI_PROJECT_DIR/tools/ci/fetch_secret.sh $MACOS_GITHUB_APP_2 installation_id) || exit $?; export GITHUB_INSTALLATION_ID
+      echo "Using GitHub App instance 2"
+    fi
+
 generate_windows_gitlab_runner_bump_pr:
   stage: debug
   image: registry.ddbuild.io/ci/datadog-agent-buildimages/deb_x64$DATADOG_AGENT_BUILDIMAGES_SUFFIX:$DATADOG_AGENT_BUILDIMAGES
