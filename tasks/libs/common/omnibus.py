@@ -220,7 +220,7 @@ def omnibus_compute_cache_key(ctx):
         h.update(str.encode(f'{k}={v}'))
         print(f'Current hash value: {h.hexdigest()}')
     cache_key = h.hexdigest()
-    print(f'Cache key: {cache_key}')
+    print(f'sould use Cache key: {cache_key}')
     cache_key = "3a7b5029a38b01a26342b6351ec0ab2bcdb548e4"
     return cache_key
 
