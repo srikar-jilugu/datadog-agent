@@ -22,7 +22,6 @@ from tasks.libs.common.color import Color, color_message
 from tasks.libs.common.constants import DEFAULT_INTEGRATIONS_CORE_BRANCH
 from tasks.libs.common.datadog_api import create_gauge, send_event, send_metrics
 from tasks.libs.common.git import get_default_branch
-from tasks.libs.common.junit_upload_core import repack_macos_junit_tar
 from tasks.libs.common.utils import get_git_pretty_ref
 from tasks.libs.owners.linter import codeowner_has_orphans, directory_has_packages_without_owner
 from tasks.libs.owners.parsing import read_owners
@@ -76,8 +75,6 @@ def trigger_macos(
     version_cache=None,
     retry_download=3,
     retry_interval=10,
-    fast_tests=None,
-    test_washer=False,
     integrations_core_ref=DEFAULT_INTEGRATIONS_CORE_BRANCH,
 ):
     """
@@ -107,26 +104,8 @@ def trigger_macos(
             version_cache_file_content=version_cache,
             integrations_core_ref=integrations_core_ref,
         )
-    elif workflow_type == "test":
-        conclusion = _trigger_macos_workflow(
-            release_version,
-            destination,
-            retry_download,
-            retry_interval,
-            workflow_name="test.yaml",
-            datadog_agent_ref=datadog_agent_ref,
-            version_cache_file_content=version_cache,
-            fast_tests=fast_tests,
-            test_washer=test_washer,
-        )
-        repack_macos_junit_tar(conclusion, "junit-tests_macos.tgz", "junit-tests_macos-repacked.tgz")
-    elif workflow_type == "lint":
-        conclusion = _trigger_macos_workflow(
-            release_version,
-            workflow_name="lint.yaml",
-            datadog_agent_ref=datadog_agent_ref,
-            version_cache_file_content=version_cache,
-        )
+    else:
+        raise Exit(f"Unsupported workflow type: {workflow_type}", code=1)
     if conclusion != "success":
         raise Exit(message=f"Macos {workflow_type} workflow {conclusion}", code=1)
 
@@ -454,7 +433,7 @@ def pr_merge_dd_event_sender(
 
     tags = [f'repo:{pr.base.repo.full_name}', f'pr_id:{pr.number}', f'author:{pr.user.login}']
     labels = set(github.get_pr_labels(pr.number))
-    all_qa_labels = {'qa/done', 'qa/no-code-change'}
+    all_qa_labels = {'qa/done', 'qa/no-code-change', 'qa/rc-required'}
     qa_labels = all_qa_labels.intersection(labels)
     if len(qa_labels) == 0:
         tags.append('qa_label:missing')
@@ -495,7 +474,7 @@ def extract_test_qa_description(pr_body: str) -> str:
     pr_body_lines = pr_body.splitlines()
     index_of_test_qa_section = -1
     for i, line in enumerate(pr_body_lines):
-        if line.startswith('### Describe how to test'):
+        if line.startswith('### Describe how you validated your changes'):
             index_of_test_qa_section = i
             break
     if index_of_test_qa_section == -1:
@@ -579,3 +558,31 @@ def add_required_checks(_, branch: str, check: str, force: bool = False):
 
     gh = GithubAPI()
     gh.add_branch_required_check(branch, check, force)
+
+
+@task
+def check_qa_labels(_, labels: str):
+    """
+    Check if the PR has one of qa/[done|no-code-change|rc-required] label
+    """
+    labels = set(labels.split(" "))
+    all_qa_labels = {'qa/done', 'qa/no-code-change', 'qa/rc-required'}
+    qa_labels = all_qa_labels.intersection(labels)
+    docs = "\n".join(
+        [
+            "You must set one of:",
+            "- 'qa/no-code-change' if your PR does not contain changes to the agent code or has no impact to the agent functionalities",
+            "  Examples: code owner changes, e2e test framework changes, documentation changes",
+            "- 'qa/done' if your PR contains changes impacting the Agent binary code that are validated through automated tests, double checked through manual validation if needed.",
+            "  If you want additional validation by a second person, you can ask reviewers to do it. Describe how to set up an environment for manual tests in the PR description. Manual validation is expected to happen on every commit before merge.",
+            "  Any manual validation step should then map to an automated test. Manual validation should not substitute automation, minus exceptions not supported by test tooling yet.",
+            "- 'qa/rc-required' if your PR changes require validation on the Release Candidate. Examples are changes that need workloads that we cannot emulate, or changes that require validation on prod during RC deployment",
+            "",
+            "See https://datadoghq.atlassian.net/wiki/spaces/agent/pages/3341649081/QA+Best+Practices for more details.",
+        ]
+    )
+    if len(qa_labels) == 0:
+        raise Exit(f"No QA label set.\n{docs}", code=1)
+    if len(qa_labels) > 1:
+        raise Exit(f"More than one QA label set.\n{docs}", code=1)
+    print("QA label set correctly")

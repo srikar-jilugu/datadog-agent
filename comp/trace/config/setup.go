@@ -23,8 +23,10 @@ import (
 
 	corecompcfg "github.com/DataDog/datadog-agent/comp/core/config"
 	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/origindetection"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
-	"github.com/DataDog/datadog-agent/comp/otelcol/otlp"
+	"github.com/DataDog/datadog-agent/comp/otelcol/otlp/configcheck"
+	apiutil "github.com/DataDog/datadog-agent/pkg/api/util"
 	"github.com/DataDog/datadog-agent/pkg/config/env"
 	"github.com/DataDog/datadog-agent/pkg/config/model"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
@@ -120,7 +122,11 @@ func prepareConfig(c corecompcfg.Component, tagger tagger.Component) (*config.Ag
 	cfg.ContainerTags = func(cid string) ([]string, error) {
 		return tagger.Tag(types.NewEntityID(types.ContainerID, cid), types.HighCardinality)
 	}
+	cfg.ContainerIDFromOriginInfo = func(originInfo origindetection.OriginInfo) (string, error) {
+		return tagger.GenerateContainerIDFromOriginInfo(originInfo)
+	}
 	cfg.ContainerProcRoot = coreConfigObject.GetString("container_proc_root")
+	cfg.GetAgentAuthToken = apiutil.GetAuthToken
 	return cfg, nil
 }
 
@@ -355,7 +361,7 @@ func applyDatadogConfig(c *config.AgentConfig, core corecompcfg.Component) error
 	c.GUIPort = core.GetString("GUI_port")
 
 	var grpcPort int
-	if otlp.IsEnabled(pkgconfigsetup.Datadog()) {
+	if configcheck.IsEnabled(pkgconfigsetup.Datadog()) {
 		grpcPort = core.GetInt(pkgconfigsetup.OTLPTracePort)
 	}
 

@@ -58,7 +58,7 @@ import (
 	workloadmetafx "github.com/DataDog/datadog-agent/comp/core/workloadmeta/fx"
 	"github.com/DataDog/datadog-agent/comp/forwarder"
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
-	eventplatformfxnoop "github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/fx-noop"
+	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/eventplatformimpl"
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatformreceiver/eventplatformreceiverimpl"
 	orchestratorForwarderImpl "github.com/DataDog/datadog-agent/comp/forwarder/orchestrator/orchestratorimpl"
 	haagentfx "github.com/DataDog/datadog-agent/comp/haagent/fx"
@@ -81,7 +81,7 @@ import (
 	hostnameStatus "github.com/DataDog/datadog-agent/pkg/status/clusteragent/hostname"
 	endpointsStatus "github.com/DataDog/datadog-agent/pkg/status/endpoints"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
-	"github.com/DataDog/datadog-agent/pkg/util"
+	"github.com/DataDog/datadog-agent/pkg/util/coredump"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 	"github.com/DataDog/datadog-agent/pkg/util/hostname"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
@@ -141,7 +141,7 @@ func Commands(globalParams *command.GlobalParams) []*cobra.Command {
 				compressionfx.Module(),
 				demultiplexerimpl.Module(demultiplexerimpl.NewDefaultParams()),
 				orchestratorForwarderImpl.Module(orchestratorForwarderImpl.NewDefaultParams()),
-				eventplatformfxnoop.Module(),
+				eventplatformimpl.Module(eventplatformimpl.NewDisabledParams()),
 				eventplatformreceiverimpl.Module(),
 				// setup workloadmeta
 				wmcatalog.GetCatalog(),
@@ -241,7 +241,7 @@ func start(log log.Component,
 	// Starting Cluster Agent sequence
 	// Initialization order is important for multiple reasons, see comments
 
-	if err := util.SetupCoreDump(config); err != nil {
+	if err := coredump.Setup(config); err != nil {
 		pkglog.Warnf("Can't setup core dumps: %v, core dumps might not be available after a crash", err)
 	}
 
@@ -479,6 +479,7 @@ func start(log log.Component,
 			Client:              apiCl.Cl,
 			StopCh:              stopCh,
 			ValidatingStopCh:    validatingStopCh,
+			Demultiplexer:       demultiplexer,
 		}
 
 		webhooks, err := admissionpkg.StartControllers(admissionCtx, wmeta, pa, datadogConfig)

@@ -5,10 +5,11 @@ Common environment variables that can be used:
 """
 
 import os
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-from invoke.exceptions import Exit
+from invoke.exceptions import Exit, UnexpectedExit
 
 from tasks.libs.common.color import Color, color_message
 from tasks.libs.common.git import get_current_branch
@@ -27,7 +28,17 @@ def init_env(ctx, branch: str | None = None):
     """
 
     if not WORKTREE_DIRECTORY.is_dir():
-        if not ctx.run(f"git worktree add '{WORKTREE_DIRECTORY}' origin/{branch or 'main'}", warn=True):
+        print(f'{color_message("Info", Color.BLUE)}: Cloning datadog agent into {WORKTREE_DIRECTORY}', file=sys.stderr)
+        remote = ctx.run("git remote get-url origin", hide=True).stdout.strip()
+        # Try to use this option to reduce cloning time
+        if all(
+            not ctx.run(
+                f"git clone '{remote}' '{WORKTREE_DIRECTORY}' -b {branch or 'main'} {filter_option}",
+                warn=True,
+                hide=True,
+            )
+            for filter_option in ["--filter=blob:none", ""]
+        ):
             raise Exit(
                 f'{color_message("Error", Color.RED)}: Cannot initialize worktree environment. You might want to reset the worktree directory with `inv worktree.remove`',
                 code=1,
@@ -38,7 +49,18 @@ def init_env(ctx, branch: str | None = None):
             f"git -C '{WORKTREE_DIRECTORY}' rev-parse --abbrev-ref HEAD", hide=True
         ).stdout.strip()
         if worktree_branch != branch:
-            ctx.run(f"git -C '{WORKTREE_DIRECTORY}' checkout '{branch}'", hide=True)
+            for retry in range(2):
+                try:
+                    ctx.run(f"git -C '{WORKTREE_DIRECTORY}' checkout '{branch}'", hide=True)
+                except UnexpectedExit as e:
+                    if retry == 1:
+                        raise e
+                    else:
+                        print(
+                            f'{color_message("Warning", Color.ORANGE)}: Git branch not found in the local worktree folder, fetching repository',
+                            file=sys.stderr,
+                        )
+                        ctx.run(f"git -C '{WORKTREE_DIRECTORY}' fetch", hide=True)
 
         if not os.environ.get("AGENT_WORKTREE_NO_PULL"):
             ctx.run(f"git -C '{WORKTREE_DIRECTORY}' pull", hide=True)
@@ -47,13 +69,13 @@ def init_env(ctx, branch: str | None = None):
 def remove_env(ctx):
     """Will remove the environment for commands applying to a worktree."""
 
-    ctx.run(f"git worktree remove -f '{WORKTREE_DIRECTORY}'", warn=True)
+    ctx.run(f"rm -rf '{WORKTREE_DIRECTORY}'", warn=True)
 
 
 def is_worktree():
     """Will return True if the current environment is a worktree environment."""
 
-    return Path.cwd() == WORKTREE_DIRECTORY
+    return Path.cwd().resolve() == WORKTREE_DIRECTORY.resolve()
 
 
 def enter_env(ctx, branch: str | None, skip_checkout=False):

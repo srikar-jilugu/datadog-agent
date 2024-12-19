@@ -25,7 +25,9 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/hostname/hostnameinterface"
 	"github.com/DataDog/datadog-agent/comp/core/hostname/remotehostnameimpl"
 	log "github.com/DataDog/datadog-agent/comp/core/log/def"
+	logfx "github.com/DataDog/datadog-agent/comp/core/log/fx"
 	logtracefx "github.com/DataDog/datadog-agent/comp/core/log/fx-trace"
+	"github.com/DataDog/datadog-agent/comp/core/secrets"
 	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 	remoteTaggerFx "github.com/DataDog/datadog-agent/comp/core/tagger/fx-remote"
 	taggerTypes "github.com/DataDog/datadog-agent/comp/core/tagger/types"
@@ -105,8 +107,20 @@ func runOTelAgentCommand(ctx context.Context, params *subcommands.GlobalParams, 
 			fx.Provide(func() coreconfig.Component {
 				return acfg
 			}),
+			fx.Provide(func(_ coreconfig.Component) log.Params {
+				return log.ForDaemon(params.LoggerName, "log_file", pkgconfigsetup.DefaultOTelAgentLogFile)
+			}),
+			logfx.Module(),
+			fetchonlyimpl.Module(),
+			// TODO: don't rely on this pattern; remove this `OptionalModuleWithParams` thing
+			//       and instead adapt OptionalModule to allow parameter passing naturally.
+			//       See: https://github.com/DataDog/datadog-agent/pull/28386
+			configsyncimpl.OptionalModuleWithParams(),
+			fx.Provide(func() configsyncimpl.Params {
+				return configsyncimpl.NewParams(params.SyncTimeout, params.SyncDelay, true)
+			}),
 			converterfx.Module(),
-			fx.Provide(func(cp converter.Component) confmap.Converter {
+			fx.Provide(func(cp converter.Component, _ optional.Option[configsync.Component]) confmap.Converter {
 				return cp
 			}),
 			collectorcontribFx.Module(),
@@ -137,6 +151,7 @@ func runOTelAgentCommand(ctx context.Context, params *subcommands.GlobalParams, 
 			return acfg, nil
 		}),
 		fxutil.ProvideOptional[coreconfig.Component](),
+		fxutil.ProvideNoneOptional[secrets.Component](),
 		workloadmetafx.Module(workloadmeta.Params{
 			AgentType:  workloadmeta.NodeAgent,
 			InitHelper: common.GetWorkloadmetaInit(),

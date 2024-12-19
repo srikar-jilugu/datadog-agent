@@ -972,7 +972,7 @@ func (e *CgroupTracingEvent) UnmarshalBinary(data []byte) (int, error) {
 	}
 	cursor := read
 
-	read, err = UnmarshalBinary(data, &e.CGroupContext)
+	read, err = UnmarshalBinary(data[cursor:], &e.CGroupContext)
 	if err != nil {
 		return 0, err
 	}
@@ -1121,6 +1121,10 @@ func (e *IMDSEvent) UnmarshalBinary(data []byte) (int, error) {
 			return 0, fmt.Errorf("failed to parse IMDS response: %v", err)
 		}
 		e.fillFromIMDSHeader(resp.Header, "")
+
+		if resp.StatusCode != http.StatusOK {
+			return len(data), ErrNoUsefulData
+		}
 
 		// try to parse cloud provider specific data
 		if e.CloudProvider == IMDSAWSCloudProvider {

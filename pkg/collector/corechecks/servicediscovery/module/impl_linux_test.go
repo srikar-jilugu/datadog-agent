@@ -32,7 +32,7 @@ import (
 	"github.com/golang/mock/gomock"
 	gorillamux "github.com/gorilla/mux"
 	"github.com/prometheus/procfs"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vishvananda/netns"
@@ -47,6 +47,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/apm"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/language"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/model"
+	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/usm"
 	"github.com/DataDog/datadog-agent/pkg/network"
 	"github.com/DataDog/datadog-agent/pkg/network/protocols/http/testutil"
 	"github.com/DataDog/datadog-agent/pkg/network/protocols/tls/nodejs"
@@ -55,6 +56,7 @@ import (
 	proccontainersmocks "github.com/DataDog/datadog-agent/pkg/process/util/containers/mocks"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
+	globalutils "github.com/DataDog/datadog-agent/pkg/util/testutil"
 	dockerutils "github.com/DataDog/datadog-agent/pkg/util/testutil/docker"
 )
 
@@ -98,7 +100,7 @@ func setupDiscoveryModule(t *testing.T) (string, *proccontainersmocks.MockContai
 	return srv.URL, mockContainerProvider
 }
 
-func getServices(t *testing.T, url string) []model.Service {
+func getServices(t require.TestingT, url string) []model.Service {
 	location := url + "/" + string(config.DiscoveryModule) + pathServices
 	req, err := http.NewRequest(http.MethodGet, location, nil)
 	require.NoError(t, err)
@@ -115,7 +117,7 @@ func getServices(t *testing.T, url string) []model.Service {
 	return res.Services
 }
 
-func getServicesMap(t *testing.T, url string) map[int]model.Service {
+func getServicesMap(t require.TestingT, url string) map[int]model.Service {
 	services := getServices(t, url)
 	servicesMap := make(map[int]model.Service)
 	for _, service := range services {
@@ -233,7 +235,7 @@ func TestBasic(t *testing.T) {
 
 	// Eventually to give the processes time to start
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
-		portMap := getServicesMap(t, url)
+		portMap := getServicesMap(collect, url)
 		for _, pid := range expectedPIDs {
 			assert.Contains(collect, portMap, pid)
 		}
@@ -286,13 +288,23 @@ func TestPorts(t *testing.T) {
 	startUDP("udp4")
 	startUDP("udp6")
 
+	expectedPortsMap := make(map[uint16]struct{}, len(expectedPorts))
+
 	serviceMap := getServicesMap(t, url)
 	pid := os.Getpid()
 	require.Contains(t, serviceMap, pid)
 	for _, port := range expectedPorts {
+		expectedPortsMap[port] = struct{}{}
 		assert.Contains(t, serviceMap[pid].Ports, port)
 	}
 	for _, port := range unexpectedPorts {
+		// An unexpected port number can also be expected since UDP and TCP and
+		// v4 and v6 are all in the same list. Just skip the extra check in that
+		// case since it should be rare.
+		if _, alsoExpected := expectedPortsMap[port]; alsoExpected {
+			continue
+		}
+
 		assert.NotContains(t, serviceMap[pid].Ports, port)
 	}
 }
@@ -361,14 +373,15 @@ func TestServiceName(t *testing.T) {
 	pid := cmd.Process.Pid
 	// Eventually to give the processes time to start
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
-		portMap := getServicesMap(t, url)
+		portMap := getServicesMap(collect, url)
 		assert.Contains(collect, portMap, pid)
 		// Non-ASCII character removed due to normalization.
-		assert.Equal(t, "foo_bar", portMap[pid].DDService)
-		assert.Equal(t, portMap[pid].DDService, portMap[pid].Name)
-		assert.Equal(t, "sleep", portMap[pid].GeneratedName)
-		assert.False(t, portMap[pid].DDServiceInjected)
-		assert.Equal(t, portMap[pid].ContainerID, "")
+		assert.Equal(collect, "foo_bar", portMap[pid].DDService)
+		assert.Equal(collect, portMap[pid].DDService, portMap[pid].Name)
+		assert.Equal(collect, "sleep", portMap[pid].GeneratedName)
+		assert.Equal(collect, string(usm.CommandLine), portMap[pid].GeneratedNameSource)
+		assert.False(collect, portMap[pid].DDServiceInjected)
+		assert.Equal(collect, portMap[pid].ContainerID, "")
 	}, 30*time.Second, 100*time.Millisecond)
 }
 
@@ -395,6 +408,7 @@ func TestInjectedServiceName(t *testing.T) {
 	// The GeneratedName can vary depending on how the tests are run, so don't
 	// assert for a specific value.
 	require.NotEmpty(t, portMap[pid].GeneratedName)
+	require.NotEmpty(t, portMap[pid].GeneratedNameSource)
 	require.NotEqual(t, portMap[pid].DDService, portMap[pid].GeneratedName)
 	assert.True(t, portMap[pid].DDServiceInjected)
 }
@@ -501,7 +515,7 @@ func testCaptureWrappedCommands(t *testing.T, script string, commandWrapper []st
 	mockContainerProvider.EXPECT().GetContainers(1*time.Minute, nil).AnyTimes()
 	pid := int(proc.Pid)
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
-		svcMap := getServicesMap(t, url)
+		svcMap := getServicesMap(collect, url)
 		assert.Contains(collect, svcMap, pid)
 		assert.True(collect, validator(svcMap[pid]))
 	}, 30*time.Second, 100*time.Millisecond)
@@ -555,12 +569,12 @@ func TestAPMInstrumentationProvided(t *testing.T) {
 			pid := cmd.Process.Pid
 
 			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				portMap := getServicesMap(t, url)
+				portMap := getServicesMap(collect, url)
 				assert.Contains(collect, portMap, pid)
 				assert.Equal(collect, string(test.language), portMap[pid].Language)
 				assert.Equal(collect, string(apm.Provided), portMap[pid].APMInstrumentation)
-				assertStat(t, portMap[pid])
-				assertCPU(t, url, pid)
+				assertStat(collect, portMap[pid])
+				assertCPU(collect, url, pid)
 			}, 30*time.Second, 100*time.Millisecond)
 		})
 	}
@@ -601,7 +615,7 @@ func assertStat(t assert.TestingT, svc model.Service) {
 	assert.InDelta(t, uint64(createTimeMs), svc.StartTimeMilli, 10000)
 }
 
-func assertCPU(t *testing.T, url string, pid int) {
+func assertCPU(t require.TestingT, url string, pid int) {
 	proc, err := process.NewProcess(int32(pid))
 	require.NoError(t, err, "could not create gopsutil process handle")
 
@@ -638,7 +652,7 @@ func TestCommandLineSanitization(t *testing.T) {
 	pid := cmd.Process.Pid
 
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
-		svcMap := getServicesMap(t, url)
+		svcMap := getServicesMap(collect, url)
 		assert.Contains(collect, svcMap, pid)
 		assert.Equal(collect, sanitizedCommandLine, svcMap[pid].CommandLine)
 	}, 30*time.Second, 100*time.Millisecond)
@@ -657,14 +671,15 @@ func TestNodeDocker(t *testing.T) {
 	pid := int(nodeJSPID)
 
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
-		svcMap := getServicesMap(t, url)
+		svcMap := getServicesMap(collect, url)
 		assert.Contains(collect, svcMap, pid)
 		// test@... changed to test_... due to normalization.
 		assert.Equal(collect, "test_nodejs-https-server", svcMap[pid].GeneratedName)
+		assert.Equal(collect, string(usm.Nodejs), svcMap[pid].GeneratedNameSource)
 		assert.Equal(collect, svcMap[pid].GeneratedName, svcMap[pid].Name)
 		assert.Equal(collect, "provided", svcMap[pid].APMInstrumentation)
 		assertStat(collect, svcMap[pid])
-		assertCPU(t, url, pid)
+		assertCPU(collect, url, pid)
 	}, 30*time.Second, 100*time.Millisecond)
 }
 
@@ -715,7 +730,7 @@ func TestAPMInstrumentationProvidedWithMaps(t *testing.T) {
 
 			pid := cmd.Process.Pid
 			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				portMap := getServicesMap(t, url)
+				portMap := getServicesMap(collect, url)
 				assert.Contains(collect, portMap, pid)
 				assert.Equal(collect, string(test.language), portMap[pid].Language)
 				assert.Equal(collect, string(apm.Provided), portMap[pid].APMInstrumentation)
@@ -774,7 +789,7 @@ func TestNamespaces(t *testing.T) {
 
 	// Eventually to give the processes time to start
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
-		portMap := getServicesMap(t, url)
+		portMap := getServicesMap(collect, url)
 		for _, pid := range pids {
 			assert.Contains(collect, portMap, pid)
 		}
@@ -791,13 +806,15 @@ func TestDocker(t *testing.T) {
 	url, mockContainerProvider := setupDiscoveryModule(t)
 
 	dir, _ := testutil.CurDir()
+	scanner, err := globalutils.NewScanner(regexp.MustCompile("Serving.*"), globalutils.NoPattern)
+	require.NoError(t, err, "failed to create pattern scanner")
 	dockerCfg := dockerutils.NewComposeConfig("foo-server",
 		dockerutils.DefaultTimeout,
 		dockerutils.DefaultRetries,
-		regexp.MustCompile("Serving.*"),
+		scanner,
 		dockerutils.EmptyEnv,
 		filepath.Join(dir, "testdata", "docker-compose.yml"))
-	err := dockerutils.Run(t, dockerCfg)
+	err = dockerutils.Run(t, dockerCfg)
 	require.NoError(t, err)
 
 	proc, err := procfs.NewDefaultFS()
@@ -840,7 +857,11 @@ func TestDocker(t *testing.T) {
 	require.Contains(t, portMap, pid1111)
 	require.Contains(t, portMap[pid1111].Ports, uint16(1234))
 	require.Contains(t, portMap[pid1111].ContainerID, "dummyCID")
-	require.Contains(t, portMap[pid1111].GeneratedName, "foo_from_app_tag")
+	require.Contains(t, portMap[pid1111].Name, "http.server")
+	require.Contains(t, portMap[pid1111].GeneratedName, "http.server")
+	require.Contains(t, portMap[pid1111].GeneratedNameSource, string(usm.CommandLine))
+	require.Contains(t, portMap[pid1111].ContainerServiceName, "foo_from_app_tag")
+	require.Contains(t, portMap[pid1111].ContainerServiceNameSource, "app")
 }
 
 // Check that the cache is cleaned when procceses die.
@@ -878,7 +899,7 @@ func TestCache(t *testing.T) {
 
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
 		_, err = discovery.getServices()
-		require.NoError(t, err)
+		require.NoError(collect, err)
 
 		for _, cmd := range cmds {
 			pid := int32(cmd.Process.Pid)
@@ -913,56 +934,67 @@ func TestTagsPriority(t *testing.T) {
 	cases := []struct {
 		name                string
 		tags                []string
+		expectedTagName     string
 		expectedServiceName string
 	}{
 		{
 			"nil tag list",
 			nil,
 			"",
+			"",
 		},
 		{
 			"empty tag list",
 			[]string{},
+			"",
 			"",
 		},
 		{
 			"no useful tags",
 			[]string{"foo:bar"},
 			"",
+			"",
 		},
 		{
 			"malformed tag",
 			[]string{"foobar"},
 			"",
+			"",
 		},
 		{
 			"service tag",
 			[]string{"service:foo"},
+			"service",
 			"foo",
 		},
 		{
 			"app tag",
 			[]string{"app:foo"},
+			"app",
 			"foo",
 		},
 		{
 			"short_image tag",
 			[]string{"short_image:foo"},
+			"short_image",
 			"foo",
 		},
 		{
 			"kube_container_name tag",
 			[]string{"kube_container_name:foo"},
+			"kube_container_name",
 			"foo",
 		},
 		{
 			"kube_deployment tag",
 			[]string{"kube_deployment:foo"},
+			"kube_deployment",
 			"foo",
 		},
 		{
 			"kube_service tag",
 			[]string{"kube_service:foo"},
+			"kube_service",
 			"foo",
 		},
 		{
@@ -973,6 +1005,7 @@ func TestTagsPriority(t *testing.T) {
 				"service:my_service",
 				"malformed",
 			},
+			"service",
 			"my_service",
 		},
 		{
@@ -981,6 +1014,7 @@ func TestTagsPriority(t *testing.T) {
 				"service:",
 				"app:foo",
 			},
+			"app",
 			"foo",
 		},
 		{
@@ -992,6 +1026,7 @@ func TestTagsPriority(t *testing.T) {
 				"service:my_service",
 				"malformed",
 			},
+			"service",
 			"my_service",
 		},
 		{
@@ -1004,31 +1039,17 @@ func TestTagsPriority(t *testing.T) {
 				"app:my_app",
 				"service:my_service",
 			},
+			"service",
 			"my_service",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			name := getServiceNameFromContainerTags(c.tags)
+			tagName, name := getServiceNameFromContainerTags(c.tags)
 			require.Equalf(t, c.expectedServiceName, name, "got wrong service name from container tags")
+			require.Equalf(t, c.expectedTagName, tagName, "got wrong tag name for service naming")
 		})
-	}
-}
-
-func BenchmarkOldProcess(b *testing.B) {
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		process.NewProcess(int32(os.Getpid()))
-	}
-}
-
-func BenchmarkNewProcess(b *testing.B) {
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		customNewProcess(int32(os.Getpid()))
 	}
 }
 

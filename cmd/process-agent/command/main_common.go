@@ -38,7 +38,7 @@ import (
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	workloadmetafx "github.com/DataDog/datadog-agent/comp/core/workloadmeta/fx"
 	compstatsd "github.com/DataDog/datadog-agent/comp/dogstatsd/statsd"
-	eventplatformfx "github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/fx"
+	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/eventplatformimpl"
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatformreceiver/eventplatformreceiverimpl"
 	hostMetadataUtils "github.com/DataDog/datadog-agent/comp/metadata/host/hostimpl/utils"
 	"github.com/DataDog/datadog-agent/comp/networkpath"
@@ -61,7 +61,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/metadata/workloadmeta/collector"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	proccontainers "github.com/DataDog/datadog-agent/pkg/process/util/containers"
-	ddutil "github.com/DataDog/datadog-agent/pkg/util"
+	"github.com/DataDog/datadog-agent/pkg/util/coredump"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil/logging"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -134,7 +134,7 @@ func runApp(ctx context.Context, globalParams *GlobalParams) error {
 		process.Bundle(),
 
 		eventplatformreceiverimpl.Module(),
-		eventplatformfx.Module(),
+		eventplatformimpl.Module(eventplatformimpl.NewDefaultParams()),
 
 		// Provides the rdnssquerier module
 		rdnsquerierfx.Module(),
@@ -296,7 +296,7 @@ type miscDeps struct {
 // Todo: (Components) WorkloadMeta, remoteTagger
 // Todo: move metadata/workloadmeta/collector to workloadmeta
 func initMisc(deps miscDeps) error {
-	if err := ddutil.SetupCoreDump(deps.Config); err != nil {
+	if err := coredump.Setup(deps.Config); err != nil {
 		deps.Logger.Warnf("Can't setup core dumps: %v, core dumps might not be available after a crash", err)
 	}
 

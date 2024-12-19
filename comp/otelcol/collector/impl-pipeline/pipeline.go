@@ -5,8 +5,8 @@
 
 //go:build otlp
 
-// Package collectorimpl implements the collector component
-package collectorimpl
+// Package pipelineimpl implements the collector component
+package pipelineimpl
 
 import (
 	"context"
@@ -24,6 +24,7 @@ import (
 	collector "github.com/DataDog/datadog-agent/comp/otelcol/collector/def"
 	"github.com/DataDog/datadog-agent/comp/otelcol/logsagentpipeline"
 	"github.com/DataDog/datadog-agent/comp/otelcol/otlp"
+	"github.com/DataDog/datadog-agent/comp/otelcol/otlp/configcheck"
 	"github.com/DataDog/datadog-agent/comp/otelcol/otlp/datatype"
 	apiutil "github.com/DataDog/datadog-agent/pkg/api/util"
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
@@ -87,7 +88,7 @@ type collectorImpl struct {
 }
 
 func (c *collectorImpl) start(context.Context) error {
-	on := otlp.IsEnabled(c.config)
+	on := configcheck.IsEnabled(c.config)
 	c.inventoryAgent.Set(otlpEnabled, on)
 	if !on {
 		return nil

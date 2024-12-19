@@ -89,7 +89,7 @@ import (
 	dogstatsdStatusimpl "github.com/DataDog/datadog-agent/comp/dogstatsd/status/statusimpl"
 	"github.com/DataDog/datadog-agent/comp/forwarder"
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
-	eventplatformfx "github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/fx"
+	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform/eventplatformimpl"
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatformreceiver/eventplatformreceiverimpl"
 	orchestratorForwarderImpl "github.com/DataDog/datadog-agent/comp/forwarder/orchestrator/orchestratorimpl"
 	langDetectionCl "github.com/DataDog/datadog-agent/comp/languagedetection/client"
@@ -146,8 +146,8 @@ import (
 	jmxStatus "github.com/DataDog/datadog-agent/pkg/status/jmx"
 	systemprobeStatus "github.com/DataDog/datadog-agent/pkg/status/systemprobe"
 	pkgTelemetry "github.com/DataDog/datadog-agent/pkg/telemetry"
-	"github.com/DataDog/datadog-agent/pkg/util"
 	pkgcommon "github.com/DataDog/datadog-agent/pkg/util/common"
+	"github.com/DataDog/datadog-agent/pkg/util/coredump"
 	"github.com/DataDog/datadog-agent/pkg/util/defaultpaths"
 	"github.com/DataDog/datadog-agent/pkg/util/flavor"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
@@ -424,7 +424,7 @@ func getSharedFxOption() fx.Option {
 		langDetectionClimpl.Module(),
 		metadata.Bundle(),
 		orchestratorForwarderImpl.Module(orchestratorForwarderImpl.NewDefaultParams()),
-		eventplatformfx.Module(),
+		eventplatformimpl.Module(eventplatformimpl.NewDefaultParams()),
 		eventplatformreceiverimpl.Module(),
 
 		// injecting the shared Serializer to FX until we migrate it to a proper component. This allows other
@@ -512,7 +512,7 @@ func startAgent(
 		log.Infof("Starting Datadog Agent v%v", version.AgentVersion)
 	}
 
-	if err := util.SetupCoreDump(pkgconfigsetup.Datadog()); err != nil {
+	if err := coredump.Setup(pkgconfigsetup.Datadog()); err != nil {
 		log.Warnf("Can't setup core dumps: %v, core dumps might not be available after a crash", err)
 	}
 
