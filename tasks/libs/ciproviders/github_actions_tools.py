@@ -26,7 +26,7 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
     inputs["id"] = workflow_id
 
     print(
-        "Creating workflow on datadog-agent-macos-build on commit {} with args:\n{}".format(  # noqa: FS002
+        "Creating workflow on buildenv on commit {} with args:\n{}".format(  # noqa: FS002
             github_action_ref, "\n".join([f"  - {k}: {inputs[k]}" for k in inputs])
         )
     )
@@ -37,7 +37,7 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
     result = gh.trigger_workflow(workflow_name, github_action_ref, inputs)
 
     if not result:
-        print("Couldn't trigger workflow run.")
+        print(f"Couldn't trigger workfglow run. result={result}")
         raise Exit(code=1)
 
     might_be_waiting = set()
