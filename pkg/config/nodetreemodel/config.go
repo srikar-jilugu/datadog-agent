@@ -528,9 +528,10 @@ func hasNoneDefaultsLeaf(node InnerNode) bool {
 			if leaf.Source().IsGreaterThan(model.SourceDefault) {
 				return true
 			}
-		}
-		if hasNoneDefaultsLeaf(child.(InnerNode)) {
-			return true
+		} else if inner, ok := child.(InnerNode); ok {
+			if hasNoneDefaultsLeaf(inner) {
+				return true
+			}
 		}
 	}
 	return false
