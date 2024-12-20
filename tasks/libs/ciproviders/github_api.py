@@ -44,6 +44,7 @@ class GithubAPI:
         org = repository.split("/")
         self._organization = org[0] if len(org) > 1 else None
         self._repository = self._github.get_repo(repository)
+        print(type(self._repository))
 
     @property
     def repo(self):
