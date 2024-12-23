@@ -160,7 +160,7 @@ def _trigger_buildenv_workflow(new_version=None, datadog_agent_ref="master"):
 
     message = f":robobits: A new windows-runner bump PR to {new_version} has been generated. Please take a look :frog-review:\n:pr: {PR_URL} :ty:"
 
-    send_slack_message("#agent-delivery-ops", message)
+    send_slack_message("agent-delivery-ops", message)
     return workflow_conclusion
 
 
