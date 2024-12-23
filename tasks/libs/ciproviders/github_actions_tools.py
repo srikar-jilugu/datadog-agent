@@ -22,8 +22,8 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
     if new_version is not None:
         inputs["new-version"] = new_version
 
-    workflow_id = str(uuid.uuid1())
-    inputs["id"] = workflow_id
+    #workflow_id = str(uuid.uuid1())
+    #inputs["id"] = workflow_id
 
     print(
         "Creating workflow on buildenv on commit {} with args:\n{}".format(  # noqa: FS002
