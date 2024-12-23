@@ -278,11 +278,12 @@ class GithubAPI:
         ref must be a branch or a tag.
         """
         workflow = self._repository.get_workflow(workflow_name)
-        print(workflow)
         if workflow is None:
             return False
         if inputs is None:
             inputs = {}
+        import inspect
+        inspect.getsource(workflow.create_dispatch)
         return workflow.create_dispatch(ref, inputs)
 
     def workflow_run(self, run_id):
