@@ -31,12 +31,19 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
         )
     )
 
+    workflow_list = []
     gh = GithubAPI('DataDog/buildenv')
-    result = gh.trigger_workflow(workflow_name, github_action_ref, inputs)
+    result = gh.trigger_workflow(workflow_name, github_action_ref, inputs, workflow_list)
 
     if not result:
         print(f"Couldn't trigger workfglow run. result={result}")
         raise Exit(code=1)
+
+    if not workflow_list:
+        print(workflow_list)
+        return workflow_list[0]
+
+
 
 def trigger_macos_workflow(
     workflow_name="macos.yaml",

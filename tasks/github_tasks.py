@@ -152,7 +152,13 @@ def _trigger_buildenv_workflow(new_version=None, datadog_agent_ref="master"):
 
     download_with_retry(download_artifacts, run, ".", 0, 0, "DataDog/buildenv")
 
-    message = f":robobits: A new windows-runner bump PR to {new_version} has been generated. Please take a look :frog-review:\n:pr: <link> :ty:"
+    with open("PR_URL_ARTIFACT") as f:
+        PR_URL = f.read().strip()
+
+    if not PR_URL:
+        raise Exit(message="Failed to fetch artifact from the workflow. (Empty artifact)")
+
+    message = f":robobits: A new windows-runner bump PR to {new_version} has been generated. Please take a look :frog-review:\n:pr: {PR_URL} :ty:"
 
     send_slack_message("#agent-delivery-ops", message)
     return workflow_conclusion
