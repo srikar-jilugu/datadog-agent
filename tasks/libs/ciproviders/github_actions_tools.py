@@ -40,32 +40,9 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
         print(f"Couldn't trigger workfglow run. result={result}")
         raise Exit(code=1)
 
-    might_be_waiting = set()
+    message = ":robobits: A new windows-runner bump PR to <version> has been generated. Please take a look :frog-review:\n:pr: <link> :ty:"
 
-    MAX_RETRIES = 30  # Retry for up to 5 minutes
-    for j in range(MAX_RETRIES):
-        print(f"Fetching triggered workflow (try {j + 1}/{MAX_RETRIES})")
-        recent_runs = gh.workflow_run_for_ref_after_date(workflow_name, github_action_ref, now)
-        for recent_run in recent_runs:
-            jobs = recent_run.jobs()
-            if jobs.totalCount >= 2:
-                if recent_run.id in might_be_waiting:
-                    might_be_waiting.remove(recent_run.id)
-                for job in jobs:
-                    if any(step.name == workflow_id for step in job.steps):
-                        return recent_run
-            else:
-                might_be_waiting.add(recent_run.id)
-                print(f"{might_be_waiting} workflows are waiting for jobs to popup...")
-                sleep(5)
-        sleep(10)
-    if len(might_be_waiting) != 0:
-        print(f"Couldn't find a workflow with expected jobs, and {might_be_waiting} are workflows with no jobs")
-        sleep(1800)
-
-    # Something went wrong :(
-    print("Couldn't fetch workflow run that was triggered.")
-    raise Exit(code=1)
+    send_slack_message("#agent-delivery-ops", message)
 
 
 def trigger_macos_workflow(
@@ -295,7 +272,7 @@ def parse_log_file(log_file):
                 return lines[line_number:]
 
 
-def download_artifacts(run, destination="."):
+def download_artifacts(run, destination=".", repository:"DataDog/datadog-agent-macos-build"):
     """
     Download all artifacts for a given job in the specified location.
     """
@@ -309,7 +286,7 @@ def download_artifacts(run, destination="."):
 
     # Create temp directory to store the artifact zips
     with tempfile.TemporaryDirectory() as tmpdir:
-        workflow = GithubAPI('DataDog/datadog-agent-macos-build')
+        workflow = GithubAPI(repository)
         for artifact in run_artifacts:
             # Download artifact
             print("Downloading artifact: ", artifact)
@@ -335,14 +312,14 @@ def download_logs(run, destination="."):
             zip_ref.extractall(destination)
 
 
-def download_with_retry(download_function, run, destination=".", retry_count=3, retry_interval=10):
+def download_with_retry(download_function, run, destination=".", retry_count=3, retry_interval=10, repository="DataDog/datadog-agent-macos-build"):
     import requests
 
     retry = retry_count
 
     while retry > 0:
         try:
-            download_function(run, destination)
+            download_function(run, destination, repository)
             print(color_message(f"Download successful for run {run.id} to {destination}", "blue"))
             return
         except (requests.exceptions.RequestException, ConnectionError):

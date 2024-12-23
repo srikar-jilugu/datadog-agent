@@ -149,6 +149,8 @@ def _trigger_buildenv_workflow(new_version=None, datadog_agent_ref="master"):
 
     print_workflow_conclusion(workflow_conclusion, workflow_url)
 
+    if destination:
+        download_with_retry(download_artifacts, run, destination, retry_download, retry_interval, "DataDog/buildenv")
     return workflow_conclusion
 
 
