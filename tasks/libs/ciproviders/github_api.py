@@ -271,7 +271,7 @@ class GithubAPI:
             return list(tags)
         return [t for t in tags if t.name.startswith(pattern)]
 
-    def trigger_workflow(self, workflow_name, ref, inputs=None, workflow_ref_list=None):
+    def trigger_workflow(self, workflow_name, ref, inputs=None):
         """
         Create a pipeline targeting a given reference of a project.
         ref must be a branch or a tag.
@@ -281,8 +281,6 @@ class GithubAPI:
             return False
         if inputs is None:
             inputs = {}
-        if workflow_ref_list is not None:
-            workflow_ref_list.append(workflow)
 
         return workflow.create_dispatch(ref, inputs)
 

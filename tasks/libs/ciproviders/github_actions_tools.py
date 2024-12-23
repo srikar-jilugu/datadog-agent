@@ -31,20 +31,28 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
         )
     )
 
-    workflow_list = []
+    # Hack: get current time to only fetch workflows that started after now
+    now = datetime.utcnow()
+
     gh = GithubAPI('DataDog/buildenv')
-    result = gh.trigger_workflow(workflow_name, github_action_ref, inputs, workflow_list)
+    result = gh.trigger_workflow(workflow_name, github_action_ref, inputs)
 
     if not result:
         print(f"Couldn't trigger workfglow run. result={result}")
         raise Exit(code=1)
 
-    if not workflow_list:
-        print(f"Couldn't get the run workflow")
+    recent_runs = gh.workflow_run_for_ref_after_date(workflow_name, github_action_ref, now)
+    MAX_RETRY = 10
+    while not recent_runs and MAX_RETRY > 0:
+        MAX_RETRY -= 1
+        sleep(3)
+        recent_runs = gh.workflow_run_for_ref_after_date(workflow_name, github_action_ref, now)
+
+    if not recent_runs:
+        print("Couldn't get the run workflow")
         raise Exit(code=1)
 
-    print(workflow_list)
-    return workflow_list[0]
+    return recent_runs[0]
 
 
 
