@@ -6,7 +6,6 @@ import os
 import platform
 import re
 import subprocess
-import types
 from collections.abc import Iterable
 from functools import lru_cache
 
@@ -20,9 +19,7 @@ from tasks.libs.common.user_interactions import yes_no_question
 try:
     import semver
     from github import Auth, Github, GithubException, GithubIntegration, GithubObject, PullRequest
-    from github.GithubObject import NotSet
     from github.NamedUser import NamedUser
-    import github
 except ImportError:
     # PyGithub isn't available on some build images, ignore it for now
     # and fail hard if it gets used.
@@ -47,7 +44,6 @@ class GithubAPI:
         org = repository.split("/")
         self._organization = org[0] if len(org) > 1 else None
         self._repository = self._github.get_repo(repository)
-        print(type(self._repository))
 
     @property
     def repo(self):
@@ -285,34 +281,7 @@ class GithubAPI:
             return False
         if inputs is None:
             inputs = {}
-        def _create_dispatch(self, ref, inputs=NotSet):
-            """
-            :calls: `POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches <https://docs.github.com/en/rest/reference/actions#create-a-workflow-dispatch-event>`_
-            :param ref: :class:`github.Branch.Branch` or :class:`github.Tag.Tag` or :class:`github.Commit.Commit` or string
-            :param inputs: dict
-            :rtype: bool
-            """
-            assert (
-                isinstance(ref, github.Branch.Branch)
-                or isinstance(ref, github.Tag.Tag)
-                or isinstance(ref, github.Commit.Commit)
-                or isinstance(ref, str)
-            ), ref
-            assert inputs is github.GithubObject.NotSet or isinstance(inputs, dict), inputs
-            if isinstance(ref, github.Branch.Branch):
-                ref = ref.name
-            elif isinstance(ref, github.Commit.Commit):
-                ref = ref.sha
-            elif isinstance(ref, github.Tag.Tag):
-                ref = ref.name
-            if inputs is github.GithubObject.NotSet:
-                inputs = {}
-            status, arg2, arg3 = self._requester.requestJson(
-                "POST", f"{self.url}/dispatches", input={"ref": ref, "inputs": inputs}
-            )
-            print(status, arg2, arg3)
-            return status == 204
-        workflow.create_dispatch = types.MethodType(_create_dispatch, workflow)
+
         return workflow.create_dispatch(ref, inputs)
 
     def workflow_run(self, run_id):
