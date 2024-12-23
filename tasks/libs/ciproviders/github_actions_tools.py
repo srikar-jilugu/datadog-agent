@@ -40,8 +40,11 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
         raise Exit(code=1)
 
     if not workflow_list:
-        print(workflow_list)
-        return workflow_list[0]
+        print(f"Couldn't get the run workflow")
+        raise Exit(code=1)
+
+    print(workflow_list)
+    return workflow_list[0]
 
 
 
