@@ -277,6 +277,9 @@ class GithubAPI:
         Create a pipeline targeting a given reference of a project.
         ref must be a branch or a tag.
         """
+        print(dir(self._repository))
+        import inspect
+        print(inspect.getsource(self._repository.get_workflow))
         workflow = self._repository.get_workflow(workflow_name)
         if workflow is None:
             return False
