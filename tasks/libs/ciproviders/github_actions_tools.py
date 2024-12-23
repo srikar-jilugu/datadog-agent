@@ -172,7 +172,7 @@ def trigger_macos_workflow(
     raise Exit(code=1)
 
 
-def follow_workflow_run(run, repository="DataDog/datadog-agent-macos-build"):
+def follow_workflow_run(run, repository="DataDog/datadog-agent-macos-build", inbetween_query_sleeptime=5):
     """
     Follow the workflow run until completion and return its conclusion.
     """
@@ -184,7 +184,7 @@ def follow_workflow_run(run, repository="DataDog/datadog-agent-macos-build"):
     minutes = 0
     failures = 0
     # Wait time (in minutes) between two queries of the workflow status
-    interval = 5
+    interval = inbetween_query_sleeptime
     MAX_FAILURES = 5
     while True:
         # Do not fail outright for temporary failures

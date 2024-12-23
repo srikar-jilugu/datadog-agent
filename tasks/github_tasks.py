@@ -143,14 +143,14 @@ def _trigger_buildenv_workflow(new_version=None, datadog_agent_ref="master"):
         new_version=new_version,
     )
 
-    workflow_conclusion, workflow_url = follow_workflow_run(run, "DataDog/buildenv")
+    workflow_conclusion, workflow_url = follow_workflow_run(run, "DataDog/buildenv", 0.5)
 
     if workflow_conclusion == "failure":
         print_failed_jobs_logs(run)
 
     print_workflow_conclusion(workflow_conclusion, workflow_url)
 
-    download_with_retry(download_artifacts, run, ".", 0, 0, "DataDog/buildenv")
+    download_with_retry(download_artifacts, run, ".", 3, 5, "DataDog/buildenv")
 
     with open("PR_URL_ARTIFACT") as f:
         PR_URL = f.read().strip()
