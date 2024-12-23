@@ -22,6 +22,7 @@ try:
     from github import Auth, Github, GithubException, GithubIntegration, GithubObject, PullRequest
     from github.GithubObject import NotSet
     from github.NamedUser import NamedUser
+    import github
 except ImportError:
     # PyGithub isn't available on some build images, ignore it for now
     # and fail hard if it gets used.
