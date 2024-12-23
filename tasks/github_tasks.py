@@ -25,6 +25,7 @@ from tasks.libs.common.datadog_api import create_gauge, send_event, send_metrics
 from tasks.libs.common.git import get_default_branch
 from tasks.libs.common.junit_upload_core import repack_macos_junit_tar
 from tasks.libs.common.utils import get_git_pretty_ref
+from tasks.libs.notify.pipeline_status import send_slack_message
 from tasks.libs.owners.linter import codeowner_has_orphans, directory_has_packages_without_owner
 from tasks.libs.owners.parsing import read_owners
 from tasks.libs.pipeline.notifications import GITHUB_SLACK_MAP
@@ -149,8 +150,11 @@ def _trigger_buildenv_workflow(new_version=None, datadog_agent_ref="master"):
 
     print_workflow_conclusion(workflow_conclusion, workflow_url)
 
-    if destination:
-        download_with_retry(download_artifacts, run, destination, retry_download, retry_interval, "DataDog/buildenv")
+    download_with_retry(download_artifacts, run, ".", 0, 0, "DataDog/buildenv")
+
+    message = f":robobits: A new windows-runner bump PR to {new_version} has been generated. Please take a look :frog-review:\n:pr: <link> :ty:"
+
+    send_slack_message("#agent-delivery-ops", message)
     return workflow_conclusion
 
 

@@ -30,8 +30,6 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
             github_action_ref, "\n".join([f"  - {k}: {inputs[k]}" for k in inputs])
         )
     )
-    # Hack: get current time to only fetch workflows that started after now
-    now = datetime.utcnow()
 
     gh = GithubAPI('DataDog/buildenv')
     result = gh.trigger_workflow(workflow_name, github_action_ref, inputs)
@@ -39,11 +37,6 @@ def trigger_buildenv_workflow(workflow_name="runner-bump.yml", github_action_ref
     if not result:
         print(f"Couldn't trigger workfglow run. result={result}")
         raise Exit(code=1)
-
-    message = ":robobits: A new windows-runner bump PR to <version> has been generated. Please take a look :frog-review:\n:pr: <link> :ty:"
-
-    send_slack_message("#agent-delivery-ops", message)
-
 
 def trigger_macos_workflow(
     workflow_name="macos.yaml",
