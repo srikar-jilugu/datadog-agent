@@ -1089,6 +1089,10 @@ workflow:
         - pkg/collector/corechecks/gpu/**/*
       compare_to: main # TODO: use a variable, when this is supported https://gitlab.com/gitlab-org/gitlab/-/issues/369916
 
+
+include:
+  - https://gitlab-templates.ddbuild.io/slack-notifier/v3-sdm/template.yml
+
 .setup_macos_github_app:
   # GitHub App rate-limits are per-app.
   # This balances the requests made to GitHub between the two apps we have set up.
@@ -1100,7 +1104,7 @@ workflow:
 
 generate_windows_gitlab_runner_bump_pr:
   stage: debug
-  image: registry.ddbuild.io/ci/datadog-agent-buildimages/deb_x64$DATADOG_AGENT_BUILDIMAGES_SUFFIX:$DATADOG_AGENT_BUILDIMAGES
+  extends: .slack-notifier-base
   tags: ["arch:amd64"]
   script:
     - !reference [.setup_macos_github_app]
