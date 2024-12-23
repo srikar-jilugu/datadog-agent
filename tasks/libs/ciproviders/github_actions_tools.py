@@ -272,7 +272,7 @@ def parse_log_file(log_file):
                 return lines[line_number:]
 
 
-def download_artifacts(run, destination=".", repository:"DataDog/datadog-agent-macos-build"):
+def download_artifacts(run, destination=".", repository="DataDog/datadog-agent-macos-build"):
     """
     Download all artifacts for a given job in the specified location.
     """
