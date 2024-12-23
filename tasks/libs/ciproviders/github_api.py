@@ -283,7 +283,7 @@ class GithubAPI:
         if inputs is None:
             inputs = {}
         import inspect
-        inspect.getsource(workflow.create_dispatch)
+        print(inspect.getsource(workflow.create_dispatch))
         return workflow.create_dispatch(ref, inputs)
 
     def workflow_run(self, run_id):
