@@ -21,19 +21,16 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/DataDog/datadog-agent/pkg/ebpf/ebpftest"
 	"github.com/DataDog/datadog-agent/pkg/ebpf/prebuilt"
-	eventmonitortestutil "github.com/DataDog/datadog-agent/pkg/eventmonitor/testutil"
-	"github.com/DataDog/datadog-agent/pkg/network/config"
+	"github.com/DataDog/datadog-agent/pkg/eventmonitor/consumers/testutil"
 	usmconfig "github.com/DataDog/datadog-agent/pkg/network/usm/config"
 	fileopener "github.com/DataDog/datadog-agent/pkg/network/usm/sharedlibraries/testutil"
 	"github.com/DataDog/datadog-agent/pkg/network/usm/utils"
 	"github.com/DataDog/datadog-agent/pkg/process/monitor"
-	procmontestutil "github.com/DataDog/datadog-agent/pkg/process/monitor/testutil"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -43,7 +40,7 @@ func launchProcessMonitor(t *testing.T, useEventStream bool) {
 	t.Cleanup(pm.Stop)
 	require.NoError(t, pm.Initialize(useEventStream))
 	if useEventStream {
-		eventmonitortestutil.StartEventMonitor(t, procmontestutil.RegisterProcessMonitorEventConsumer)
+		monitor.InitializeEventConsumer(testutil.NewTestProcessConsumer(t))
 	}
 }
 
@@ -52,7 +49,7 @@ type SharedLibrarySuite struct {
 }
 
 func TestSharedLibrary(t *testing.T) {
-	if !usmconfig.TLSSupported(config.New()) {
+	if !usmconfig.TLSSupported(utils.NewUSMEmptyConfig()) {
 		t.Skip("shared library tracing not supported for this platform")
 	}
 
@@ -81,7 +78,7 @@ func (s *SharedLibrarySuite) TestSharedLibraryDetection() {
 	registerRecorder := new(utils.CallbackRecorder)
 	unregisterRecorder := new(utils.CallbackRecorder)
 
-	watcher, err := NewWatcher(config.New(), LibsetCrypto,
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
 		Rule{
 			Re:           regexp.MustCompile(`foo-libssl.so`),
 			RegisterCB:   registerRecorder.Callback(),
@@ -104,6 +101,147 @@ func (s *SharedLibrarySuite) TestSharedLibraryDetection() {
 
 	require.Eventually(t, func() bool {
 		return unregisterRecorder.CallsForPathID(fooPathID1) == 1
+	}, time.Second*10, 100*time.Millisecond)
+}
+
+func (s *SharedLibrarySuite) TestLongPath() {
+	t := s.T()
+
+	const (
+		fileName             = "foo-libssl.so"
+		nullTerminatorLength = len("\x00")
+	)
+	padLength := LibPathMaxSize - len(fileName) - len(t.TempDir()) - len("_") - len(string(filepath.Separator)) - nullTerminatorLength
+	fooPath1, fooPathID1 := createTempTestFile(t, strings.Repeat("a", padLength)+"_"+fileName)
+	// fooPath2 is longer than the limit we have, thus it will be ignored.
+	fooPath2, fooPathID2 := createTempTestFile(t, strings.Repeat("a", padLength+1)+"_"+fileName)
+
+	registerRecorder := new(utils.CallbackRecorder)
+	unregisterRecorder := new(utils.CallbackRecorder)
+
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
+		Rule{
+			Re:           regexp.MustCompile(`foo-libssl.so`),
+			RegisterCB:   registerRecorder.Callback(),
+			UnregisterCB: unregisterRecorder.Callback(),
+		},
+	)
+	require.NoError(t, err)
+	watcher.Start()
+	t.Cleanup(watcher.Stop)
+
+	// create files
+	command1, err := fileopener.OpenFromAnotherProcess(t, fooPath1)
+	require.NoError(t, err)
+
+	command2, err := fileopener.OpenFromAnotherProcess(t, fooPath2)
+	require.NoError(t, err)
+
+	require.Eventuallyf(t, func() bool {
+		return registerRecorder.CallsForPathID(fooPathID1) == 1 &&
+			registerRecorder.CallsForPathID(fooPathID2) == 0
+	}, time.Second*10, 100*time.Millisecond, "")
+
+	require.NoError(t, command1.Process.Kill())
+	require.NoError(t, command2.Process.Kill())
+
+	require.Eventually(t, func() bool {
+		return unregisterRecorder.CallsForPathID(fooPathID1) == 1 &&
+			unregisterRecorder.CallsForPathID(fooPathID2) == 0
+	}, time.Second*10, 100*time.Millisecond)
+}
+
+// Tests that the periodic scan is able to detect processes which are missed by
+// the eBPF-based watcher.
+func (s *SharedLibrarySuite) TestSharedLibraryDetectionPeriodic() {
+	t := s.T()
+
+	// Construct a large path to exceed the limits of the eBPF-based watcher
+	// (LIB_PATH_MAX_SIZE).  255 is the max filename size of ext4.  The path
+	// size will also include the directories leading up to this filename so the
+	// total size will be more.
+	var b strings.Builder
+	final := "foo-libssl.so"
+	for i := 0; i < 255-len(final); i++ {
+		b.WriteByte('x')
+	}
+	b.WriteString(final)
+	filename := b.String()
+
+	// Reduce interval to speed up test
+	orig := scanTerminatedProcessesInterval
+	t.Cleanup(func() { scanTerminatedProcessesInterval = orig })
+	scanTerminatedProcessesInterval = 10 * time.Millisecond
+
+	fooPath1, fooPathID1 := createTempTestFile(t, filename)
+	errPath, errorPathID := createTempTestFile(t, strings.Replace(filename, "xfoo", "yfoo", 1))
+
+	registerRecorder := new(utils.CallbackRecorder)
+	unregisterRecorder := new(utils.CallbackRecorder)
+
+	registerCallback := registerRecorder.Callback()
+
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
+		Rule{
+			Re: regexp.MustCompile(`foo-libssl.so`),
+			RegisterCB: func(fp utils.FilePath) error {
+				registerCallback(fp)
+				if fp.ID == errorPathID {
+					return utils.ErrEnvironment
+				}
+				return nil
+			},
+			UnregisterCB: unregisterRecorder.Callback(),
+		},
+	)
+	require.NoError(t, err)
+	watcher.Start()
+	t.Cleanup(watcher.Stop)
+
+	// create files
+	command1, err := fileopener.OpenFromAnotherProcess(t, fooPath1)
+	pid := command1.Process.Pid
+	require.NoError(t, err)
+
+	command2, err := fileopener.OpenFromAnotherProcess(t, errPath)
+	pid2 := command2.Process.Pid
+	require.NoError(t, err)
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		assert.Equal(c, registerRecorder.CallsForPathID(fooPathID1), 1)
+
+		// Check that we tried to attach to the process twice.  See w.sync() for
+		// why we do it.  We don't actually need to attempt the registration
+		// twice, we just need to ensure that the maps were scanned twice but we
+		// don't have a hook for that so this check should be good enough.
+		assert.Equal(c, registerRecorder.CallsForPathID(errorPathID), 2)
+	}, time.Second*10, 100*time.Millisecond, "")
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		watcher.syncMutex.Lock()
+		defer watcher.syncMutex.Unlock()
+
+		assert.Contains(c, watcher.scannedPIDs, uint32(pid))
+		assert.Contains(c, watcher.scannedPIDs, uint32(pid2))
+	}, time.Second*10, 100*time.Millisecond)
+
+	require.NoError(t, command1.Process.Kill())
+	require.NoError(t, command2.Process.Kill())
+
+	command1.Process.Wait()
+	command2.Process.Wait()
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		assert.Equal(c, unregisterRecorder.CallsForPathID(fooPathID1), 1)
+	}, time.Second*10, 100*time.Millisecond)
+
+	// Check that clean up of dead processes works.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		watcher.syncMutex.Lock()
+		defer watcher.syncMutex.Unlock()
+
+		assert.NotContains(c, watcher.scannedPIDs, uint32(pid))
+		assert.NotContains(c, watcher.scannedPIDs, uint32(pid2))
 	}, time.Second*10, 100*time.Millisecond)
 }
 
@@ -138,7 +276,7 @@ func (s *SharedLibrarySuite) TestSharedLibraryDetectionWithPIDAndRootNamespace()
 		return nil
 	}
 
-	watcher, err := NewWatcher(config.New(), LibsetCrypto,
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
 		Rule{
 			Re:           regexp.MustCompile(`fooroot-crypto.so`),
 			RegisterCB:   callback,
@@ -186,7 +324,7 @@ func (s *SharedLibrarySuite) TestSameInodeRegression() {
 	registerRecorder := new(utils.CallbackRecorder)
 	unregisterRecorder := new(utils.CallbackRecorder)
 
-	watcher, err := NewWatcher(config.New(), LibsetCrypto,
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
 		Rule{
 			Re:           regexp.MustCompile(`foo-libssl.so`),
 			RegisterCB:   registerRecorder.Callback(),
@@ -227,7 +365,7 @@ func (s *SharedLibrarySuite) TestSoWatcherLeaks() {
 	registerCB := registerRecorder.Callback()
 	unregisterCB := unregisterRecorder.Callback()
 
-	watcher, err := NewWatcher(config.New(), LibsetCrypto,
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
 		Rule{
 			Re:           regexp.MustCompile(`foo-libssl.so`),
 			RegisterCB:   registerCB,
@@ -293,7 +431,7 @@ func (s *SharedLibrarySuite) TestSoWatcherProcessAlreadyHoldingReferences() {
 	registerCB := registerRecorder.Callback()
 	unregisterCB := unregisterRecorder.Callback()
 
-	watcher, err := NewWatcher(config.New(), LibsetCrypto,
+	watcher, err := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
 		Rule{
 			Re:           regexp.MustCompile(`foo-libssl.so`),
 			RegisterCB:   registerCB,
@@ -363,7 +501,7 @@ func createTempTestFile(t *testing.T, name string) (string, utils.PathIdentifier
 }
 
 func BenchmarkScanSOWatcherNew(b *testing.B) {
-	w, _ := NewWatcher(config.New(), LibsetCrypto,
+	w, _ := NewWatcher(utils.NewUSMEmptyConfig(), LibsetCrypto,
 		Rule{
 			Re: regexp.MustCompile(`libssl.so`),
 		},
