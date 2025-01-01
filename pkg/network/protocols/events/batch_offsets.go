@@ -55,7 +55,7 @@ func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool) (begin, end int
 		state.nextBatchID = batchID + 1
 	}
 
-	// determining the begin offset
+	// determining the begin offset.
 	// usually this is 0, but if we've done a partial read of this batch
 	// we need to take that into account
 	if int(batch.Idx) == state.partialBatchID {
