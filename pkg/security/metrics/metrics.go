@@ -265,6 +265,9 @@ var (
 	// MetricSBOMResolverSBOMCacheMiss is the name of the metric used to report the number of SBOMs that weren't in cache
 	// Tags: -
 	MetricSBOMResolverSBOMCacheMiss = newRuntimeMetric(".sbom_resolver.sbom_cache.miss")
+	// MetricSBOMResolverScannerChannelSize is the name of the metric used to report the size of the SBOM scanning queue
+	// Tags: -
+	MetricSBOMResolverScannerChannelSize = newRuntimeMetric(".sbom_resolver.sbom_cache.scanner_channel_size")
 
 	// Security Profile metrics
 

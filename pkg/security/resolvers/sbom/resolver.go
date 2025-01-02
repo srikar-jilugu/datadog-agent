@@ -611,5 +611,11 @@ func (r *Resolver) SendStats() error {
 		}
 	}
 
+	if val := float64(len(r.scannerChan)); val > 0 {
+		if err := r.statsdClient.Gauge(metrics.MetricSBOMResolverScannerChannelSize, val, []string{}, 1.0); err != nil {
+			return fmt.Errorf("couldn't send MetricSBOMResolverScannerChannelSize: %w", err)
+		}
+	}
+
 	return nil
 }
