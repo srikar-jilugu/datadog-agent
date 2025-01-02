@@ -33,8 +33,8 @@ var defaultPerfEventBufferSize = 16 * os.Getpagesize()
 // defaultPerfHandlerSize controls the size of the go channel that buffers perf
 // events (*ddebpf.PerfHandler). All perf events handled by this library have
 // fixed size (sizeof(batch_data_t)) which is ~4KB, so by choosing a value of
-// 100 we'll be buffering up to ~400KB of data in *Go* heap memory.
-const defaultPerfHandlerSize = 100
+// 1000 we'll be buffering up to ~4MB of data in *Go* heap memory.
+const defaultPerfHandlerSize = 1000
 
 // Configure a given `*manager.Manager` for event processing
 // This essentially instantiates the perf map/ring buffers and configure the
