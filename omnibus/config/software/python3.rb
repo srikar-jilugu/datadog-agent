@@ -123,9 +123,6 @@ build do
     openssl_arch = "x64"
     copy "#{install_dir}/embedded3/bin/libcrypto-3-#{openssl_arch}.dll", "#{windows_safe_path(python_3_embedded)}/DLLs"
     copy "#{install_dir}/embedded3/bin/libssl-3-#{openssl_arch}.dll", "#{windows_safe_path(python_3_embedded)}/DLLs"
-    # We can also remove the DLLs that were put there by the python build since they won't be loaded anyway
-    delete "#{windows_safe_path(python_3_embedded)}/libcrypto-3.dll"
-    delete "#{windows_safe_path(python_3_embedded)}/libssl-3.dll"
 
     copy "Include", "#{windows_safe_path(python_3_embedded)}\\include"
     copy "PC/pyconfig.h", "#{windows_safe_path(python_3_embedded)}\\include\\"
