@@ -408,6 +408,58 @@ namespace Datadog.CustomActions
             }
         }
 
+        private void AddDatadogUserToDataFolder()
+        {
+            var dataDirectory = _session.Property("APPLICATIONDATADIRECTORY");
+
+            FileSystemSecurity fileSystemSecurity;
+            try
+            {
+                fileSystemSecurity = _fileSystemServices.GetAccessControl(dataDirectory, AccessControlSections.All);
+            }
+            catch (Exception e)
+            {
+                _session.Log($"Failed to get ACLs on {dataDirectory}: {e}");
+                throw;
+            }
+            // ddagentuser Read and execute permissions, enable child inheritance of this ACE
+            fileSystemSecurity.AddAccessRule(new FileSystemAccessRule(
+                _ddAgentUserSID,
+                FileSystemRights.ReadAndExecute | FileSystemRights.Synchronize,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+
+            // datadog write on this folder
+            // This allows creating new files/folders, but not deleting or modifying permissions.
+            fileSystemSecurity.AddAccessRule(new FileSystemAccessRule(
+                _ddAgentUserSID,
+                FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.WriteAttributes | FileSystemRights.WriteExtendedAttributes | FileSystemRights.Synchronize,
+                InheritanceFlags.None,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+
+            // add full control to CREATOR OWNER
+            // Grants FullControl to any files/directories created by the Agent user
+            // Marked InherityOnly so it applies only to children and not this directory
+            fileSystemSecurity.AddAccessRule(new FileSystemAccessRule(
+                new SecurityIdentifier(WellKnownSidType.CreatorOwnerSid, null),
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.InheritOnly,
+                AccessControlType.Allow));
+            try
+            {
+                UpdateAndLogAccessControl(dataDirectory, fileSystemSecurity);
+            }
+            catch (Exception e)
+            {
+                _session.Log($"Failed to set ACLs on {dataDirectory}: {e}");
+                throw;
+            }
+
+        }
+
         private void ConfigureFilePermissions()
         {
             try
@@ -433,6 +485,7 @@ namespace Datadog.CustomActions
 
                 if (_ddAgentUserSID != new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null))
                 {
+                    AddDatadogUserToDataFolder();
                     GrantAgentAccessPermissions();
                 }
             }
@@ -627,6 +680,8 @@ namespace Datadog.CustomActions
                             _session.Log($"Failed to remove {ddAgentUserName} from {filePath}: {e}");
                         }
                     }
+                    //remove datadog access to root folder and restore to base permissions
+                    SetBaseInheritablePermissions();
                 }
 
                 // We intentionally do NOT delete the ddagentuser account.
