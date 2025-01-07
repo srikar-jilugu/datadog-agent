@@ -7,7 +7,11 @@
 package main
 
 import (
+	"log"
 	"os"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/DataDog/datadog-agent/cmd/internal/runcmd"
 	"github.com/DataDog/datadog-agent/cmd/trace-agent/command"
@@ -15,6 +19,10 @@ import (
 )
 
 func main() {
+	go func() {
+		log.Println("Starting pprof server on port 6060")
+		log.Fatal(http.ListenAndServe(":6161", nil))
+	}()
 	flavor.SetFlavor(flavor.TraceAgent)
 
 	os.Args = command.FixDeprecatedFlags(os.Args, os.Stdout)
