@@ -7,11 +7,7 @@
 
 package tracer
 
-import (
-	"github.com/cilium/ebpf"
-
-	"github.com/DataDog/datadog-agent/pkg/network/usm"
-)
+import "github.com/DataDog/datadog-agent/pkg/network/usm"
 
 // RemoveClient stops tracking stateful data for a given client
 func (t *Tracer) RemoveClient(clientID string) {
@@ -21,9 +17,4 @@ func (t *Tracer) RemoveClient(clientID string) {
 // USMMonitor returns the USM monitor field
 func (t *Tracer) USMMonitor() *usm.Monitor {
 	return t.usmMonitor
-}
-
-// GetMap returns the map with the given name
-func (t *Tracer) GetMap(name string) (*ebpf.Map, error) {
-	return t.ebpfTracer.GetMap(name)
 }
