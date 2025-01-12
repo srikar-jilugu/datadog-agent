@@ -532,6 +532,37 @@ func (s *usmHTTP2Suite) TestRawTraffic() {
 		expectedEndpoints map[usmhttp.Key]int
 	}{
 		{
+			name: "guy",
+			messageBuilder: func() [][]byte {
+				payload := []byte("test")
+				req1 := newFramer().writeHeaders(t, 1, usmhttp2.HeadersFrameOptions{Headers: testHeaders()}).
+					writeData(t, 1, endStream, payload).bytes()
+
+				headersFrame2 := newFramer().writeHeaders(t, 3, usmhttp2.HeadersFrameOptions{Headers: headersWithGivenEndpoint("/bbb")}).bytes()
+				dataFrame2 := newFramer().writeData(t, 3, endStream, payload).bytes()
+				req3 := newFramer().writeHeaders(t, 5, usmhttp2.HeadersFrameOptions{Headers: testHeaders()}).
+					writeData(t, 5, endStream, payload).bytes()
+				first := append(req1, headersFrame2[:2]...)
+				third := append(headersFrame2[4:], dataFrame2...)
+				return [][]byte{
+					first,
+					headersFrame2[2:4],
+					third,
+					req3,
+				}
+			},
+			expectedEndpoints: map[usmhttp.Key]int{
+				{
+					Path:   usmhttp.Path{Content: usmhttp.Interner.GetString(http2DefaultTestPath)},
+					Method: usmhttp.MethodPost,
+				}: 2,
+				{
+					Path:   usmhttp.Path{Content: usmhttp.Interner.GetString("/bbb")},
+					Method: usmhttp.MethodPost,
+				}: 1,
+			},
+		},
+		{
 			name: "parse_frames tail call using 1 program",
 			// The objective of this test is to verify that we accurately perform the parsing of frames within
 			// a single program.
@@ -1320,7 +1351,7 @@ func (s *usmHTTP2Suite) TestRawTraffic() {
 						t.Logf("key: %v was not found in res", key.Path.Content.Get())
 					}
 				}
-				ebpftest.DumpMapsTestHelper(t, usmMonitor.DumpMaps, usmhttp2.InFlightMap, "http2_dynamic_table")
+				ebpftest.DumpMapsTestHelper(t, usmMonitor.DumpMaps, usmhttp2.InFlightMap, "http2_dynamic_table", "http2_incomplete_frames")
 				dumpTelemetry(t, usmMonitor, s.isTLS)
 			}
 		})
