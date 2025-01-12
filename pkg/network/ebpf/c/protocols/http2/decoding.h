@@ -101,17 +101,16 @@ static __always_inline void pktbuf_skip_preface(pktbuf_t pkt) {
 
 // Returns the telemetry pointer from the relevant map.
 static __always_inline void* get_telemetry(pktbuf_t pkt) {
-    const __u32 plaintext_ey = 0;
-    const __u32 tls_key = 1;
+    const __u32 zero = 0;
 
     pktbuf_map_lookup_option_t map_lookup_telemetry_array[] = {
         [PKTBUF_SKB] = {
             .map = &http2_telemetry,
-            .key = (void*)&plaintext_ey,
+            .key = (void*)&zero,
         },
         [PKTBUF_TLS] = {
-            .map = &http2_telemetry,
-            .key = (void*)&tls_key,
+            .map = &tls_http2_telemetry,
+            .key = (void*)&zero,
         },
     };
     return pktbuf_map_lookup(pkt, map_lookup_telemetry_array);

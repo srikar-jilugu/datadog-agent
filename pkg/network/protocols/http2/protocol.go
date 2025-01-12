@@ -59,8 +59,10 @@ const (
 	eosParserTailCall         = "socket__http2_eos_parser"
 	eventStream               = "http2"
 
-	// TelemetryMap is the name of the map that collects telemetry for plaintext and TLS encrypted HTTP/2 traffic.
+	// TelemetryMap is the name of the map used to retrieve plaintext metrics from the kernel
 	TelemetryMap = "http2_telemetry"
+	// TLSTelemetryMap is the name of the map used to retrieve metrics from the eBPF probes for TLS
+	TLSTelemetryMap = "tls_http2_telemetry"
 
 	tlsFirstFrameTailCall    = "uprobe__http2_tls_handle_first_frame"
 	tlsFilterTailCall        = "uprobe__http2_tls_filter"
@@ -314,8 +316,13 @@ func (p *Protocol) updateKernelTelemetry(mgr *manager.Manager) {
 		return
 	}
 
-	plaintextKey := uint32(0)
-	tlsKey := uint32(1)
+	tlsMap, err := protocols.GetMap(mgr, TLSTelemetryMap)
+	if err != nil {
+		log.Warn(err)
+		return
+	}
+
+	var zero uint32
 	http2Telemetry := &HTTP2Telemetry{}
 	ticker := time.NewTicker(30 * time.Second)
 
@@ -325,14 +332,14 @@ func (p *Protocol) updateKernelTelemetry(mgr *manager.Manager) {
 		for {
 			select {
 			case <-ticker.C:
-				if err := mp.Lookup(unsafe.Pointer(&plaintextKey), unsafe.Pointer(http2Telemetry)); err != nil {
+				if err := mp.Lookup(unsafe.Pointer(&zero), unsafe.Pointer(http2Telemetry)); err != nil {
 					log.Errorf("unable to lookup %q map: %s", TelemetryMap, err)
 					return
 				}
 				p.http2Telemetry.update(http2Telemetry, false)
 
-				if err := mp.Lookup(unsafe.Pointer(&tlsKey), unsafe.Pointer(http2Telemetry)); err != nil {
-					log.Errorf("unable to lookup %q map: %s", TelemetryMap, err)
+				if err := tlsMap.Lookup(unsafe.Pointer(&zero), unsafe.Pointer(http2Telemetry)); err != nil {
+					log.Errorf("unable to lookup %q map: %s", TLSTelemetryMap, err)
 					return
 				}
 				p.http2Telemetry.update(http2Telemetry, true)
