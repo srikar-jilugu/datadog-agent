@@ -34,7 +34,7 @@ func assertMessageContent(t *testing.T, m *message.Message, content string) {
 	assert.Equal(t, m.IsMultiLine, isMultiLine)
 }
 
-func assertMultiline(t *testing.T, m *message.Message, content string) {
+func assertTrailingMultiline(t *testing.T, m *message.Message, content string) {
 	assert.Equal(t, content, string(m.GetContent()))
 	assert.Equal(t, m.IsMultiLine, true)
 }
@@ -177,7 +177,7 @@ func TestTagTruncatedLogs(t *testing.T) {
 	assertMessageContent(t, msg, "00")
 }
 
-func TestTagFoo(t *testing.T) {
+func TestSingleGroupIsTruncatedAsMultilineLog(t *testing.T) {
 	outputChan, outputFn := makeHandler()
 	ag := NewAggregator(outputFn, 5, time.Duration(1*time.Second), true, false, status.NewInfoRegistry())
 
@@ -187,12 +187,30 @@ func TestTagFoo(t *testing.T) {
 	msg := <-outputChan
 	assert.True(t, msg.ParsingExtra.IsTruncated)
 	assert.Equal(t, msg.ParsingExtra.Tags, []string{message.TruncatedReasonTag("auto_multiline")})
-	assertMultiline(t, msg, "123...TRUNCATED...")
+	assertTrailingMultiline(t, msg, "123...TRUNCATED...")
 
 	msg = <-outputChan
 	assert.True(t, msg.ParsingExtra.IsTruncated)
 	assert.Equal(t, msg.ParsingExtra.Tags, []string{message.TruncatedReasonTag("auto_multiline")})
-	assertMultiline(t, msg, "...TRUNCATED...456")
+	assertTrailingMultiline(t, msg, "...TRUNCATED...456")
+}
+
+func TestSingleLineTruncatedLogIsTaggedSingleLine(t *testing.T) {
+	outputChan, outputFn := makeHandler()
+	ag := NewAggregator(outputFn, 5, time.Duration(1*time.Second), true, false, status.NewInfoRegistry())
+
+	ag.Aggregate(newMessage("12345"), startGroup) // Exactly the size of the max message size - simulates truncation in the framer
+	ag.Aggregate(newMessage("456"), aggregate)
+
+	msg := <-outputChan
+	assert.True(t, msg.ParsingExtra.IsTruncated)
+	assert.Equal(t, msg.ParsingExtra.Tags, []string{message.TruncatedReasonTag("single_line")})
+	assertMessageContent(t, msg, "12345...TRUNCATED...")
+
+	msg = <-outputChan
+	assert.True(t, msg.ParsingExtra.IsTruncated)
+	assert.Equal(t, msg.ParsingExtra.Tags, []string{message.TruncatedReasonTag("single_line")})
+	assertMessageContent(t, msg, "...TRUNCATED...456")
 }
 
 func TestTagMultiLineLogs(t *testing.T) {
@@ -236,9 +254,9 @@ func TestSingleLineTooLongTruncation(t *testing.T) {
 	ag.Aggregate(newMessage(""), startGroup)
 
 	msg := <-outputChan
-	assertMultiline(t, msg, "123...TRUNCATED...")
+	assertTrailingMultiline(t, msg, "123...TRUNCATED...")
 	msg = <-outputChan
-	assertMultiline(t, msg, "...TRUNCATED...456")
+	assertTrailingMultiline(t, msg, "...TRUNCATED...456")
 	msg = <-outputChan
 	assertMessageContent(t, msg, "123456...TRUNCATED...")
 	msg = <-outputChan
