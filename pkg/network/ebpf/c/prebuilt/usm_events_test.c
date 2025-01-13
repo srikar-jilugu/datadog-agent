@@ -9,7 +9,6 @@
 #include "defs.h"
 #include "map-defs.h"
 #include "protocols/events.h"
-#include "pid_tgid.h"
 
 // --------------------------------------------------------
 // this is a test program for pkg/networks/protocols/events
@@ -38,7 +37,7 @@ struct syscalls_enter_write_args {
 SEC("tracepoint/syscalls/sys_enter_write")
 int tracepoint__syscalls__sys_enter_write(struct syscalls_enter_write_args *ctx) {
     __u32 zero = 0;
-    __u32 pid = GET_USER_MODE_PID(bpf_get_current_pid_tgid());
+    __u32 pid = bpf_get_current_pid_tgid() >> 32;
     test_ctx_t *test_ctx = bpf_map_lookup_elem(&test, &zero);
     if (!test_ctx || test_ctx->expected_fd != ctx->fd || test_ctx->expected_pid != pid)
         return 0;
