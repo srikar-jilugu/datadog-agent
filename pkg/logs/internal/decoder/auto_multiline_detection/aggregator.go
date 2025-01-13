@@ -161,6 +161,10 @@ func (a *Aggregator) Aggregate(msg *message.Message, label Label) {
 	// so we add the message to the bucket or flush if the bucket will overflow the max content size.
 	if msg.RawDataLen+a.bucket.buffer.Len() >= a.maxContentSize {
 		a.bucket.needsTruncation = true
+		if label == aggregate && a.bucket.buffer.Len() < a.maxContentSize {
+			a.bucket.lineCount++
+		}
+
 		brokenMultiLine := a.bucket.lineCount > 1
 		a.Flush()
 
