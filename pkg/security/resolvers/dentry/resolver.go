@@ -71,6 +71,7 @@ type Resolver struct {
 	filenameParts    []string
 	keys             []model.PathKey
 	cacheNameEntries []string
+	interner         *lru.Cache[string, string]
 
 	hitsCounters map[counterEntry]*atomic.Int64
 	missCounters map[counterEntry]*atomic.Int64
@@ -244,7 +245,12 @@ func (dr *Resolver) lookupInodeFromMap(pathKey model.PathKey) (model.PathLeaf, e
 	return pathLeaf, nil
 }
 
-func newPathEntry(parent model.PathKey, name string) PathEntry {
+func (dr *Resolver) makePathEntry(parent model.PathKey, name string) PathEntry {
+	value, exists := dr.interner.Get(name)
+	if exists {
+		name = value
+	}
+
 	return PathEntry{
 		Parent: parent,
 		Name:   name,
@@ -269,8 +275,7 @@ func (dr *Resolver) ResolveNameFromMap(pathKey model.PathKey) (string, error) {
 	name := pathLeaf.GetName()
 
 	if !IsFakeInode(pathKey.Inode) {
-		cacheEntry := newPathEntry(pathLeaf.Parent, name)
-
+		cacheEntry := dr.makePathEntry(pathLeaf.Parent, name)
 		_ = dr.cacheInode(pathKey, cacheEntry)
 	}
 
@@ -803,6 +808,11 @@ func NewResolver(config *config.Config, statsdClient statsd.ClientInterface, e *
 		return nil, fmt.Errorf("couldn't fetch the host CPU count: %w", err)
 	}
 
+	interner, err := lru.New[string, string](512)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Resolver{
 		config:        config,
 		statsdClient:  statsdClient,
@@ -814,5 +824,6 @@ func NewResolver(config *config.Config, statsdClient statsd.ClientInterface, e *
 		missCounters:  missCounters,
 		numCPU:        numCPU,
 		challenge:     rand.Uint32(),
+		interner:      interner,
 	}, nil
 }
