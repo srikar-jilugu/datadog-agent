@@ -8,6 +8,7 @@ package workloadmeta
 import (
 	"context"
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/util/efficiency"
 	"io"
 	"strings"
 	"time"
@@ -1072,6 +1073,7 @@ type ContainerImageMetadata struct {
 	Variant      string
 	Layers       []ContainerImageLayer
 	SBOM         *SBOM
+	Efficiency   *efficiency.EfficiencyReport
 }
 
 // ContainerImageLayer represents a layer of a container image
@@ -1145,7 +1147,15 @@ func (i ContainerImageMetadata) String(verbose bool) string {
 			default:
 			}
 		} else {
-			fmt.Fprintln(&sb, "SBOM is nil")
+			_, _ = fmt.Fprintln(&sb, "SBOM is nil")
+		}
+		if i.Efficiency != nil {
+			_, _ = fmt.Fprintln(&sb, "----------- Efficiency -----------")
+			_, _ = fmt.Fprintln(&sb, "Score: ", i.Efficiency.Score)
+			_, _ = fmt.Fprintln(&sb, "Total Discovered Size: ", i.Efficiency.TotalDiscoveredSize)
+			_, _ = fmt.Fprintln(&sb, "Total Min Size: ", i.Efficiency.TotalMinSize)
+		} else {
+			_, _ = fmt.Fprintln(&sb, "Efficiency is nil")
 		}
 
 		_, _ = fmt.Fprintln(&sb, "----------- Layers -----------")

@@ -181,8 +181,9 @@ func (p *processor) processImage(img *workloadmeta.ContainerImageMetadata) {
 				Version:      img.OSVersion,
 				Architecture: img.Architecture,
 			},
-			Layers:  layers,
-			BuiltAt: lastCreated,
+			Layers:          layers,
+			BuiltAt:         lastCreated,
+			SpaceEfficScore: float32(img.Efficiency.Score),
 		}
 	}
 }

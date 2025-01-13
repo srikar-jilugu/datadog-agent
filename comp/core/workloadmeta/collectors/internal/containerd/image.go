@@ -11,7 +11,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/util/efficiency"
 	"strings"
+	"time"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/api/events"
@@ -371,12 +373,56 @@ func (c *collector) createOrUpdateImageMetadata(ctx context.Context,
 		}
 	}
 
+	efficiencyReport, err := c.generateEfficiencyReport(img, namespace)
+	if err != nil {
+		wlmImage.Efficiency = efficiencyReport
+	}
+
 	// The CycloneDX should contain the RepoTags and RepoDigests but the scanner might
 	// not be able to inject them. For example, if we use the scanner from filesystem or
 	// if the `imgMeta` object does not contain all the metadata when it is sent.
 	// We add them here to make sure they are present.
 	wlmImage.SBOM = util.UpdateSBOMRepoMetadata(wlmImage.SBOM, wlmImage.RepoTags, wlmImage.RepoDigests)
 	return &wlmImage, nil
+}
+
+// generateEfficiencyReport calculates the efficiency of the image and returns the report
+func (c *collector) generateEfficiencyReport(img containerd.Image, namespace string) (*efficiency.EfficiencyReport, error) {
+	// Retrieve the mounts (layers) for the image
+	ctx := context.Background()
+	deadline, _ := ctx.Deadline()
+	expiration := deadline.Sub(time.Now().Add(30 * time.Second))
+	ctx, cancel := context.WithTimeout(ctx, expiration)
+	defer cancel()
+
+	ctx = namespaces.WithNamespace(ctx, namespace)
+
+	log.Infof("Generating efficiency report for image: %s", img.Name())
+
+	mounts, err := c.containerdClient.Mounts(ctx, expiration, namespace, img)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get mounts for image %s: %w", img.Name(), err)
+	}
+
+	// Initialize the new FS Walker for efficiency tracking
+	fsWalker := efficiency.NewEfficiencyFSWalker()
+
+	log.Infof("Found %d mounts (layers) for image %s", len(mounts), img.Name())
+
+	// Walk through the layers and track file sizes
+	for _, layer := range mounts {
+		log.Debugf("Walking layer: %s", layer.Target)
+		// Use the walker to process the mounted layer
+		err := fsWalker.Walk(layer.Target)
+		if err != nil {
+			return nil, fmt.Errorf("unable to walk mounted layer %s: %v", layer.Target, err)
+		}
+	}
+
+	log.Infof("Efficiency report generated for image: %s", img.Name())
+
+	report := efficiency.GenerateEfficiencyReport(fsWalker.EfficiencyMap)
+	return report, nil
 }
 
 func (c *collector) notifyEventForImage(ctx context.Context, namespace string, img containerd.Image, sbom *workloadmeta.SBOM) error {
