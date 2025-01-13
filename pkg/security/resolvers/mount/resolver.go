@@ -35,7 +35,7 @@ import (
 const (
 	numAllowedMountIDsToResolvePerPeriod = 5
 	fallbackLimiterPeriod                = time.Second
-	redemptionTime                       = 2 * time.Second
+	redemptionTime                       = 5 * time.Second
 )
 
 type redemptionEntry struct {
@@ -302,7 +302,7 @@ func (mr *Resolver) insert(m *model.Mount, pid uint32) {
 
 func (mr *Resolver) getFromRedemption(mountID uint32) *model.Mount {
 	entry, exists := mr.redemption.Get(mountID)
-	if !exists || time.Since(entry.insertedAt) > redemptionTime {
+	if !exists {
 		return nil
 	}
 	return entry.mount
@@ -634,7 +634,7 @@ func NewResolver(statsdClient statsd.ClientInterface, cgroupsResolver *cgroup.Re
 		procMissStats:   atomic.NewInt64(0),
 	}
 
-	redemption, err := simplelru.NewLRU(1024, func(_ uint32, entry *redemptionEntry) {
+	redemption, err := simplelru.NewLRU(3072, func(_ uint32, entry *redemptionEntry) {
 		mr.finalize(entry.mount)
 	})
 	if err != nil {
