@@ -343,7 +343,7 @@ func assertReturnValue(tb testing.TB, retval, expected int64) bool {
 
 //nolint:deadcode,unused
 func validateProcessContextLineage(tb testing.TB, event *model.Event) {
-	eventJSON, err := serializers.MarshalEvent(event, nil)
+	eventJSON, err := serializers.MarshalEvent(event)
 	if err != nil {
 		tb.Errorf("failed to marshal event: %v", err)
 		return
@@ -462,7 +462,7 @@ func validateProcessContextSECL(tb testing.TB, event *model.Event) {
 	valid := nameFieldValid && pathFieldValid
 
 	if !valid {
-		eventJSON, err := serializers.MarshalEvent(event, nil)
+		eventJSON, err := serializers.MarshalEvent(event)
 		if err != nil {
 			tb.Errorf("failed to marshal event: %v", err)
 			return
@@ -517,7 +517,7 @@ func validateSyscallContext(tb testing.TB, event *model.Event, jsonPath string) 
 		return
 	}
 
-	eventJSON, err := serializers.MarshalEvent(event, nil)
+	eventJSON, err := serializers.MarshalEvent(event)
 	if err != nil {
 		tb.Errorf("failed to marshal event: %v", err)
 		return
