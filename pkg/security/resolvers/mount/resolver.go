@@ -35,7 +35,7 @@ import (
 const (
 	numAllowedMountIDsToResolvePerPeriod = 5
 	fallbackLimiterPeriod                = time.Second
-	redemptionTime                       = 5 * time.Second
+	redemptionTime                       = 2 * time.Second
 )
 
 type redemptionEntry struct {
@@ -302,7 +302,7 @@ func (mr *Resolver) insert(m *model.Mount, pid uint32) {
 
 func (mr *Resolver) getFromRedemption(mountID uint32) *model.Mount {
 	entry, exists := mr.redemption.Get(mountID)
-	if !exists {
+	if !exists || time.Since(entry.insertedAt) > redemptionTime {
 		return nil
 	}
 	return entry.mount
