@@ -238,7 +238,7 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
 
 	testFile := "/tmp/test/test-obc-2"
-
+	test.msgSender.flush()
 	if err := test.GetEventDiscarder(t, func() error {
 		cmd := dockerInstance.Command("touch", []string{testFile}, []string{})
 		if _, err = cmd.CombinedOutput(); err != nil {
