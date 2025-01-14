@@ -320,7 +320,7 @@ func (mr *Resolver) lookupByMountID(mountID uint32) *model.Mount {
 
 	mount := mr.mounts[mountID]
 	if mount != nil {
-		fmt.Println("------------------ IN lookupByMountID, NOT FOUND IN MAP")
+		fmt.Println("------------------ IN lookupByMountID, NOT FOUND IN MAP", mr.redemption.Len())
 
 		return mount
 	}
@@ -667,7 +667,7 @@ func NewResolver(statsdClient statsd.ClientInterface, cgroupsResolver *cgroup.Re
 	mr.redemption = redemption
 
 	// create a rate limiter that allows for 64 mount IDs
-	limiter, err := utils.NewLimiter[uint64](64, numAllowedMountIDsToResolvePerPeriod, fallbackLimiterPeriod)
+	limiter, err := utils.NewLimiter[uint64](1000, numAllowedMountIDsToResolvePerPeriod, fallbackLimiterPeriod)
 	if err != nil {
 		return nil, err
 	}
