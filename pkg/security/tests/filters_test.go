@@ -22,6 +22,7 @@ import (
 	"github.com/cilium/ebpf"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/DataDog/datadog-agent/pkg/security/events"
 	"github.com/DataDog/datadog-agent/pkg/security/metrics"
 	"github.com/DataDog/datadog-agent/pkg/security/probe"
 	"github.com/DataDog/datadog-agent/pkg/security/secl/compiler/eval"
@@ -230,6 +231,8 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
+
 	testFile := "/tmp/test/test-obc-2"
 
 	if err := test.GetEventDiscarder(t, func() error {
@@ -249,6 +252,8 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
+
 	// Check that we get a probe event "saved by activity dumps"
 	if err := test.GetProbeEvent(func() error {
 		cmd := dockerInstance.Command("cat", []string{testFile}, []string{})
@@ -263,6 +268,9 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 	}, 3*time.Second); err != nil {
 		t.Fatal(err)
 	}
+
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
+
 }
 
 func testFilterOpenParentDiscarder(t *testing.T, parents ...string) {
@@ -351,6 +359,7 @@ func runAUIDTest(t *testing.T, test *testModule, goSyscallTester string, eventTy
 
 	// reset stats
 	test.statsdClient.Flush()
+	test.msgSender.flush()
 
 	if err := waitForProbeEvent(test, func() error {
 		args := []string{
@@ -400,6 +409,9 @@ func runAUIDTest(t *testing.T, test *testModule, goSyscallTester string, eventTy
 	}); err == nil {
 		t.Fatal("shouldn't get an event")
 	}
+
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
+
 }
 
 func TestFilterOpenAUIDEqualApprover(t *testing.T) {
