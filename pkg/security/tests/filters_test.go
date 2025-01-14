@@ -220,6 +220,8 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 	if err := test.StopAllActivityDumps(); err != nil {
 		t.Fatal("Can't stop all running activity dumps")
 	}
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
+
 	// dockerInstance, err := test.StartACustomDocker("ubuntu")
 	dockerInstance, _, err := test.StartADockerGetDump()
 	if err != nil {

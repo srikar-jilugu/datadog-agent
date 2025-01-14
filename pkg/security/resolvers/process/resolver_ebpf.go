@@ -17,6 +17,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -317,6 +318,7 @@ func (p *EBPFResolver) AddExecEntry(event *model.Event) error {
 	if err := p.ResolveNewProcessCacheEntry(event.ProcessCacheEntry, event.ContainerContext); err != nil {
 		var errResolution *spath.ErrPathResolution
 		if errors.As(err, &errResolution) {
+			printStackTrace()
 			event.SetPathResolutionError(&event.ProcessCacheEntry.FileEvent, err)
 		}
 	} else {
@@ -800,11 +802,13 @@ func (p *EBPFResolver) resolveFromCache(pid, tid uint32, inode uint64) *model.Pr
 // ResolveNewProcessCacheEntry resolves the context fields of a new process cache entry parsed from kernel data
 func (p *EBPFResolver) ResolveNewProcessCacheEntry(entry *model.ProcessCacheEntry, ctrCtx *model.ContainerContext) error {
 	if _, err := p.SetProcessPath(&entry.FileEvent, entry, ctrCtx); err != nil {
+		printStackTrace()
 		return &spath.ErrPathResolution{Err: fmt.Errorf("failed to resolve exec path: %w", err)}
 	}
 
 	if entry.HasInterpreter() {
 		if _, err := p.SetProcessPath(&entry.LinuxBinprm.FileEvent, entry, ctrCtx); err != nil {
+			printStackTrace()
 			return &spath.ErrPathResolution{Err: fmt.Errorf("failed to resolve interpreter path: %w", err)}
 		}
 	} else {
@@ -1519,4 +1523,10 @@ func NewEBPFResolver(manager *manager.Manager, config *config.Config, statsdClie
 	p.procFallbackLimiter = limiter
 
 	return p, nil
+}
+
+func printStackTrace() {
+	buf := make([]byte, 1024)
+	n := runtime.Stack(buf, false)
+	fmt.Printf("Stack trace:\n%s", buf[:n])
 }
