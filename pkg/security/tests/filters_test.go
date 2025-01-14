@@ -215,6 +215,7 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer test.Close()
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
 
 	if err := test.StopAllActivityDumps(); err != nil {
 		t.Fatal("Can't stop all running activity dumps")
@@ -225,6 +226,7 @@ func TestFilterOpenLeafDiscarderActivityDump(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer dockerInstance.stop()
+	assert.Nil(t, test.msgSender.getMsg(events.AbnormalPathRuleID), "abnormal error detected")
 
 	cmd := dockerInstance.Command("mkdir", []string{"/tmp/test"}, []string{})
 	if _, err := cmd.CombinedOutput(); err != nil {
@@ -395,7 +397,7 @@ func runAUIDTest(t *testing.T, test *testModule, goSyscallTester string, eventTy
 
 	if err := waitForProbeEvent(test, func() error {
 		args := []string{
-			"-login-uid-test",
+			"-login-uid-texst",
 			"-login-uid-event-type", eventType.String(),
 			"-login-uid-path", "/tmp/test-auid",
 			"-login-uid-value", auidKO,
