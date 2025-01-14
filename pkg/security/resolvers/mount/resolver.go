@@ -306,7 +306,7 @@ func (mr *Resolver) getFromRedemption(mountID uint32) *model.Mount {
 
 	entry, exists := mr.redemption.Get(mountID)
 	if !exists {
-		fmt.Println("------------------ IN getFromRedemption, NOT FOUND IN REDEMPTION MAP")
+		fmt.Println("------------------ IN getFromRedemption, NOT FOUND IN REDEMPTION MAP", mr.redemption.Len())
 		return nil
 	}
 
@@ -658,7 +658,7 @@ func NewResolver(statsdClient statsd.ClientInterface, cgroupsResolver *cgroup.Re
 		procMissStats:   atomic.NewInt64(0),
 	}
 
-	redemption, err := simplelru.NewLRU(3072, func(_ uint32, entry *redemptionEntry) {
+	redemption, err := simplelru.NewLRU(6144, func(_ uint32, entry *redemptionEntry) {
 		mr.finalize(entry.mount)
 	})
 	if err != nil {
