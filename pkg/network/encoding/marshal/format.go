@@ -120,10 +120,9 @@ func FormatConnection(builder *model.ConnectionBuilder, conn network.ConnectionS
 
 	httpStaticTags, httpDynamicTags := httpEncoder.GetHTTPAggregationsAndTags(conn, builder)
 	http2StaticTags, http2DynamicTags := http2Encoder.WriteHTTP2AggregationsAndTags(conn, builder)
-	tlsDynamicTags := conn.TLSTags.GetDynamicTags()
 
 	staticTags := httpStaticTags | http2StaticTags
-	dynamicTags := mergeDynamicTags(httpDynamicTags, http2DynamicTags, tlsDynamicTags)
+	dynamicTags := mergeDynamicTags(httpDynamicTags, http2DynamicTags)
 
 	staticTags |= kafkaEncoder.WriteKafkaAggregations(conn, builder)
 	staticTags |= postgresEncoder.WritePostgresAggregations(conn, builder)
