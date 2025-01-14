@@ -989,6 +989,7 @@ func (tm *testModule) Close() {
 	tm.statsdClient.Flush()
 
 	if tm.msgSender != nil {
+		fmt.Println("---------------------- FLUSHING MESSAGE SENDER")
 		tm.msgSender.flush()
 	}
 
