@@ -10,6 +10,7 @@ package mount
 
 import (
 	"encoding/json"
+	"fmt"
 	"path"
 	"slices"
 	"strings"
@@ -301,16 +302,26 @@ func (mr *Resolver) insert(m *model.Mount, pid uint32) {
 }
 
 func (mr *Resolver) getFromRedemption(mountID uint32) *model.Mount {
+	fmt.Println("------------------ IN getFromRedemption")
+
 	entry, exists := mr.redemption.Get(mountID)
 	if !exists {
+		fmt.Println("------------------ IN getFromRedemption, NOT FOUND IN REDEMPTION MAP")
 		return nil
 	}
+
+	fmt.Println("------------------ IN getFromRedemption FOUND IN REDEMPTION MAP")
+
 	return entry.mount
 }
 
 func (mr *Resolver) lookupByMountID(mountID uint32) *model.Mount {
+	fmt.Println("------------------ IN lookupByMountID")
+
 	mount := mr.mounts[mountID]
 	if mount != nil {
+		fmt.Println("------------------ IN lookupByMountID, NOT FOUND IN MAP")
+
 		return mount
 	}
 
@@ -336,6 +347,8 @@ func (mr *Resolver) lookupByDevice(device uint32, pid uint32) *model.Mount {
 }
 
 func (mr *Resolver) lookupMount(mountID uint32, device uint32, pid uint32) (*model.Mount, model.MountSource, model.MountOrigin) {
+	fmt.Println("------------------ doing lookupByMountID")
+
 	mount := mr.lookupByMountID(mountID)
 	if mount != nil {
 		return mount, model.MountSourceMountID, mount.Origin
@@ -352,6 +365,8 @@ func (mr *Resolver) _getMountPath(mountID uint32, device uint32, pid uint32, cac
 	if _, err := mr.IsMountIDValid(mountID); err != nil {
 		return "", model.MountSourceUnknown, model.MountOriginUnknown, err
 	}
+
+	fmt.Println("------------------ doing lookupMount")
 
 	mount, source, origin := mr.lookupMount(mountID, device, pid)
 	if mount == nil {
@@ -448,12 +463,17 @@ func (mr *Resolver) reSyncCache(mountID uint32, pids []uint32, containerID conta
 }
 
 func (mr *Resolver) resolveMountPath(mountID uint32, device uint32, pid uint32, containerID containerutils.ContainerID) (string, model.MountSource, model.MountOrigin, error) {
+	fmt.Println("------------------ IN resolveMountPath")
+
 	if _, err := mr.IsMountIDValid(mountID); err != nil {
+		fmt.Println("------------------ ERR IsMountIDValid", err)
 		return "", model.MountSourceUnknown, model.MountOriginUnknown, err
 	}
 
 	// force a resolution here to make sure the LRU keeps doing its job and doesn't evict important entries
 	workload, _ := mr.cgroupsResolver.GetWorkload(containerID)
+
+	fmt.Println("------------------ doing getMountPath")
 
 	path, source, origin, err := mr.getMountPath(mountID, device, pid)
 	if err == nil {
@@ -463,12 +483,15 @@ func (mr *Resolver) resolveMountPath(mountID uint32, device uint32, pid uint32, 
 	mr.cacheMissStats.Inc()
 
 	if !mr.opts.UseProcFS {
+		fmt.Println("------------------ mr.opts.UseProcFS")
 		return "", model.MountSourceUnknown, model.MountOriginUnknown, &ErrMountNotFound{MountID: mountID}
 	}
 
 	if err := mr.reSyncCache(mountID, []uint32{pid}, containerID, workload); err != nil {
+		fmt.Println("------------------ error reSyncCache", err)
 		return "", model.MountSourceUnknown, model.MountOriginUnknown, err
 	}
+	fmt.Println("------------------ doing 2nd getMountPath")
 
 	path, source, origin, err = mr.getMountPath(mountID, device, pid)
 	if err == nil {
@@ -476,6 +499,7 @@ func (mr *Resolver) resolveMountPath(mountID uint32, device uint32, pid uint32, 
 		return path, source, origin, nil
 	}
 	mr.procMissStats.Inc()
+	fmt.Println("------------------ FOUND NOTHING")
 
 	return "", model.MountSourceUnknown, model.MountOriginUnknown, err
 }

@@ -11,7 +11,6 @@ package path
 import (
 	"errors"
 	"fmt"
-	"runtime"
 	"strings"
 
 	"github.com/DataDog/datadog-agent/pkg/security/resolvers/dentry"
@@ -42,7 +41,6 @@ func (r *Resolver) ResolveFilePath(e *model.FileFields, _ *model.PIDContext, _ *
 		if _, err := r.mountResolver.IsMountIDValid(e.MountID); errors.Is(err, mount.ErrMountKernelID) {
 			return pathStr, &ErrPathResolutionNotCritical{Err: err}
 		}
-		printStackTrace()
 		return pathStr, &ErrPathResolution{Err: err}
 	}
 
@@ -65,7 +63,6 @@ func (r *Resolver) ResolveFileFieldsPath(e *model.FileFields, pidCtx *model.PIDC
 		if _, err := r.mountResolver.IsMountIDValid(e.MountID); errors.Is(err, mount.ErrMountKernelID) {
 			return pathStr, "", origin, source, &ErrPathResolutionNotCritical{Err: fmt.Errorf("mount ID(%d) invalid: %w", e.MountID, err)}
 		}
-		printStackTrace()
 		return pathStr, "", source, origin, &ErrPathResolution{Err: err}
 	}
 
@@ -74,7 +71,6 @@ func (r *Resolver) ResolveFileFieldsPath(e *model.FileFields, pidCtx *model.PIDC
 		if _, err := r.mountResolver.IsMountIDValid(e.MountID); errors.Is(err, mount.ErrMountKernelID) {
 			return pathStr, "", source, origin, &ErrPathResolutionNotCritical{Err: fmt.Errorf("mount ID(%d) invalid: %w", e.MountID, err)}
 		}
-		printStackTrace()
 		return pathStr, "", source, origin, &ErrPathResolution{Err: err}
 	}
 
@@ -134,10 +130,4 @@ func (r *Resolver) ResolveMountPoint(ev *model.Event, e *model.Mount) (string, e
 		}
 	}
 	return e.MountPointStr, nil
-}
-
-func printStackTrace() {
-	buf := make([]byte, 2048)
-	n := runtime.Stack(buf, false)
-	fmt.Printf("Stack trace:\n%s", buf[:n])
 }
