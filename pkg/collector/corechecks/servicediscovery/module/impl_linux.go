@@ -695,7 +695,7 @@ func (s *discovery) getServices() (*[]model.Service, error) {
 
 	var services []model.Service
 	alivePids := make(map[int32]struct{}, len(pids))
-	containers, _, pidToCid, err := s.containerProvider.GetContainers(1*time.Minute, nil)
+	containers, _, pidToCid, err := s.containerProvider.GetContainers(30*time.Second, nil)
 	if err != nil {
 		log.Errorf("could not get containers: %s", err)
 	}
