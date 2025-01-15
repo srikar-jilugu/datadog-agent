@@ -404,6 +404,7 @@ func (c *Client) pollLoop() {
 
 	logLimit := log.NewLogLimit(5, time.Minute)
 	for {
+		backoffDuration := c.backoffPolicy.GetBackoffDuration(c.backoffErrorCount)
 		interval := c.pollInterval + c.backoffPolicy.GetBackoffDuration(c.backoffErrorCount)
 		if !successfulFirstRun && interval > time.Second {
 			// If we never managed to contact the RC service, we want to retry faster (max every second)
@@ -415,6 +416,7 @@ func (c *Client) pollLoop() {
 		case <-c.ctx.Done():
 			return
 		case <-time.After(interval):
+			log.Infof("[rc client] polling interval: %d, interval: %d, backoffDuration:%d", c.pollInterval.Seconds(), interval.Seconds(), backoffDuration.Seconds())
 			err := c.update()
 			if err != nil {
 				if status.Code(err) == codes.Unimplemented {
