@@ -166,6 +166,11 @@ func (p *processor) processImage(img *workloadmeta.ContainerImageMetadata) {
 			ddTags2 = append(ddTags2, "image_tag:"+t)
 		}
 
+		score := float32(0)
+		if img.Efficiency != nil {
+			score = float32(img.Efficiency.Score)
+		}
+
 		p.queue <- &model.ContainerImage{
 			Id:          id,
 			DdTags:      ddTags2,
@@ -183,7 +188,7 @@ func (p *processor) processImage(img *workloadmeta.ContainerImageMetadata) {
 			},
 			Layers:          layers,
 			BuiltAt:         lastCreated,
-			SpaceEfficScore: float32(img.Efficiency.Score),
+			SpaceEfficScore: score,
 		}
 	}
 }

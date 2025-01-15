@@ -8,9 +8,11 @@
 package efficiency
 
 import (
+	"archive/tar"
 	"errors"
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -51,8 +53,6 @@ func (w *EfficiencyFSWalker) Walk(root string) error {
 		}
 		relPath = filepath.ToSlash(relPath) // Normalize the path
 
-		log.Debugf("Processing file: %s", relPath)
-
 		// Process every file and directory (no skipping)
 		if !d.IsDir() { // Only process files (skip directories)
 			info, err := d.Info()
@@ -66,10 +66,53 @@ func (w *EfficiencyFSWalker) Walk(root string) error {
 				Path: relPath,
 				Size: info.Size(),
 			}
-			log.Debugf("Tracking file: %s with size: %d bytes", file.Path, file.Size)
 			TrackFileEfficiency(file, w.EfficiencyMap, relPath)
 		}
 
 		return nil
 	})
+}
+
+func WalkTarball(tarballPath string) error {
+	// Open the tarball
+	tarball, err := os.Open(tarballPath)
+	if err != nil {
+		return fmt.Errorf("failed to open tarball %s: %w", tarballPath, err)
+	}
+	defer tarball.Close()
+
+	// Create a new tar reader
+	tarReader := tar.NewReader(tarball)
+
+	var currentLayer string
+
+	// Walk through the files in the tarball
+	for {
+		// Get the next file in the tarball
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break // End of tarball
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tarball file: %w", err)
+		}
+
+		layerDir := filepath.Dir(header.Name)
+		if currentLayer != layerDir {
+			// We've moved to a new layer
+			currentLayer = layerDir
+			log.Infof("Entering layer: %s", currentLayer)
+		}
+
+		// Log file details for inspection
+		log.Infof("Processing file: %s in layer: %s", header.Name, currentLayer)
+
+		// Process the file for efficiency calculation
+		// For example, track file size
+		// This part could use your existing `EfficiencyFSWalker`
+		// fsWalker := NewEfficiencyFSWalker()
+		// fsWalker.TrackFileEfficiency(header.Name, header.Size)
+	}
+
+	return nil
 }

@@ -301,5 +301,30 @@ func (img *image) ID() (string, error) {
 }
 
 func (img *image) Layers() ([]v1.Layer, error) {
+	if err := img.populateImage(); err != nil {
+		return nil, fmt.Errorf("unable to populate: %w", err)
+	}
+	return img.Image.Layers()
+}
+
+/*func (img *image) Layers() ([]v1.Layer, error) {
+	log.Infof("Getting diff IDs for image %s", img.name)
+	diffIDs, err := img.diffIDs()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get diff IDs: %w", err)
+	}
+	log.Infof("Got diff IDs, iterating over %d ids and getting layers for image %s", len(diffIDs), img.name)
+	log.Infof("All diff IDs: %v", diffIDs)
+	var layers []v1.Layer
+	for _, diffID := range diffIDs {
+		layer, err := img.LayerByDiffID(diffID)
+		if err != nil {
+			log.Errorf("unable to get layer by diff ID %s: %v", diffID, err)
+			return nil, fmt.Errorf("unable to get layer by diff ID %s: %w", diffID, err)
+		}
+		layers = append(layers, layer)
+	}
+	log.Infof("Got layers for image %s", img.name)
 	return nil, nil
 }
+*/

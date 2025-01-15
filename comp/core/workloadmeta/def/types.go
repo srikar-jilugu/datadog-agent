@@ -8,7 +8,6 @@ package workloadmeta
 import (
 	"context"
 	"fmt"
-	"github.com/DataDog/datadog-agent/pkg/util/efficiency"
 	"io"
 	"strings"
 	"time"
@@ -1073,7 +1072,7 @@ type ContainerImageMetadata struct {
 	Variant      string
 	Layers       []ContainerImageLayer
 	SBOM         *SBOM
-	Efficiency   *efficiency.EfficiencyReport
+	Efficiency   *Efficiency
 }
 
 // ContainerImageLayer represents a layer of a container image
@@ -1092,6 +1091,12 @@ type SBOM struct {
 	GenerationDuration time.Duration
 	Status             SBOMStatus
 	Error              string // needs to be stored as a string otherwise the merge() will favor the nil value
+}
+
+type Efficiency struct {
+	Score               float64
+	TotalDiscoveredSize int64
+	TotalMinSize        int64
 }
 
 // GetID implements Entity#GetID.
@@ -1149,8 +1154,8 @@ func (i ContainerImageMetadata) String(verbose bool) string {
 		} else {
 			_, _ = fmt.Fprintln(&sb, "SBOM is nil")
 		}
+		_, _ = fmt.Fprintln(&sb, "----------- Efficiency -----------")
 		if i.Efficiency != nil {
-			_, _ = fmt.Fprintln(&sb, "----------- Efficiency -----------")
 			_, _ = fmt.Fprintln(&sb, "Score: ", i.Efficiency.Score)
 			_, _ = fmt.Fprintln(&sb, "Total Discovered Size: ", i.Efficiency.TotalDiscoveredSize)
 			_, _ = fmt.Fprintln(&sb, "Total Min Size: ", i.Efficiency.TotalMinSize)
