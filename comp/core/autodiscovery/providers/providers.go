@@ -11,6 +11,7 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/providers/names"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/telemetry"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -22,7 +23,7 @@ func RegisterProvider(name string,
 	providerCatalog map[string]ConfigProviderFactory) {
 	RegisterProviderWithComponents(
 		name,
-		func(providerConfig *pkgconfigsetup.ConfigurationProviders, _ workloadmeta.Component, telemetryStore *telemetry.Store) (ConfigProvider, error) {
+		func(providerConfig *pkgconfigsetup.ConfigurationProviders, _ workloadmeta.Component, _ tagger.Component, telemetryStore *telemetry.Store) (ConfigProvider, error) {
 			return factory(providerConfig, telemetryStore)
 		},
 		providerCatalog,
@@ -61,7 +62,7 @@ func RegisterProviders(providerCatalog map[string]ConfigProviderFactory) {
 }
 
 // ConfigProviderFactory is any function capable to create a ConfigProvider instance
-type ConfigProviderFactory func(providerConfig *pkgconfigsetup.ConfigurationProviders, wmeta workloadmeta.Component, telemetryStore *telemetry.Store) (ConfigProvider, error)
+type ConfigProviderFactory func(providerConfig *pkgconfigsetup.ConfigurationProviders, wmeta workloadmeta.Component, tagger tagger.Component, telemetryStore *telemetry.Store) (ConfigProvider, error)
 
 // ConfigProvider represents a source of `integration.Config` values
 // that can either be applied immediately or resolved for a service and

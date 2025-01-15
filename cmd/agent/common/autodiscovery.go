@@ -20,6 +20,7 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/providers"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/providers/names"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	confad "github.com/DataDog/datadog-agent/pkg/config/autodiscovery"
 	pkgconfigenv "github.com/DataDog/datadog-agent/pkg/config/env"
@@ -41,7 +42,7 @@ var (
 	legacyProviders = []string{"kubelet", "container", "docker"}
 )
 
-func setupAutoDiscovery(confSearchPaths []string, wmeta workloadmeta.Component, ac autodiscovery.Component) {
+func setupAutoDiscovery(confSearchPaths []string, wmeta workloadmeta.Component, tagger tagger.Component, ac autodiscovery.Component) {
 	if pkgconfigsetup.Datadog().GetString("fleet_policies_dir") != "" {
 		confSearchPaths = append(confSearchPaths, filepath.Join(pkgconfigsetup.Datadog().GetString("fleet_policies_dir"), "conf.d"))
 	}
@@ -117,7 +118,7 @@ func setupAutoDiscovery(confSearchPaths []string, wmeta workloadmeta.Component, 
 	for _, cp := range uniqueConfigProviders {
 		factory, found := ac.GetProviderCatalog()[cp.Name]
 		if found {
-			configProvider, err := factory(&cp, wmeta, acTelemetryStore)
+			configProvider, err := factory(&cp, wmeta, tagger, acTelemetryStore)
 			if err != nil {
 				log.Errorf("Error while adding config provider %v: %v", cp.Name, err)
 				continue

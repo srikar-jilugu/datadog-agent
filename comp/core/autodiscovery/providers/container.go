@@ -12,13 +12,17 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/common/utils"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/providers/names"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/telemetry"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
+	ddTelemetry "github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -26,20 +30,26 @@ import (
 // ContainerConfigProvider implements the ConfigProvider interface for both pods and containers
 type ContainerConfigProvider struct {
 	workloadmetaStore workloadmeta.Component
+	tagger            tagger.Component
 	configErrors      map[string]ErrorMsgSet                   // map[entity name]ErrorMsgSet
+	podIDsWithErrors  map[string]struct{}                      // map[pod ID]struct{}
 	configCache       map[string]map[string]integration.Config // map[entity name]map[config digest]integration.Config
 	mu                sync.RWMutex
 	telemetryStore    *telemetry.Store
+	telemetryProvider *ddTelemetry.StatsTelemetryProvider
 }
 
 // NewContainerConfigProvider returns a new ConfigProvider subscribed to both container
 // and pods
-func NewContainerConfigProvider(_ *pkgconfigsetup.ConfigurationProviders, wmeta workloadmeta.Component, telemetryStore *telemetry.Store) (ConfigProvider, error) {
+func NewContainerConfigProvider(_ *pkgconfigsetup.ConfigurationProviders, wmeta workloadmeta.Component, tagger tagger.Component, telemetryStore *telemetry.Store) (ConfigProvider, error) {
 	return &ContainerConfigProvider{
 		workloadmetaStore: wmeta,
+		tagger:            tagger,
 		configCache:       make(map[string]map[string]integration.Config),
 		configErrors:      make(map[string]ErrorMsgSet),
+		podIDsWithErrors:  make(map[string]struct{}),
 		telemetryStore:    telemetryStore,
+		telemetryProvider: ddTelemetry.GetStatsTelemetryProvider(),
 	}, nil
 }
 
@@ -64,11 +74,17 @@ func (k *ContainerConfigProvider) Stream(ctx context.Context) <-chan integration
 		Build()
 	inCh := k.workloadmetaStore.Subscribe(name, workloadmeta.ConfigProviderPriority, filter)
 
+	podErrorsMetricTicker := time.NewTicker(15 * time.Second)
+
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				k.workloadmetaStore.Unsubscribe(inCh)
+				podErrorsMetricTicker.Stop()
+
+			case <-podErrorsMetricTicker.C:
+				k.reportPodErrors()
 
 			case evBundle, ok := <-inCh:
 				if !ok {
@@ -102,8 +118,16 @@ func (k *ContainerConfigProvider) processEvents(evBundle workloadmeta.EventBundl
 
 			if err != nil {
 				k.configErrors[entityName] = err
+
+				if pod, ok := event.Entity.(*workloadmeta.KubernetesPod); ok {
+					k.podIDsWithErrors[pod.ID] = struct{}{}
+				}
 			} else {
 				delete(k.configErrors, entityName)
+
+				if pod, ok := event.Entity.(*workloadmeta.KubernetesPod); ok {
+					delete(k.podIDsWithErrors, pod.ID)
+				}
 			}
 
 			configCache, ok := k.configCache[entityName]
@@ -145,6 +169,10 @@ func (k *ContainerConfigProvider) processEvents(evBundle workloadmeta.EventBundl
 
 			delete(k.configCache, entityName)
 			delete(k.configErrors, entityName)
+
+			if pod, ok := event.Entity.(*workloadmeta.KubernetesPod); ok {
+				delete(k.podIDsWithErrors, pod.ID)
+			}
 
 		default:
 			log.Errorf("cannot handle event of type %d", event.Type)
@@ -303,6 +331,20 @@ func buildEntityName(e workloadmeta.Entity) string {
 		return containers.BuildEntityName(string(entity.Runtime), entityID.ID)
 	default:
 		return fmt.Sprintf("%s://%s", entityID.Kind, entityID.ID)
+	}
+}
+
+func (k *ContainerConfigProvider) reportPodErrors() {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	for pod := range k.podIDsWithErrors {
+		tags, err := k.tagger.Tag(types.NewEntityID(types.KubernetesPodUID, pod), types.HighCardinality)
+		if err != nil {
+			log.Errorf("error getting tags for pod %s: %s", pod, err)
+			continue
+		}
+		k.telemetryProvider.Gauge("datadog.agent.autodiscovery_errors_in_pod", 1, tags)
 	}
 }
 

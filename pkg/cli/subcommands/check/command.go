@@ -294,7 +294,7 @@ func run(
 	pkgcollector.InitPython(common.GetPythonPaths()...)
 	commonchecks.RegisterChecks(wmeta, tagger, config, telemetry)
 
-	common.LoadComponents(secretResolver, wmeta, ac, pkgconfigsetup.Datadog().GetString("confd_path"))
+	common.LoadComponents(secretResolver, wmeta, tagger, ac, pkgconfigsetup.Datadog().GetString("confd_path"))
 	ac.LoadAndRun(context.Background())
 
 	// Create the CheckScheduler, but do not attach it to
