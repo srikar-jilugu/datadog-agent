@@ -33,6 +33,7 @@ type dockerDiscoveryTestSuite struct {
 func TestDiscoveryDocker(t *testing.T) {
 	agentOpts := []dockeragentparams.Option{
 		dockeragentparams.WithAgentServiceEnvVariable("DD_DISCOVERY_ENABLED", pulumi.StringPtr("true")),
+		dockeragentparams.WithAgentServiceEnvVariable("DD_LOG_LEVEL", pulumi.StringPtr("debug")),
 	}
 
 	e2e.Run(t,
@@ -64,17 +65,20 @@ func (s *dockerDiscoveryTestSuite) TestServiceDiscoveryContainerID() {
 	containerID = strings.TrimSuffix(containerID, "\n")
 	t.Logf("service container ID: %v", containerID)
 
-	services := s.Env().Docker.Client.ExecuteCommand(s.Env().Agent.ContainerName, "curl", "-s", "--unix-socket", "/opt/datadog-agent/run/sysprobe.sock", "http://unix/discovery/services")
-	t.Logf("system-probe services: %v", services)
+	workloadMeta := s.Env().Docker.Client.ExecuteCommand(s.Env().Agent.ContainerName, "agent", "workload-list")
+	t.Logf("workload state: %v", workloadMeta)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		services := s.Env().Docker.Client.ExecuteCommand(s.Env().Agent.ContainerName, "curl", "-s", "--unix-socket", "/opt/datadog-agent/run/sysprobe.sock", "http://unix/discovery/services")
+		t.Logf("system-probe services: %v", services)
+
 		payloads, err := client.GetServiceDiscoveries()
 		require.NoError(t, err)
 
 		foundMap := make(map[string]*aggregator.ServiceDiscoveryPayload)
 		for _, p := range payloads {
 			name := p.Payload.ServiceName
-			t.Log("RequestType", p.RequestType, "ServiceName", name)
+			t.Log("RequestType", p.RequestType, "ServiceName", name, "ContainerID", p.Payload.ContainerID)
 
 			if p.RequestType == "start-service" {
 				foundMap[name] = p
@@ -93,5 +97,5 @@ func (s *dockerDiscoveryTestSuite) assertDockerAgentDiscoveryRunning() {
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		statusOutput := s.Env().Agent.Client.Status(agentclient.WithArgs([]string{"collector", "--json"})).Content
 		assertCollectorStatusFromJSON(c, statusOutput, "service_discovery")
-	}, 2*time.Minute, 10*time.Second)
+	}, 10*time.Second, 10*time.Second)
 }
