@@ -23,5 +23,5 @@ type EbpfTx struct {
 	Request_started    uint64
 	Response_last_seen uint64
 	Tags               uint8
-	Pad_cgo_0          [7]byte
+	_                  [7]byte
 }

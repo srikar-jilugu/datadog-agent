@@ -4,10 +4,10 @@
 package ebpf
 
 type LockRange struct {
-	Start     uint64
-	Range     uint64
-	Type      uint32
-	Pad_cgo_0 [4]byte
+	Start uint64
+	Range uint64
+	Type  uint32
+	_     [4]byte
 }
 type ContentionData struct {
 	Total_time uint64

@@ -25,7 +25,7 @@ type EbpfTx struct {
 	Response_last_seen  uint64
 	Original_query_size uint32
 	Tags                uint8
-	Pad_cgo_0           [3]byte
+	_                   [3]byte
 }
 type PostgresKernelMsgCount struct {
 	Reached_max_messages uint64

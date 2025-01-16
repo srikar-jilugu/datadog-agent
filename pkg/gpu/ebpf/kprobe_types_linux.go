@@ -9,9 +9,9 @@ type CudaEventHeader struct {
 	Stream_id uint64
 	Ktime_ns  uint64
 	Type      uint32
-	Pad       uint32
+	_         uint32
 	Cgroup    [129]byte
-	Pad_cgo_0 [7]byte
+	_         [7]byte
 }
 
 type CudaKernelLaunch struct {
@@ -32,18 +32,18 @@ type CudaSync struct {
 }
 
 type CudaMemEvent struct {
-	Header    CudaEventHeader
-	Size      uint64
-	Addr      uint64
-	Type      uint32
-	Pad_cgo_0 [4]byte
+	Header CudaEventHeader
+	Size   uint64
+	Addr   uint64
+	Type   uint32
+	_      [4]byte
 }
 type CudaMemEventType uint32
 
 type CudaSetDeviceEvent struct {
-	Header    CudaEventHeader
-	Device    int32
-	Pad_cgo_0 [4]byte
+	Header CudaEventHeader
+	Device int32
+	_      [4]byte
 }
 
 const CudaEventTypeKernelLaunch = 0x0

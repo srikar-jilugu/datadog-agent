@@ -28,9 +28,9 @@ type EbpfTx struct {
 }
 
 type KafkaTransactionKey struct {
-	Tuple     ConnTuple
-	Id        int32
-	Pad_cgo_0 [4]byte
+	Tuple ConnTuple
+	Id    int32
+	_     [4]byte
 }
 type KafkaTransaction struct {
 	Request_started     uint64
@@ -42,7 +42,7 @@ type KafkaTransaction struct {
 	Tags                uint8
 	Topic_name          [80]byte
 	Error_code          int8
-	Pad_cgo_0           [7]byte
+	_                   [7]byte
 }
 
 type KafkaResponseContext struct {
@@ -61,7 +61,7 @@ type KafkaResponseContext struct {
 	Varint_position             uint8
 	Partition_error_code        int8
 	Partition_state             uint8
-	Pad_cgo_0                   [7]byte
+	_                           [7]byte
 }
 
 type RawKernelTelemetry struct {

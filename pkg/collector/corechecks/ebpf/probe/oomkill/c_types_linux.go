@@ -12,7 +12,7 @@ type oomStats struct {
 	Pages        uint64
 	Memcg_oom    uint32
 	Score_adj    int16
-	Pad          int16
+	_            int16
 	Cgroup_name  [129]byte
-	Pad_cgo_0    [7]byte
+	_            [7]byte
 }

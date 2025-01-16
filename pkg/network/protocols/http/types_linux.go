@@ -15,9 +15,9 @@ type ConnTuple = struct {
 	Metadata uint32
 }
 type SslSock struct {
-	Tup       ConnTuple
-	Fd        uint32
-	Pad_cgo_0 [4]byte
+	Tup ConnTuple
+	Fd  uint32
+	_   [4]byte
 }
 type SslReadArgs struct {
 	Ctx uint64
@@ -35,7 +35,7 @@ type EbpfTx struct {
 	Tcp_seq              uint32
 	Response_status_code uint16
 	Request_method       uint8
-	Pad_cgo_0            [1]byte
+	_                    [1]byte
 	Request_fragment     [208]byte
 }
 

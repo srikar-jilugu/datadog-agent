@@ -8,7 +8,7 @@ type Location struct {
 	X_register   int64
 	In_register  uint8
 	Exists       uint8
-	Pad_cgo_0    [6]byte
+	_            [6]byte
 }
 type SliceLocation struct {
 	Ptr Location
@@ -20,7 +20,7 @@ type GoroutineIDMetadata struct {
 	Goroutine_id_offset       uint64
 	Runtime_g_register        int64
 	Runtime_g_in_register     uint8
-	Pad_cgo_0                 [7]byte
+	_                         [7]byte
 }
 type TlsBinaryId struct {
 	Id_major uint32

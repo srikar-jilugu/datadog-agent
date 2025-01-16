@@ -34,12 +34,12 @@ type HTTP2DynamicTableEntry struct {
 	Original_index     uint32
 	String_len         uint8
 	Is_huffman_encoded bool
-	Pad_cgo_0          [2]byte
+	_                  [2]byte
 }
 type HTTP2StreamKey struct {
-	Tup       ConnTuple
-	Id        uint32
-	Pad_cgo_0 [4]byte
+	Tup ConnTuple
+	Id  uint32
+	_   [4]byte
 }
 type http2StatusCode struct {
 	Raw_buffer         [3]uint8
@@ -69,7 +69,7 @@ type HTTP2Stream struct {
 	Request_method     http2requestMethod
 	Path               http2Path
 	End_of_stream_seen bool
-	Pad_cgo_0          [1]byte
+	_                  [1]byte
 }
 type EbpfTx struct {
 	Tuple  ConnTuple
@@ -89,7 +89,7 @@ type HTTP2IncompleteFrameEntry struct {
 	Remainder uint32
 	Length    uint32
 	Buf       [9]byte
-	Pad_cgo_0 [3]byte
+	_         [3]byte
 }
 
 type StaticTableEnumValue = uint8

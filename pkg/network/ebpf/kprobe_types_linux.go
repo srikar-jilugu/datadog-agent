@@ -48,14 +48,14 @@ type PidTs struct {
 	Timestamp uint64
 }
 type Batch struct {
-	C0        Conn
-	C1        Conn
-	C2        Conn
-	C3        Conn
-	Id        uint64
-	Cpu       uint32
-	Len       uint16
-	Pad_cgo_0 [2]byte
+	C0  Conn
+	C1  Conn
+	C2  Conn
+	C3  Conn
+	Id  uint64
+	Cpu uint32
+	Len uint16
+	_   [2]byte
 }
 type Telemetry struct {
 	Tcp_failed_connect              uint64
@@ -75,9 +75,9 @@ type Telemetry struct {
 	Tcp_close_connection_flush      uint64
 }
 type PortBinding struct {
-	Netns     uint32
-	Port      uint16
-	Pad_cgo_0 [2]byte
+	Netns uint32
+	Port  uint16
+	_     [2]byte
 }
 type PIDFD struct {
 	Pid uint32
@@ -98,20 +98,20 @@ type ProtocolStack struct {
 	Flags       uint8
 }
 type ProtocolStackWrapper struct {
-	Updated   uint64
-	Stack     ProtocolStack
-	Pad_cgo_0 [4]byte
+	Updated uint64
+	Stack   ProtocolStack
+	_       [4]byte
 }
 type TLSTags struct {
 	Chosen_version   uint16
 	Cipher_suite     uint16
 	Offered_versions uint8
-	Pad_cgo_0        [1]byte
+	_                [1]byte
 }
 type TLSTagsWrapper struct {
-	Updated   uint64
-	Info      TLSTags
-	Pad_cgo_0 [2]byte
+	Updated uint64
+	Info    TLSTags
+	_       [2]byte
 }
 
 type _Ctype_struct_sock uint64

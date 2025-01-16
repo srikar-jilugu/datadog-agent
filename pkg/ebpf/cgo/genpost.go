@@ -71,6 +71,10 @@ func processFile(rdr io.Reader, out io.Writer) error {
 	convertBytePointerToUint64Regex := regexp.MustCompile(`(\s+)(\*byte)`)
 	b = convertBytePointerToUint64Regex.ReplaceAll(b, []byte("${1}uint64"))
 
+	// Convert Pad_cgo_* fields to underscores
+	convertPadToUnderscoreRegex := regexp.MustCompile(`(Pad\S*)(\s+)(\S+)`)
+	b = convertPadToUnderscoreRegex.ReplaceAll(b, []byte("_$2$3"))
+
 	b, err = format.Source(b)
 	if err != nil {
 		return err
