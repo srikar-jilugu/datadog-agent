@@ -13,6 +13,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	netebpf "github.com/DataDog/datadog-agent/pkg/network/ebpf"
+	"github.com/DataDog/datadog-agent/pkg/network/usm"
+	"github.com/DataDog/datadog-agent/pkg/network/usm/consts"
+	"github.com/DataDog/datadog-agent/pkg/network/usm/testutil/grpc"
+	"github.com/DataDog/datadog-agent/pkg/network/usm/utils"
 	"io"
 	"math"
 	"math/rand"
@@ -28,6 +33,7 @@ import (
 	"syscall"
 	"testing"
 	"time"
+	"unsafe"
 
 	manager "github.com/DataDog/ebpf-manager"
 	"github.com/cilium/ebpf"
@@ -2600,4 +2606,67 @@ func skipEbpflessTodo(t *testing.T, cfg *config.Config) {
 	if cfg.EnableEbpfless {
 		t.Skip("TODO: ebpf-less")
 	}
+}
+
+const (
+	srvAddr = "127.0.0.1:7777"
+)
+
+func TestReproduceIncident34000(t *testing.T) {
+	srv, cancel := grpc.NewGRPCTLSServer(t, srvAddr, true)
+	t.Cleanup(cancel)
+	defaultCtx := context.Background()
+
+	cfg := testConfig()
+	cfg.ServiceMonitoringEnabled = true
+	cfg.EnableGoTLSSupport = true
+	cfg.GoTLSExcludeSelf = false
+	cfg.EnableHTTP2Monitoring = true
+
+	connProtoCleaningInterval = 10 * time.Second
+	connProtoTTL = 10 * time.Second
+
+	tr := setupTracer(t, cfg)
+	connectionProtocolMap, err := tr.ebpfTracer.GetMap("connection_protocol")
+	require.NoError(t, err)
+
+	utils.WaitForProgramsToBeTraced(t, consts.USMModuleName, usm.GoTLSAttacherName, srv.Process.Pid, utils.ManualTracingFallbackEnabled)
+
+	client1, err := grpc.NewClient(srvAddr, grpc.Options{}, true)
+	require.NoError(t, err)
+	t.Cleanup(client1.Close)
+
+	client2, err := grpc.NewClient(srvAddr, grpc.Options{}, true)
+	require.NoError(t, err)
+	t.Cleanup(client2.Close)
+
+	require.NoError(t, client1.HandleUnary(defaultCtx, "test"))
+	require.NoError(t, client2.HandleUnary(defaultCtx, "test"))
+
+	found := 0
+	iterator := connectionProtocolMap.Iterate()
+	var key netebpf.ConnTuple
+	var value netebpf.ProtocolStackWrapper
+	for iterator.Next(unsafe.Pointer(&key), unsafe.Pointer(&value)) {
+		if key.Sport == 7777 || key.Dport == 7777 {
+			found++
+			require.Equal(t, uint8(2), value.Stack.Application)
+			require.Equal(t, uint8(1), value.Stack.Encryption)
+		}
+	}
+	require.Equal(t, 2, found)
+
+	time.Sleep(connProtoCleaningInterval)
+
+	found = 0
+	iterator = connectionProtocolMap.Iterate()
+	for iterator.Next(unsafe.Pointer(&key), unsafe.Pointer(&value)) {
+		if key.Sport == 7777 || key.Dport == 7777 {
+			found++
+			require.Equal(t, uint8(2), value.Stack.Application)
+			require.Equal(t, uint8(1), value.Stack.Encryption)
+		}
+	}
+
+	require.Equal(t, 2, found)
 }
