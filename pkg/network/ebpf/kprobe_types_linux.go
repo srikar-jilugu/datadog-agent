@@ -100,8 +100,9 @@ type ProtocolStack struct {
 	Flags       uint8
 }
 type ProtocolStackWrapper struct {
-	Stack   ProtocolStack
-	Updated uint64
+	Updated   uint64
+	Stack     ProtocolStack
+	Pad_cgo_0 [4]byte
 }
 
 type _Ctype_struct_sock uint64
