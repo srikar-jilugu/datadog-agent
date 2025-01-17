@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"os"
 	"strings"
 	"time"
@@ -76,10 +75,7 @@ type ContainerdItf interface {
 	CallWithClientContext(namespace string, f func(context.Context) error) error
 	IsSandbox(namespace string, ctn containerd.Container) (bool, error)
 	MountImage(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image, targetDir string) (func(context.Context) error, error)
-	MountImageWithMounts(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image, targetDir string) ([]mount.Mount, func(context.Context) error, error)
-	MountLayers(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, func(context.Context) error, error)
 	Mounts(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, error)
-	MountsWithClean(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, func(context.Context) error, error)
 }
 
 // ContainerdUtil is the util used to interact with the Containerd api.
@@ -513,16 +509,6 @@ func (c *ContainerdUtil) Mounts(ctx context.Context, expiration time.Duration, n
 	return mounts, nil
 }
 
-// MountsWithClean returns the mounts for an image and a cleanup function
-func (c *ContainerdUtil) MountsWithClean(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, func(context.Context) error, error) {
-	// Get mounts and the cleanup function
-	mounts, clean, err := c.getMounts(ctx, expiration, namespace, img)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get mounts for image %s: %w", img.Name(), err)
-	}
-	return mounts, clean, nil
-}
-
 // MountImage mounts an image to a directory
 func (c *ContainerdUtil) MountImage(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image, targetDir string) (func(context.Context) error, error) {
 	mounts, clean, err := c.getMounts(ctx, expiration, namespace, img)
@@ -541,184 +527,5 @@ func (c *ContainerdUtil) MountImage(ctx context.Context, expiration time.Duratio
 			return fmt.Errorf("unable to unmount directory: %s for image: %s, err: %w", targetDir, img.Name(), err)
 		}
 		return clean(ctx)
-	}, nil
-}
-
-// MountImageWithMounts mounts an image to a directory and returns the mounts
-func (c *ContainerdUtil) MountImageWithMounts(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image, targetDir string) ([]mount.Mount, func(context.Context) error, error) {
-	mounts, clean, err := c.getMounts(ctx, expiration, namespace, img)
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := mount.All(mounts, targetDir); err != nil {
-		if err := clean(ctx); err != nil {
-			log.Warnf("Unable to clean snapshot, err: %v", err)
-		}
-		return mounts, nil, fmt.Errorf("unable to mount image %s to dir %s, err: %w", img.Name(), targetDir, err)
-	}
-	return mounts, func(ctx context.Context) error {
-		ctx = namespaces.WithNamespace(ctx, namespace)
-		if err := mount.UnmountAll(targetDir, 0); err != nil {
-			return fmt.Errorf("unable to unmount directory: %s for image: %s, err: %w", targetDir, img.Name(), err)
-		}
-		return clean(ctx)
-	}, nil
-}
-
-// MountLayers mounts an image to a directory and returns the mounts
-func (c *ContainerdUtil) MountLayers(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, func(context.Context) error, error) {
-	log.Infof("Calling getLayerMounts")
-	mounts, clean, err := c.getLayerMounts(ctx, expiration, namespace, img)
-	if err != nil {
-		log.Errorf("getLayerMounts finished with error: %v", err)
-		return nil, nil, fmt.Errorf("unable to get mounts for image %s: %w", img.Name(), err)
-	}
-	log.Infof("Successfully finished getLayerMounts")
-	return mounts, clean, nil
-}
-
-// MountsIndividually returns the mounts for an image without merging the layers.
-func (c *ContainerdUtil) getLayerMounts(ctx context.Context, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, func(context.Context) error, error) {
-	log.Infof("Checking if image %s is unpacked...", img.Name())
-	ctx = namespaces.WithNamespace(ctx, namespace)
-	imgUnpacked, err := img.IsUnpacked(ctx, containerd.DefaultSnapshotter)
-	if err != nil {
-		log.Errorf("Error checking if image %s is unpacked: %v", img.Name(), err)
-		return nil, nil, fmt.Errorf("unable to check if image %s is unpacked: %w", img.Name(), err)
-	}
-	if !imgUnpacked {
-		log.Warnf("Image %s is not unpacked", img.Name())
-		return nil, nil, fmt.Errorf("image %s is not unpacked", img.Name())
-	}
-	log.Infof("Image %s is unpacked. Retrieving layers...", img.Name())
-
-	imgConfig, err := img.Config(ctx)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get image config for image named: %s, err: %w", img.Name(), err)
-	}
-	imageID := imgConfig.Digest.String()
-
-	// Retrieve the diffIDs (which represent the individual layers)
-	diffIDs, err := img.RootFS(ctx)
-	if err != nil {
-		log.Errorf("Error retrieving layers for image %s: %v", img.Name(), err)
-		return nil, nil, fmt.Errorf("unable to get layers for image %s: %w", img.Name(), err)
-	}
-	log.Infof("Found %d layers for image %s", len(diffIDs), img.Name())
-
-	// Prepare each layer individually and return them as mounts
-	var allMounts []mount.Mount
-	var cleanupFuncs []func(context.Context) error
-
-	// List all images
-	images, err := c.cl.ListImages(ctx)
-	if err != nil {
-		log.Errorf("Error listing images: %v", err)
-	} else {
-		for _, image := range images {
-			log.Infof("Found image: %s, digest: %s", image.Name(), image.Target().Digest.String())
-		}
-	}
-
-	//End
-
-	// Iterate over each diffID (layer)
-	for i, diffID := range diffIDs {
-		log.Infof("Processing layer %d with diffID %s", i+1, diffID.String())
-
-		layerDesc := ocispec.Descriptor{
-			Digest:    diffID,
-			MediaType: "application/vnd.docker.image.rootfs.diff.tar.gzip",
-		}
-		reader, err := img.ContentStore().ReaderAt(ctx, layerDesc)
-		if err != nil {
-			log.Errorf("Could not get contentstore reader with diffID %s: %v", diffID.String(), err)
-		} else {
-			log.Infof("Successfully got reader!")
-			defer reader.Close()
-		}
-
-		leaseID := fmt.Sprintf("%s-%s", imageID, diffID.String())
-
-		// View each layer (snapshot)
-		mounts, clean, err := c.viewLayer(ctx, diffID.String(), leaseID, expiration, namespace, img)
-		if err != nil {
-			log.Errorf("Error viewing snapshot for layer %s: %v", diffID.String(), err)
-			return nil, nil, fmt.Errorf("unable to view snapshot for layer %s: %w", diffID.String(), err)
-		}
-
-		// Add the layer mounts to the list
-		allMounts = append(allMounts, mounts...)
-		cleanupFuncs = append(cleanupFuncs, clean)
-
-		log.Infof("Layer %d mounted successfully", i+1)
-	}
-
-	// Return the mounts and cleanup functions
-	log.Infof("Returning all mounts and cleanup functions")
-	return allMounts, func(ctx context.Context) error {
-		// Clean up all mounts after processing
-		ctx = namespaces.WithNamespace(ctx, namespace)
-		for _, clean := range cleanupFuncs {
-			// First clean up the snapshot
-			if err := clean(ctx); err != nil {
-				log.Warnf("Error cleaning snapshot: %v", err)
-			}
-		}
-		log.Infof("All snapshots cleaned up successfully.")
-		return nil
-	}, nil
-}
-
-// viewLayer prepares a snapshot (layer) as a readonly mount and returns its mount(s)
-func (c *ContainerdUtil) viewLayer(ctx context.Context, diffID string, leaseID string, expiration time.Duration, namespace string, img containerd.Image) ([]mount.Mount, func(context.Context) error, error) {
-	// Access the SnapshotService
-	log.Infof("Accessing SnapshotService to view layer with diffID %s...", diffID)
-	snapshotter := containerd.DefaultSnapshotter
-	ctx = namespaces.WithNamespace(ctx, namespace)
-
-	ctx, done, err := c.cl.WithLease(ctx, leases.WithID(leaseID), leases.WithExpiration(expiration))
-	if err != nil {
-		log.Errorf("Error getting lease for layer %s: %v", diffID, err)
-		return nil, nil, fmt.Errorf("unable to get lease for layer %s: %w", diffID, err)
-	}
-
-	// Prepare the layer (snapshot) based on the diffID (layer ID)
-	s := c.cl.SnapshotService(snapshotter)
-	log.Infof("Viewing snapshot for layer %s with parent %s", diffID, "")
-	mounts, err := s.View(ctx, diffID, "") // Use diffID for both key and parent (read-only view)
-	if err != nil {
-		if errdefs.IsAlreadyExists(err) {
-			log.Infof("Snapshot for layer %s already exists. Skipping mount.", diffID)
-			return nil, func(ctx context.Context) error {
-				// Just release the lease, no actual cleanup needed since the layer was skipped
-				if err := done(ctx); err != nil {
-					log.Warnf("Error cleaning up lease for layer %s: %v", diffID, err)
-				}
-				return nil
-			}, nil
-		}
-		if err := done(ctx); err != nil {
-			log.Warnf("Error cleaning up lease for layer %s: %v", diffID, err)
-		}
-		log.Errorf("Error viewing snapshot for layer %s: %v", diffID, err)
-		return nil, nil, fmt.Errorf("unable to view snapshot for layer %s: %w", diffID, err)
-	}
-
-	// Return the mounts and a cleanup function
-	cleanSnapshot := func(ctx context.Context) error {
-		log.Infof("Cleaning up snapshot for layer %s", diffID)
-		return s.Remove(ctx, diffID)
-	}
-
-	return mounts, func(ctx context.Context) error {
-		ctx = namespaces.WithNamespace(ctx, namespace)
-		if err := cleanSnapshot(ctx); err != nil {
-			log.Warnf("Unable to clean snapshot, err: %v", err)
-		}
-		if err := done(ctx); err != nil {
-			log.Warnf("Unable to cancel containerd lease: err: %v", err)
-		}
-		return nil
 	}, nil
 }

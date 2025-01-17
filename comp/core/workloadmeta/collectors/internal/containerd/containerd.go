@@ -140,6 +140,10 @@ func (c *collector) Start(ctx context.Context, store workloadmeta.Component) err
 		return err
 	}
 
+	if err = c.startEfficiencyCollection(ctx); err != nil {
+		return err
+	}
+
 	c.filterPausedContainers, err = containers.GetPauseContainerFilter()
 	if err != nil {
 		return err

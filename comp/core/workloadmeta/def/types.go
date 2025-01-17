@@ -69,6 +69,10 @@ const (
 	// `crio` uses this source.
 	SourceTrivy Source = "trivy"
 
+	// SourceEfficiency represents entities detected by the efficiency scanner.
+	// `containerd` uses this source.
+	SourceEfficiency Source = "efficiency"
+
 	// SourceNodeOrchestrator represents entities detected by the node
 	// agent from an orchestrator. `kubelet` and `ecs` use this.
 	SourceNodeOrchestrator Source = "node_orchestrator"

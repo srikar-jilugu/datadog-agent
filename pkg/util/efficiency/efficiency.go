@@ -10,9 +10,7 @@ package efficiency
 import (
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/containerd/containerd/mount"
-	"os"
-	"path/filepath"
+	"github.com/containerd/containerd"
 )
 
 // File represents a file or directory within a container snapshot.
@@ -38,7 +36,7 @@ type EfficiencyReport struct {
 }
 
 // TrackFileEfficiency updates efficiency data for a file, accumulating size and tracking its path across layers.
-func TrackFileEfficiency(file *File, efficiencyMap map[string]*EfficiencyData, layerID string) {
+func trackFileEfficiency(file *File, efficiencyMap map[string]*EfficiencyData, layerID string) {
 	if _, ok := efficiencyMap[file.Path]; !ok {
 		efficiencyMap[file.Path] = &EfficiencyData{
 			Path:              file.Path,
@@ -59,7 +57,7 @@ func TrackFileEfficiency(file *File, efficiencyMap map[string]*EfficiencyData, l
 }
 
 // CalculateEfficiencyScore calculates the efficiency score based on the cumulative size vs. minimum discovered size.
-func CalculateEfficiencyScore(efficiencyMap map[string]*EfficiencyData) float64 {
+func calculateEfficiencyScore(efficiencyMap map[string]*EfficiencyData) float64 {
 	var totalDiscoveredSize int64
 	var totalMinSize int64
 
@@ -76,7 +74,7 @@ func CalculateEfficiencyScore(efficiencyMap map[string]*EfficiencyData) float64 
 }
 
 // GenerateEfficiencyReport generates a report summarizing the efficiency of files across layers.
-func GenerateEfficiencyReport(efficiencyMap map[string]*EfficiencyData) *EfficiencyReport {
+func generateEfficiencyReport(efficiencyMap map[string]*EfficiencyData) *EfficiencyReport {
 	var inefficientFiles []*EfficiencyData
 	var totalDiscoveredSize int64
 	var totalMinSize int64
@@ -89,7 +87,7 @@ func GenerateEfficiencyReport(efficiencyMap map[string]*EfficiencyData) *Efficie
 		totalMinSize += data.MinDiscoveredSize
 	}
 
-	score := CalculateEfficiencyScore(efficiencyMap)
+	score := calculateEfficiencyScore(efficiencyMap)
 
 	return &EfficiencyReport{
 		Score:               score,
@@ -99,31 +97,27 @@ func GenerateEfficiencyReport(efficiencyMap map[string]*EfficiencyData) *Efficie
 	}
 }
 
-// ExtractLayerInfo traverses the mounted snapshot layers and collects file data.
-func ExtractLayerInfo(mounts []mount.Mount) ([]*File, error) {
-	var files []*File
-	for _, mnt := range mounts {
-		// Walk through the filesystem at the mount path
-		err := filepath.Walk(mnt.Target, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				log.Errorf("Error walking file path %s: %v", path, err)
-				return nil
-			}
+func GetEfficiencyReportFromImage(img containerd.Image) (*EfficiencyReport, error) {
+	// Extract the layer digests from the metadata
+	layerDigests, err := getLayerDigestsFromImage(img)
+	if err != nil {
+		log.Errorf("unable to extract layer digests: %v", err)
+		return nil, fmt.Errorf("unable to extract layer digests: %w", err)
+	}
+	log.Infof("Extracted %d layer digests", len(layerDigests))
 
-			// Skip directories, only include files
-			if !info.IsDir() {
-				files = append(files, &File{
-					Path: path,
-					Size: info.Size(),
-				})
-			}
-			return nil
-		})
-
+	// Get the tarballs for each layer
+	walker := NewEfficiencyFSWalker()
+	for _, layerDigest := range layerDigests {
+		err = walker.WalkLayerTarball(layerDigest)
 		if err != nil {
-			return nil, fmt.Errorf("error walking mounted layer %s: %v", mnt.Target, err)
+			log.Errorf("unable to walk layer tarball: %v for image: %v", err, img.Name())
+			return nil, fmt.Errorf("unable to walk layer tarball: %w", err)
 		}
 	}
+	log.Infof("Successfully retrieved layer tarballs")
 
-	return files, nil
+	report := generateEfficiencyReport(walker.EfficiencyMap)
+
+	return report, nil
 }

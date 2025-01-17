@@ -108,22 +108,6 @@ func convertContainerdImage(ctx context.Context, client *containerd.Client, imgM
 	}, cleanup, nil
 }
 
-func GetLayersForEfficiency(ctx context.Context, client *containerd.Client, imgMeta *workloadmeta.ContainerImageMetadata, img containerd.Image) ([]v1.Layer, func(), error) {
-	log.Infof("Converting containerd image %s to fanal", imgMeta.ID)
-	fanalimg, cleanup, err := convertContainerdImage(ctx, client, imgMeta, img)
-	if err != nil {
-		return nil, cleanup, fmt.Errorf("unable to convert containerd image, err: %w", err)
-	}
-	log.Infof("Successfully converted, getting layers")
-	layers, err := fanalimg.Layers()
-	if err != nil {
-		log.Errorf("Failed to get layers for image %s: %v", img.Name(), err)
-		return nil, cleanup, fmt.Errorf("unable to get layers, err: %w", err)
-	}
-	log.Infof("Returning layers")
-	return layers, cleanup, nil
-}
-
 // readImageConfig reads the config spec (`application/vnd.oci.image.config.v1+json`) for img.platform from content store.
 // ported from https://github.com/aquasecurity/trivy/blob/2206e008ea6e5f4e5c1aa7bc8fc77dae7041de6a/pkg/fanal/image/daemon/containerd.go
 func readImageConfig(ctx context.Context, img containerd.Image) (ocispec.Image, ocispec.Descriptor, error) {

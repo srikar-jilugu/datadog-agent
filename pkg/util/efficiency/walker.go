@@ -9,110 +9,192 @@ package efficiency
 
 import (
 	"archive/tar"
-	"errors"
+	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/containerd/containerd"
 	"io"
-	"io/fs"
 	"os"
-	"path/filepath"
+	"strings"
 )
 
 // EfficiencyFSWalker is a custom walker for tracking file sizes and redundancies for efficiency calculation
-type EfficiencyFSWalker struct {
+type EfficiencyTarballWalker struct {
 	EfficiencyMap map[string]*EfficiencyData
 }
 
 // NewEfficiencyFSWalker returns a new instance of the EfficiencyFSWalker
-func NewEfficiencyFSWalker() *EfficiencyFSWalker {
-	return &EfficiencyFSWalker{
+func NewEfficiencyFSWalker() *EfficiencyTarballWalker {
+	return &EfficiencyTarballWalker{
 		EfficiencyMap: make(map[string]*EfficiencyData), // Initialize the map
 	}
 }
 
-// Walk walks the filesystem rooted at root, calling fn for each file.
-func (w *EfficiencyFSWalker) Walk(root string) error {
-	// Walk the directory tree
-	log.Infof("Starting file system walk at: %s", root)
-	return filepath.WalkDir(root, func(filePath string, d fs.DirEntry, err error) error {
-		// Error handling
-		if err != nil {
-			if os.IsPermission(err) || errors.Is(err, fs.ErrNotExist) {
-				log.Warnf("Permission error or file does not exist: %s, skipping", filePath)
-				return nil
-			}
-			log.Errorf("Error walking file path %s: %v", filePath, err)
-			return err
-		}
+func (w *EfficiencyTarballWalker) WalkLayerTarball(layerDigest string) error {
+	// Construct the file path to access the tarball directly from the OS
+	layerDigest = strings.TrimPrefix(layerDigest, "sha256:")
+	filePath := fmt.Sprintf("/host/var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/%s", layerDigest)
+	log.Infof("Opening layer tarball at %s", filePath)
 
-		// Build relative file path
-		relPath, err := filepath.Rel(root, filePath)
-		if err != nil {
-			log.Errorf("Error getting relative path (%s): %v", filePath, err)
-			return fmt.Errorf("error getting relative path (%s): %w", filePath, err)
-		}
-		relPath = filepath.ToSlash(relPath) // Normalize the path
-
-		// Process every file and directory (no skipping)
-		if !d.IsDir() { // Only process files (skip directories)
-			info, err := d.Info()
-			if err != nil {
-				log.Errorf("Error getting file info for %s: %v", filePath, err)
-				return fmt.Errorf("error getting file info: %w", err)
-			}
-
-			// Track file efficiency (file path, size)
-			file := &File{
-				Path: relPath,
-				Size: info.Size(),
-			}
-			TrackFileEfficiency(file, w.EfficiencyMap, relPath)
-		}
-
-		return nil
-	})
-}
-
-func WalkTarball(tarballPath string) error {
-	// Open the tarball
-	tarball, err := os.Open(tarballPath)
+	// Open the file containing the layer tarball
+	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to open tarball %s: %w", tarballPath, err)
+		log.Errorf("unable to open layer tarball file, skipping: %v", err)
+		return nil
+		//return fmt.Errorf("unable to open layer tarball file: %w", err)
 	}
-	defer tarball.Close()
+	defer file.Close()
 
-	// Create a new tar reader
-	tarReader := tar.NewReader(tarball)
+	// Extract the tarball contents to the temporary directory
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil {
+		log.Errorf("failed to create gzip reader: %v", err)
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	tarReader := tar.NewReader(gzipReader)
 
-	var currentLayer string
+	log.Infof("Started tarReader, about to enter loop")
 
-	// Walk through the files in the tarball
 	for {
-		// Get the next file in the tarball
+		// Read the next file header from the tarball
 		header, err := tarReader.Next()
 		if err == io.EOF {
 			break // End of tarball
 		}
 		if err != nil {
+			log.Errorf("failed to read tarball file: %v", err)
 			return fmt.Errorf("failed to read tarball file: %w", err)
 		}
 
-		layerDir := filepath.Dir(header.Name)
-		if currentLayer != layerDir {
-			// We've moved to a new layer
-			currentLayer = layerDir
-			log.Infof("Entering layer: %s", currentLayer)
+		efficiencyFile := &File{
+			Path: header.Name,
+			Size: header.Size,
+		}
+		trackFileEfficiency(efficiencyFile, w.EfficiencyMap, header.Name)
+	}
+	log.Infof("Finished walking layer tarball for %s", layerDigest)
+	return nil
+}
+
+// GetLayerTarballs fetches and extracts the tarballs for each layer from the content store
+func walkLayerTarballs(layerDigests []string) error {
+	// Process each layer's digest
+	for idx, layerDigest := range layerDigests {
+		layerDigest = strings.TrimPrefix(layerDigest, "sha256:")
+		log.Infof("Processing layer %d with digest %s", idx+1, layerDigest)
+
+		// Construct the file path to access the tarball directly from the OS
+		filePath := fmt.Sprintf("/host/var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/%s", layerDigest)
+		log.Infof("Opening layer tarball at %s", filePath)
+
+		// Open the file containing the layer tarball
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Errorf("unable to open layer tarball file: %v", err)
+			return fmt.Errorf("unable to open layer tarball file: %w", err)
+		}
+		defer file.Close()
+
+		log.Infof("Successfully opened layer tarball at %s", filePath)
+
+		// Extract the tarball contents to the temporary directory
+		gzipReader, err := gzip.NewReader(file)
+		if err != nil {
+			log.Errorf("failed to create gzip reader: %v", err)
+			return fmt.Errorf("failed to create gzip reader: %w", err)
+		}
+		tarReader := tar.NewReader(gzipReader)
+		log.Infof("Started tarReader, about to enter loop")
+		totalSize := int64(0)
+		for {
+			// Read the next file header from the tarball
+			header, err := tarReader.Next()
+			if err == io.EOF {
+				log.Infof("Attempting to break")
+				break // End of tarball
+			}
+			if err != nil {
+				log.Errorf("failed to read tarball file: %v", err)
+				return fmt.Errorf("failed to read tarball file: %w", err)
+			}
+
+			totalSize += header.Size
 		}
 
-		// Log file details for inspection
-		log.Infof("Processing file: %s in layer: %s", header.Name, currentLayer)
-
-		// Process the file for efficiency calculation
-		// For example, track file size
-		// This part could use your existing `EfficiencyFSWalker`
-		// fsWalker := NewEfficiencyFSWalker()
-		// fsWalker.TrackFileEfficiency(header.Name, header.Size)
+		log.Infof("Total size of layer %d: %d", idx+1, totalSize)
 	}
 
 	return nil
+}
+
+// Parse the image's manifest and extract the layer digests
+type LayerInfo struct {
+	Digest string `json:"digest"`
+}
+
+// Define a struct for the manifest
+type Manifest struct {
+	SchemaVersion int         `json:"schemaVersion"`
+	MediaType     string      `json:"mediaType"`
+	Layers        []LayerInfo `json:"layers"`
+}
+
+func getLayerDigestsFromImage(img containerd.Image) ([]string, error) {
+	// Get the image metadata (manifest or config)
+	log.Infof("Getting metadata for image %s", img.Name())
+
+	// Get the metadata for the image (the manifest)
+	metadata, err := getImageMetadata(img.Target().Digest.String())
+	if err != nil {
+		log.Errorf("unable to get image metadata: %v", err)
+		return nil, fmt.Errorf("unable to get image metadata: %w", err)
+	}
+	log.Infof("Successfully retrieved image metadata for image %s", img.Name())
+
+	// Now we can parse the JSON content into a struct
+	var manifest Manifest
+
+	// Unmarshal the content into the struct
+	if err := json.Unmarshal(metadata, &manifest); err != nil {
+		log.Errorf("unable to unmarshal metadata: %v", err)
+		return nil, fmt.Errorf("unable to unmarshal metadata: %w", err)
+	}
+
+	// Extract the layer digests
+	layerDigests := make([]string, 0)
+	for idx, layer := range manifest.Layers {
+		log.Infof("Extracted layer %d digest: %s", idx+1, layer.Digest)
+		layerDigests = append(layerDigests, layer.Digest)
+	}
+
+	return layerDigests, nil
+}
+
+// Method to retrieve the image metadata (manifest)
+func getImageMetadata(imgDigest string) ([]byte, error) {
+	// Open the file directly from the agent's filesystem
+	imgDigest = strings.TrimPrefix(imgDigest, "sha256:")
+	filePath := fmt.Sprintf("/host/var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/%s", imgDigest)
+	log.Infof("Opening image metadata file at %s", filePath)
+
+	// Open the file
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Errorf("unable to open image metadata file: %v", err)
+		return nil, fmt.Errorf("unable to open image metadata file: %w", err)
+	}
+	defer file.Close()
+
+	// Read the file content (increase buffer size)
+	content, err := io.ReadAll(file)
+	if err != nil {
+		log.Errorf("failed to read metadata content: %v", err)
+		return nil, fmt.Errorf("failed to read metadata content: %w", err)
+	}
+
+	// Log raw content for inspection
+	log.Infof("Full content length: %d", len(content))
+
+	return content, nil
 }
