@@ -7,10 +7,12 @@
 package collector
 
 import (
+	"context"
 	"expvar"
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -18,11 +20,13 @@ import (
 	"github.com/DataDog/datadog-agent/comp/collector/collector"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
 	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
 	integrations "github.com/DataDog/datadog-agent/comp/logs/integrations/def"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/sender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	checkid "github.com/DataDog/datadog-agent/pkg/collector/check/id"
 	"github.com/DataDog/datadog-agent/pkg/collector/loaders"
+	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/option"
@@ -56,26 +60,40 @@ func init() {
 
 // CheckScheduler is the check scheduler
 type CheckScheduler struct {
-	configToChecks map[string][]checkid.ID // cache the ID of checks we load for each config
-	loaders        []check.Loader
-	collector      option.Option[collector.Component]
-	senderManager  sender.SenderManager
-	m              sync.RWMutex
+	configToChecks    map[string][]checkid.ID // cache the ID of checks we load for each config
+	loaders           []check.Loader
+	collector         option.Option[collector.Component]
+	senderManager     sender.SenderManager
+	m                 sync.RWMutex
+	metricsTicker     *time.Ticker
+	telemetryProvider *telemetry.StatsTelemetryProvider
+	ctx               context.Context
+	cancel            context.CancelFunc
+	tagger            tagger.Component
 }
 
 // InitCheckScheduler creates and returns a check scheduler
 func InitCheckScheduler(collector option.Option[collector.Component], senderManager sender.SenderManager, logReceiver option.Option[integrations.Component], tagger tagger.Component) *CheckScheduler {
+	ctx, cancel := context.WithCancel(context.TODO())
 	checkScheduler = &CheckScheduler{
-		collector:      collector,
-		senderManager:  senderManager,
-		configToChecks: make(map[string][]checkid.ID),
-		loaders:        make([]check.Loader, 0, len(loaders.LoaderCatalog(senderManager, logReceiver, tagger))),
+		collector:         collector,
+		senderManager:     senderManager,
+		configToChecks:    make(map[string][]checkid.ID),
+		loaders:           make([]check.Loader, 0, len(loaders.LoaderCatalog(senderManager, logReceiver, tagger))),
+		tagger:            tagger,
+		metricsTicker:     time.NewTicker(15 * time.Second),
+		telemetryProvider: telemetry.GetStatsTelemetryProvider(),
+		ctx:               ctx,
+		cancel:            cancel,
 	}
 	// add the check loaders
 	for _, loader := range loaders.LoaderCatalog(senderManager, logReceiver, tagger) {
 		checkScheduler.AddLoader(loader)
 		log.Debugf("Added %s to Check Scheduler", loader)
 	}
+
+	go checkScheduler.emitMetrics()
+
 	return checkScheduler
 }
 
@@ -141,7 +159,12 @@ func (s *CheckScheduler) Unschedule(configs []integration.Config) {
 }
 
 // Stop is a stub to satisfy the scheduler interface
-func (s *CheckScheduler) Stop() {}
+func (s *CheckScheduler) Stop() {
+	if s.metricsTicker != nil {
+		s.metricsTicker.Stop()
+	}
+	s.cancel()
+}
 
 // AddLoader adds a new Loader that AutoConfig can use to load a check.
 func (s *CheckScheduler) AddLoader(loader check.Loader) {
@@ -272,4 +295,29 @@ func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, popu
 // GetLoaderErrors returns the check loader errors
 func GetLoaderErrors() map[string]map[string]string {
 	return errorStats.getLoaderErrors()
+}
+
+func (s *CheckScheduler) emitMetrics() {
+	for {
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-s.metricsTicker.C:
+			loaderErrors := errorStats.getLoaderErrors()
+			for checkName := range loaderErrors {
+				defaultSender, err := s.senderManager.GetDefaultSender()
+				if err != nil {
+					// TODO
+					return
+				}
+				tags, err := s.tagger.AgentTags(types.HighCardinality)
+				if err != nil {
+					// TODO
+					return
+				}
+				tags = append(tags, "check_name:"+checkName)
+				defaultSender.Gauge("datadog.agent.checks.config_errors", 1, "", tags)
+			}
+		}
+	}
 }
