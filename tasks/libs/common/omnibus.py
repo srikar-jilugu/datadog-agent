@@ -228,6 +228,7 @@ def omnibus_compute_cache_key(ctx):
         print(f'Current hash value: {h.hexdigest()}')
     cache_key = h.hexdigest()
     print(f'Cache key: {cache_key}')
+    print('dummy change to cause a cache hit')
     return cache_key
 
 
