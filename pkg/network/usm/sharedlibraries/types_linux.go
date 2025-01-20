@@ -6,6 +6,7 @@ package sharedlibraries
 type LibPath struct {
 	Pid uint32
 	Len uint32
+	Src uint32
 	Buf [220]byte
 }
 

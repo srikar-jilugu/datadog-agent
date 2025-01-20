@@ -221,7 +221,7 @@ func (w *Watcher) handleLibraryOpen(lib LibPath) {
 	}
 
 	if !found {
-		log.Warnf("no rules matched for %q", path)
+		log.Warnf("no rules matched for %q; source %d", path, lib.Src)
 	}
 }
 
