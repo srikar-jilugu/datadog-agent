@@ -67,13 +67,13 @@ static __always_inline void push_event_if_relevant(void *ctx, lib_path_t *path, 
     int i = 0;
 #pragma unroll
     for (i = 0; i < LIB_PATH_MAX_SIZE - (LIB_SO_SUFFIX_SIZE); i++) {
-        if (i + LIB_SO_SUFFIX_SIZE > path->len) {
-            break;
-        }
         if (match3chars(6, '.', 's', 'o')) {
             is_shared_library = true;
             break;
         }
+    }
+    if (i + LIB_SO_SUFFIX_SIZE > path->len) {
+        return;
     }
     if (!is_shared_library) {
         return;
