@@ -198,12 +198,18 @@ func (w *Watcher) handleLibraryOpen(lib LibPath) {
 
 	w.libHits.Add(1)
 	path := ToBytes(&lib)
+	found := false
 	for _, r := range w.rules {
 		if r.Re.Match(path) {
+			found = true
 			w.libMatches.Add(1)
 			_ = w.registry.Register(string(path), lib.Pid, r.RegisterCB, r.UnregisterCB, utils.IgnoreCB)
 			break
 		}
+	}
+
+	if !found {
+		log.Warnf("no rules matched for %q", path)
 	}
 }
 
