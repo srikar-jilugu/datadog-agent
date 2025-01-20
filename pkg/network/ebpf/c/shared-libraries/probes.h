@@ -74,7 +74,7 @@ static __always_inline void push_event_if_relevant(void *ctx, lib_path_t *path, 
     if (!is_shared_library) {
         return;
     }
-    if (i + LIB_SO_SUFFIX_SIZE >= path->len) {
+    if (i + LIB_SO_SUFFIX_SIZE > path->len) {
         return;
     }
 
