@@ -36,10 +36,9 @@ static __always_inline bool fill_lib_path(lib_path_t *path, const char *path_arg
     return path->len > 0;
 }
 
-static __always_inline void do_sys_open_helper_enter(const char *filename, __u32 src) {
+static __always_inline void do_sys_open_helper_enter(const char *filename) {
     lib_path_t path = { 0 };
     if (fill_lib_path(&path, filename)) {
-        path.src = src;
         u64 pid_tgid = bpf_get_current_pid_tgid();
         bpf_map_update_with_telemetry(open_at_args, &pid_tgid, &path, BPF_ANY);
     }
@@ -72,10 +71,10 @@ static __always_inline void push_event_if_relevant(void *ctx, lib_path_t *path, 
             break;
         }
     }
-    if (i + LIB_SO_SUFFIX_SIZE > path->len) {
+    if (!is_shared_library) {
         return;
     }
-    if (!is_shared_library) {
+    if (i + LIB_SO_SUFFIX_SIZE >= path->len) {
         return;
     }
 
@@ -125,7 +124,7 @@ int tracepoint__syscalls__sys_enter_open(enter_sys_open_ctx *args) {
         return 0;
     }
 
-    do_sys_open_helper_enter(args->filename, 1);
+    do_sys_open_helper_enter(args->filename);
     return 0;
 }
 
@@ -144,7 +143,7 @@ int tracepoint__syscalls__sys_enter_openat(enter_sys_openat_ctx *args) {
         return 0;
     }
 
-    do_sys_open_helper_enter(args->filename, 2);
+    do_sys_open_helper_enter(args->filename);
     return 0;
 }
 
@@ -167,7 +166,7 @@ int tracepoint__syscalls__sys_enter_openat2(enter_sys_openat2_ctx *args) {
         }
     }
 
-    do_sys_open_helper_enter(args->filename, 3);
+    do_sys_open_helper_enter(args->filename);
     return 0;
 }
 
@@ -186,7 +185,6 @@ int BPF_BYPASSABLE_PROG(do_sys_openat2_exit, int dirfd, const char *pathname, op
 
     lib_path_t path = { 0 };
     if (fill_lib_path(&path, pathname)) {
-        path.src = 4;
         push_event_if_relevant(ctx, &path, ret);
     }
     return 0;
