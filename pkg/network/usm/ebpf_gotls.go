@@ -404,6 +404,9 @@ func registerCBCreator(mgr *manager.Manager, offsetsDataMap *ebpf.Map, probeIDs 
 		elapsed := time.Since(start)
 
 		binAnalysisMetric.Add(elapsed.Milliseconds())
+		if elapsed.Seconds() > 60 {
+			log.Warnf("slow binary analysis for %q (%v) in %s", filePath.HostPath, filePath.ID, elapsed)
+		}
 		log.Debugf("attached hooks on %s (%v) in %s", filePath.HostPath, filePath.ID, elapsed)
 		return nil
 	}
