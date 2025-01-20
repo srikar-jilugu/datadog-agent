@@ -9,6 +9,7 @@ package sharedlibraries
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"regexp"
@@ -69,6 +70,7 @@ type Watcher struct {
 	scannedPIDs    map[uint32]int
 
 	// telemetry
+	libIgnore  *telemetry.Counter
 	libHits    *telemetry.Counter
 	libMatches *telemetry.Counter
 }
@@ -95,6 +97,7 @@ func NewWatcher(cfg *config.Config, libset Libset, rules ...Rule) (*Watcher, err
 		registry:       utils.NewFileRegistry(consts.USMModuleName, "shared_libraries"),
 		scannedPIDs:    make(map[uint32]int),
 
+		libIgnore:  telemetry.NewCounter("usm.so_watcher.ignore", telemetry.OptPrometheus),
 		libHits:    telemetry.NewCounter("usm.so_watcher.hits", telemetry.OptPrometheus),
 		libMatches: telemetry.NewCounter("usm.so_watcher.matches", telemetry.OptPrometheus),
 	}, nil
@@ -190,14 +193,23 @@ func (w *Watcher) AttachPID(pid uint32) error {
 	return nil
 }
 
+var (
+	lib5k = []byte("libk5crypto.so")
+)
+
 func (w *Watcher) handleLibraryOpen(lib LibPath) {
 	if int(lib.Pid) == w.thisPID {
 		// don't scan ourself
 		return
 	}
 
-	w.libHits.Add(1)
 	path := ToBytes(&lib)
+	if bytes.Contains(path, lib5k) {
+		w.libIgnore.Add(1)
+		return
+	}
+
+	w.libHits.Add(1)
 	found := false
 	for _, r := range w.rules {
 		if r.Re.Match(path) {
