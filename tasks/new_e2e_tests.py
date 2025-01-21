@@ -464,8 +464,7 @@ def pretty_print_logs(result_json_path, logs_per_test: list[TestResult], max_siz
 
         # Split flaky / non flaky tests
         for test_result in logs_per_test:
-
-        # for package, tests in logs_per_test.items():
+            # for package, tests in logs_per_test.items():
             package_flaky = all_known_flakes.get(test_result.package, set())
             package_failing = failing_tests.get(test_result.package, set())
             # print(package, package_flaky, package_failing)
