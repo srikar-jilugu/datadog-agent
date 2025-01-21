@@ -211,6 +211,14 @@ def run(
         raise Exit(code=1)
 
 
+@task
+def cc(ctx):
+    result_json_path = '/tmp/module_test_output.json'
+
+    post_processed_output = post_process_output(result_json_path, test_depth=1)
+    pretty_print_logs(result_json_path, post_processed_output)
+
+
 @task(
     help={
         'locks': 'Cleans up lock files, default True',
