@@ -46,6 +46,7 @@ build do
     # Force different defaults for the "optimization settings"
     # This removes the debug symbol generation and doesn't enable all warnings
     env["OPT"] = "-DNDEBUG -fwrapv"
+    env["PYTHONOPTIMIZE"] = "2"
     configure(*python_configure_options, :env => env)
     command "make -j #{workers}", :env => env
     command "make install", :env => env
