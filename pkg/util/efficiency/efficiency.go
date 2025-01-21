@@ -79,6 +79,8 @@ func generateEfficiencyReport(efficiencyMap map[string]*EfficiencyData) *Efficie
 	var totalDiscoveredSize int64
 	var totalMinSize int64
 
+	log.Infof("Generating efficiency report for %d files and efficiency map %v", len(efficiencyMap), efficiencyMap)
+
 	for _, data := range efficiencyMap {
 		if len(data.Layers) > 1 { // Only files that appear in multiple layers
 			inefficientFiles = append(inefficientFiles, data)

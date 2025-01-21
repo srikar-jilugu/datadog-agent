@@ -120,7 +120,7 @@ func (c *Collector) Scan(ctx context.Context, request sbom.ScanRequest) sbom.Sca
 
 	var report sbom.Report
 	var scanner scannerFunc
-	if c.opts.UseMount && false {
+	if c.opts.UseMount {
 		log.Infof("scanning image using FS")
 		scanner = c.trivyCollector.ScanContainerdImageFromFilesystem
 	} else if c.opts.OverlayFsScan {

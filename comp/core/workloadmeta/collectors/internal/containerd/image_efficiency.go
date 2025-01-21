@@ -9,9 +9,8 @@ package containerd
 
 import (
 	"context"
-	"github.com/DataDog/datadog-agent/pkg/util/efficiency"
-
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
+	"github.com/DataDog/datadog-agent/pkg/util/efficiency"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -60,35 +59,42 @@ func (c *collector) handleEfficiencyEventBundle(eventBundle workloadmeta.EventBu
 		}
 
 		// Start efficiency calculation in a background goroutine
-		c.calculateEfficiencyForImage(image.ID)
+		go func() {
+			if err := c.calculateEfficiencyForImage(image.ID); err != nil {
+				log.Errorf("Error calculating efficiency for image %s: %v", image.ID, err)
+			}
+		}()
 	}
+
+	log.Infof("Finished processing efficiency event bundle with %d events.", len(eventBundle.Events))
 }
 
-func (c *collector) calculateEfficiencyForImage(imageID string) {
+func (c *collector) calculateEfficiencyForImage(imageID string) error {
 	// Fetch the image from the workloadmeta store
 	log.Infof("Fetching image metadata for image %s.", imageID)
 	wmImage, err := c.store.GetImage(imageID)
 	if err != nil {
 		log.Errorf("Unable to fetch image %s: %v", imageID, err)
-		return
+		return err
 	}
 
 	// Perform the efficiency calculation
 	image, err := c.containerdClient.Image(wmImage.Namespace, wmImage.Name)
 	if err != nil {
 		log.Errorf("Error fetching image %s: %v", imageID, err)
-		return
+		return err
 	}
 	log.Infof("Calculating efficiency for image %s.", imageID)
 	report, err := efficiency.GetEfficiencyReportFromImage(image)
 	if err != nil {
 		log.Errorf("Error calculating efficiency for image %s: %v", imageID, err)
-		return
+		return err
 	}
 
 	// Update the image with the efficiency report
 	wmReport := c.convertEfficiencyReportToWorkloadMeta(report)
 	c.notifyStoreWithEfficiencyForImage(imageID, wmReport)
+	return nil
 }
 
 func (c *collector) convertEfficiencyReportToWorkloadMeta(report *efficiency.EfficiencyReport) *workloadmeta.Efficiency {
