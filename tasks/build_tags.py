@@ -111,7 +111,16 @@ AGENT_HEROKU_TAGS = AGENT_TAGS.difference(
 FIPS_AGENT_TAGS = AGENT_TAGS.union({"goexperiment.systemcrypto"})
 
 # CLUSTER_AGENT_TAGS lists the tags needed when building the cluster-agent
-CLUSTER_AGENT_TAGS = {"clusterchecks", "datadog.no_waf", "glibc", "kubeapiserver", "orchestrator", "zlib", "zstd", "ec2"}
+CLUSTER_AGENT_TAGS = {
+    "clusterchecks",
+    "datadog.no_waf",
+    "glibc",
+    "kubeapiserver",
+    "orchestrator",
+    "zlib",
+    "zstd",
+    "ec2",
+}
 
 # CLUSTER_AGENT_CLOUDFOUNDRY_TAGS lists the tags needed when building the cloudfoundry cluster-agent
 CLUSTER_AGENT_CLOUDFOUNDRY_TAGS = {"clusterchecks", "glibc"}
@@ -186,7 +195,7 @@ TRACE_AGENT_TAGS = {
     "containerd",
     "no_dynamic_plugins",
     "datadog.no_waf",
-    "glibc"
+    "glibc",
     "kubeapiserver",
     "kubelet",
     "otlp",
