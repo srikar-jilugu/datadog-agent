@@ -73,8 +73,8 @@ func newMeasuredCache(opts cacheOptions) *measuredCache {
 		// We average it to 500K and multiply 10x as the documentation recommends.
 		NumCounters: 500000 * 10,
 
-		BufferItems: 64,   // default recommended value
-		Metrics:     true, // enable hit/miss counters
+		BufferItems: 64,    // default recommended value
+		Metrics:     false, // enable hit/miss counters
 	}
 	cache, err := ristretto.NewCache(cfg)
 	if err != nil {
