@@ -12,6 +12,7 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -28,6 +29,35 @@ from tasks.libs.common.gomodules import get_default_modules
 from tasks.libs.common.utils import REPO_PATH, color_message, gitlab_section, running_in_ci
 from tasks.testwasher import TestWasher
 from tasks.tools.e2e_stacks import destroy_remote_stack
+
+
+@dataclass
+class TestResult:
+    package: str
+    # Suffix of the full name, contains `test_depth` elements, e.g. TestMultiLine/AutoMultiLine
+    name: str
+    # Contains the test suite name, e.g. TestMultiLineSuite/TestMultiLine/AutoMultiLine
+    full_name: str
+    log: list[str]
+
+
+class TestResultProcessor:
+    def __init__(self, test_depth):
+        self.test_depth = test_depth
+        self.test_results: dict[tuple[str, str], TestResult] = {}
+
+    def add_log(self, package, test, log):
+        splitted_test = test.split("/")
+        simple_name = "/".join(splitted_test[: self.test_depth])
+        key = package, simple_name
+
+        if key in self.test_results:
+            self.test_results[key].log.append(log)
+        else:
+            self.test_results[key] = TestResult(package, simple_name, test, [log])
+
+    def get_results(self):
+        return sorted(self.test_results.values(), key=lambda row: (row.package, row.full_name))
 
 
 class TestState:
@@ -304,7 +334,7 @@ def cleanup_remote_stacks(ctx, stack_regex, pulumi_backend):
         print(f"Failed to destroy stack {stack}")
 
 
-def post_process_output(path: str, test_depth: int = 1):
+def post_process_output(path: str, test_depth: int = 1) -> list[TestResult]:
     """
     Post process the test results to add the test run name
     path: path to the test result json file
@@ -325,23 +355,25 @@ def post_process_output(path: str, test_depth: int = 1):
                 return False
         return True
 
+    results = TestResultProcessor(test_depth)
+
     logs_per_test = {}
     with open(path) as f:
         all_lines = f.readlines()
 
-        # Initalize logs_per_test with all test names
-        for line in all_lines:
-            json_line = json.loads(line)
-            if "Package" not in json_line or "Test" not in json_line or "Output" not in json_line:
-                continue
-            splitted_test = json_line["Test"].split("/")
-            if len(splitted_test) < test_depth:
-                continue
-            if json_line["Package"] not in logs_per_test:
-                logs_per_test[json_line["Package"]] = {}
+        # # Initalize logs_per_test with all test names
+        # for line in all_lines:
+        #     json_line = json.loads(line)
+        #     if "Package" not in json_line or "Test" not in json_line or "Output" not in json_line:
+        #         continue
+        #     splitted_test = json_line["Test"].split("/")
+        #     if len(splitted_test) < test_depth:
+        #         continue
+        #     if json_line["Package"] not in logs_per_test:
+        #         logs_per_test[json_line["Package"]] = {}
 
-            test_name = splitted_test[: min(test_depth, len(splitted_test))]
-            logs_per_test[json_line["Package"]]["/".join(test_name)] = []
+        #     test_name = splitted_test[: min(test_depth, len(splitted_test))]
+        #     logs_per_test[json_line["Package"]]["/".join(test_name)] = []
 
         for line in all_lines:
             json_line = json.loads(line)
@@ -356,11 +388,25 @@ def post_process_output(path: str, test_depth: int = 1):
             if len(splitted_test) < test_depth:  # Append logs to all children tests
                 for test_name in logs_per_test[json_line["Package"]]:
                     if is_parent(splitted_test, test_name.split("/")):
-                        logs_per_test[json_line["Package"]][test_name].append(json_line["Output"])
+                        results.add_log(json_line["Package"], test_name, json_line["Output"])
+                        # logs_per_test[json_line["Package"]][test_name].append((json_line["Output"], test_name))
                 continue
 
-            logs_per_test[json_line["Package"]]["/".join(splitted_test[:test_depth])].append(json_line["Output"])
-    return logs_per_test
+            # TODO A: Modify write logs too
+            # logs_per_test[json_line["Package"]]["/".join(splitted_test[:test_depth])].append(
+            #     (json_line["Output"], "/".join(splitted_test))
+            # )
+            print(json_line["Test"])
+            results.add_log(json_line["Package"], json_line["Test"], json_line["Output"])
+
+    # for package, tests in sorted(logs_per_test.items()):
+    #     for test, logs in sorted(tests.items()):
+    #         print(package, test, len(logs))
+
+    # for res in results.get_results():
+    #     print(res.package, res.name, len(res.log))
+
+    return results.get_results()
 
 
 def write_result_to_log_files(logs_per_test, log_folder):
@@ -391,7 +437,7 @@ def pretty_print_test_logs(logs_per_test: list[tuple[str, str, str]], max_size):
     return size
 
 
-def pretty_print_logs(result_json_path, logs_per_test, max_size=250000, flakes_file="flakes.yaml"):
+def pretty_print_logs(result_json_path, logs_per_test: list[TestResult], max_size=250000, flakes_file="flakes.yaml"):
     """Pretty prints logs with a specific order.
 
     Print order:
@@ -407,17 +453,29 @@ def pretty_print_logs(result_json_path, logs_per_test, max_size=250000, flakes_f
     failing_tests, marked_flaky_tests = washer.parse_test_results(result_json_dir)
     all_known_flakes = washer.merge_known_flakes(marked_flaky_tests)
 
+    print('marked', marked_flaky_tests)
+    print('flakes', all_known_flakes)
+    print()
+    # exit()
+
     try:
         # (failing, flaky) -> [(package, test_name, logs)]
         categorized_logs = defaultdict(list)
 
         # Split flaky / non flaky tests
-        for package, tests in logs_per_test.items():
-            package_flaky = all_known_flakes.get(package, set())
-            package_failing = failing_tests.get(package, set())
-            for test_name, logs in tests.items():
-                state = test_name in package_failing, test_name in package_flaky
-                categorized_logs[state].append((package, test_name, logs))
+        for test_result in logs_per_test:
+
+        # for package, tests in logs_per_test.items():
+            package_flaky = all_known_flakes.get(test_result.package, set())
+            package_failing = failing_tests.get(test_result.package, set())
+            # print(package, package_flaky, package_failing)
+            # for _, (test_name, logs) in tests.items():
+            if True:
+                state = test_result.full_name in package_failing, test_result.full_name in package_flaky
+                print(state, test_result.full_name)
+                # print(state, package, test_name)
+                # categorized_logs[state].append((package, test_name, logs))
+                categorized_logs[state].append((test_result.package, test_result.full_name, test_result.log))
 
         for failing, flaky in [TestState.FAILED, TestState.FLAKY_FAILED, TestState.SUCCESS, TestState.FLAKY_SUCCESS]:
             logs_to_print = categorized_logs[failing, flaky]
@@ -426,7 +484,10 @@ def pretty_print_logs(result_json_path, logs_per_test, max_size=250000, flakes_f
 
             print(f'* {color_message(TestState.get_human_readable_state(failing, flaky), Color.BOLD)} job logs:')
             # Print till the size limit is reached
-            max_size -= pretty_print_test_logs(logs_to_print, max_size)
+            # TODO A
+            # max_size -= pretty_print_test_logs(logs_to_print, max_size)
+            for log in logs_to_print:
+                print(log[:2])
     except TooManyLogsError:
         print(
             color_message("WARNING", "yellow")
