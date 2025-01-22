@@ -62,6 +62,8 @@ func newMeasuredCache(opts cacheOptions) *measuredCache {
 		// a nil *ristretto.Cache is a no-op cache
 		return &measuredCache{}
 	}
+	// The obfuscator cache comes with additional memory overhead due to the ristretto internal
+	// maintenance of Check-Min Sketch and Bloom Filter.
 	cfg := &ristretto.Config{
 		MaxCost: opts.MaxSize,
 		// Assuming the minimum query size is 10 bytes, the maximum number of queries
