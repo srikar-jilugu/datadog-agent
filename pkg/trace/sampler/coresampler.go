@@ -18,10 +18,56 @@ import (
 )
 
 const (
-	bucketDuration  = 5 * time.Second
-	numBuckets      = 6
-	maxRateIncrease = 1.2
+	bucketDuration    = 5 * time.Second
+	numBuckets        = 6
+	maxRateIncrease   = 1.2
+	metricSamplerSeen = "datadog.trace_agent.sampler.seen"
+	metricSamplerKept = "datadog.trace_agent.sampler.kept"
+	metricSamplerSize = "datadog.trace_agent.sampler.size"
 )
+
+type metrics struct {
+	statsd statsd.ClientInterface
+	tags   []string
+	// key: ServiceSignature, value: metricsValue
+	value sync.Map
+}
+
+type metricsValue struct {
+	seen int64
+	kept int64
+}
+
+func (m *metrics) record(sampled bool, serviceSignature ServiceSignature) {
+	initialValue := metricsValue{seen: 1}
+	if sampled {
+		initialValue.kept = 1
+	}
+	if v, load := m.value.LoadOrStore(serviceSignature, initialValue); load {
+		loadedMetricsValue := v.(metricsValue)
+		loadedMetricsValue.seen++
+		if sampled {
+			loadedMetricsValue.kept++
+		}
+		m.value.Store(serviceSignature, loadedMetricsValue)
+	}
+}
+
+func (m *metrics) report() {
+	m.value.Range(func(key, value any) bool {
+		serviceSignature := key.(ServiceSignature)
+		metricsValue := value.(metricsValue)
+		tags := append(m.tags, serviceSignature.metricTags()...)
+		if metricsValue.seen > 0 {
+			_ = m.statsd.Count(metricSamplerSeen, metricsValue.seen, tags, 1)
+		}
+		if metricsValue.kept > 0 {
+			_ = m.statsd.Count(metricSamplerKept, metricsValue.kept, tags, 1)
+		}
+		m.value.Delete(serviceSignature) // reset counters
+		return true
+	})
+}
 
 // Sampler is the main component of the sampling logic
 // Seen traces are counted per signature in a circular buffer
@@ -52,9 +98,7 @@ type Sampler struct {
 	// extraRate is an extra raw sampling rate to apply on top of the sampler rate
 	extraRate float64
 
-	totalSeen float32
-	totalKept *atomic.Int64
-
+	metrics metrics
 	tags    []string
 	exit    chan struct{}
 	stopped chan struct{}
@@ -64,14 +108,14 @@ type Sampler struct {
 // newSampler returns an initialized Sampler
 func newSampler(extraRate float64, targetTPS float64, tags []string, statsd statsd.ClientInterface) *Sampler {
 	s := &Sampler{
-		seen: make(map[Signature][numBuckets]float32),
-
+		seen:      make(map[Signature][numBuckets]float32),
 		extraRate: extraRate,
 		targetTPS: atomic.NewFloat64(targetTPS),
 		tags:      tags,
-
-		totalKept: atomic.NewInt64(0),
-
+		metrics: metrics{
+			tags:   tags,
+			statsd: statsd,
+		},
 		exit:    make(chan struct{}),
 		stopped: make(chan struct{}),
 		statsd:  statsd,
@@ -140,7 +184,6 @@ func (s *Sampler) countWeightedSig(now time.Time, signature Signature, n float32
 	buckets[bucketID%numBuckets] += n
 	s.seen[signature] = buckets
 
-	s.totalSeen += n
 	s.muSeen.Unlock()
 	return updateRates
 }
@@ -248,11 +291,6 @@ func zeroAndGetMax(buckets [numBuckets]float32, previousBucket, newBucket int64)
 	return maxBucket, buckets
 }
 
-// countSample counts a trace sampled by the sampler.
-func (s *Sampler) countSample() {
-	s.totalKept.Inc()
-}
-
 // getSignatureSampleRate returns the sampling rate to apply to a signature
 func (s *Sampler) getSignatureSampleRate(sig Signature) float64 {
 	s.muRates.RLock()
@@ -311,14 +349,8 @@ func (s *Sampler) size() int64 {
 }
 
 func (s *Sampler) report() {
-	s.muSeen.Lock()
-	seen := int64(s.totalSeen)
-	s.totalSeen = 0
-	s.muSeen.Unlock()
-	kept := s.totalKept.Swap(0)
-	_ = s.statsd.Count("datadog.trace_agent.sampler.kept", kept, s.tags, 1)
-	_ = s.statsd.Count("datadog.trace_agent.sampler.seen", seen, s.tags, 1)
-	_ = s.statsd.Gauge("datadog.trace_agent.sampler.size", float64(s.size()), s.tags, 1)
+	s.metrics.report()
+	_ = s.statsd.Gauge(metricSamplerSize, float64(s.size()), s.tags, 1)
 }
 
 // Stop stops the main Run loop

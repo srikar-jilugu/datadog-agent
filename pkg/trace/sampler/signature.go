@@ -70,6 +70,17 @@ func (s ServiceSignature) String() string {
 	return "service:" + s.Name + ",env:" + s.Env
 }
 
+func (s ServiceSignature) metricTags() []string {
+	tags := make([]string, 0, 2)
+	if s.Name != "" {
+		tags = append(tags, "target_service:"+s.Name)
+	}
+	if s.Env != "" {
+		tags = append(tags, "target_env:"+s.Env)
+	}
+	return tags
+}
+
 func computeSpanHash(span *pb.Span, env string, withResource bool) spanHash {
 	h := new32a()
 	h.Write([]byte(env))
