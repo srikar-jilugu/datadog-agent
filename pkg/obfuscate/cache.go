@@ -61,7 +61,7 @@ func newMeasuredCache(opts cacheOptions) *measuredCache {
 		// a nil *ristretto.Cache is a no-op cache
 		return &measuredCache{}
 	}
-	cfg := &ristretto.Config{
+	cache, err := ristretto.NewCache(&ristretto.Config[string, interface{}]{
 		// We know that the maximum allowed resource length is 5K. This means that
 		// in 5MB we can store a minimum of 1000 queries.
 		MaxCost: 5000000,
@@ -75,8 +75,7 @@ func newMeasuredCache(opts cacheOptions) *measuredCache {
 
 		BufferItems: 64,   // default recommended value
 		Metrics:     true, // enable hit/miss counters
-	}
-	cache, err := ristretto.NewCache(cfg)
+	})
 	if err != nil {
 		panic(fmt.Errorf("Error starting obfuscator query cache: %v", err))
 	}
