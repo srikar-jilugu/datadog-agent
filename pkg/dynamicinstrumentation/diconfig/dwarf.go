@@ -319,6 +319,11 @@ func getIndividualArrayElements(offset dwarf.Offset, dwarfData *dwarf.Data, seen
 	arrayElements := []*ditypes.Parameter{}
 	for h := 0; h < int(arrayLength); h++ {
 		newParam := ditypes.Parameter{}
+
+		if elementFields == nil {
+			continue
+		}
+
 		copyTree(&newParam.ParameterPieces, &elementFields.ParameterPieces)
 		newParam.Name = fmt.Sprintf("[%d]%s[%d]", arrayLength, elementTypeName, h)
 		newParam.Type = elementTypeName
@@ -389,7 +394,7 @@ func getStructFields(offset dwarf.Offset, dwarfData *dwarf.Data, seenTypes map[s
 				newStructField.Type, newStructField.TotalSize, newStructField.Kind = getTypeEntryBasicInfo(typeEntry)
 				if typeEntry.Tag != dwarf.TagBaseType {
 					field, err := expandTypeData(typeEntry.Offset, dwarfData, seenTypes)
-					if err != nil {
+					if err != nil || field == nil {
 						return []*ditypes.Parameter{}, err
 					}
 					field.Name = newStructField.Name

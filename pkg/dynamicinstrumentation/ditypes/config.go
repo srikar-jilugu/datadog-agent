@@ -140,6 +140,7 @@ type ProcessInfo struct {
 	ProbesByID             ProbesByID
 	InstrumentationUprobes map[ProbeID]*link.Link
 	InstrumentationObjects map[ProbeID]*ebpf.Collection
+	FailedInspection       bool
 }
 
 // SetupConfigUprobe sets the configuration probe for the process

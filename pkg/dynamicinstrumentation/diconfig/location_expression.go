@@ -225,6 +225,15 @@ func GenerateLocationExpression(limitsInfo *ditypes.InstrumentationInfo, param *
 					if elementParam.TotalSize == 0 && len(elementParam.ParameterPieces) == 0 {
 						continue
 					}
+
+					if elementParam == nil || elementParam.ParameterPieces == nil {
+						continue
+					}
+
+					if len(elementParam.ParameterPieces) == 0 {
+						continue
+					}
+
 					//FIXME: Do we need to limit lengths of arrays??
 					if elementParam.ParameterPieces[0] == nil {
 						continue

@@ -84,6 +84,10 @@ func (cm *ReaderConfigManager) update() error {
 		}
 
 		for pid, procInfo := range cm.state {
+			if procInfo.FailedInspection {
+				continue
+			}
+
 			// cleanup dead procs
 			if _, running := updatedState[pid]; !running {
 				procInfo.CloseAllUprobeLinks()
@@ -92,6 +96,10 @@ func (cm *ReaderConfigManager) update() error {
 		}
 
 		for pid, procInfo := range updatedState {
+			if procInfo.FailedInspection {
+				continue
+			}
+
 			if _, tracked := cm.state[pid]; !tracked {
 				for _, probe := range procInfo.GetProbes() {
 					// install all probes from new process
@@ -124,7 +132,23 @@ func (cm *ReaderConfigManager) updateProcessInfo(procs ditypes.DIProcs) {
 }
 
 func (cm *ReaderConfigManager) updateServiceConfigs(configs configsByService) {
-	cm.configs = configs
+	if cm.configs == nil {
+		cm.configs = make(configsByService)
+	}
+
+	// Merge the new configs into cm.configs
+	for service, probeConfigs := range configs {
+		// Initialize the inner map if it doesn't exist
+		if cm.configs[service] == nil {
+			cm.configs[service] = make(map[ditypes.ProbeID]rcConfig)
+		}
+
+		// Add/update all probe configs for this service
+		for probeID, config := range probeConfigs {
+			cm.configs[service][probeID] = config
+		}
+	}
+
 	err := cm.update()
 	if err != nil {
 		log.Info(err)
