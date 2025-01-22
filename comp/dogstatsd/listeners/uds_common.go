@@ -324,7 +324,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 			// Extract container id from credentials
 			pid, container, taggingErr := processUDSOrigin(oobS[:oobn], l.wmeta, l.pidMap)
 			if taggingErr != nil {
-				log.Warnf("dogstatsd-uds: error processing origin, data will not be tagged : %v", taggingErr)
+				log.Warnf("dogstatsd-uds: error processing origin, data will not be tagged: oobn=%d, oob=%#v (%d/%d): %v", oobn, oob, len(*oob), cap(*oob), taggingErr)
 				udsOriginDetectionErrors.Add(1)
 				l.telemetryStore.tlmUDSOriginDetectionError.Inc(tlmListenerID, l.transport)
 			} else {
