@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/outcaste-io/ristretto"
+	"github.com/dgraph-io/ristretto/v2"
 )
 
 // measuredCache is a wrapper on top of *ristretto.Cache which additionally
 // sends metrics (hits and misses) every 10 seconds.
 type measuredCache struct {
-	*ristretto.Cache
+	*ristretto.Cache[string, interface{}]
 
 	// close allows sending shutdown notification.
 	close  chan struct{}

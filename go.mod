@@ -312,7 +312,7 @@ require (
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	golang.org/x/net v0.33.0
 	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.29.0
 	golang.org/x/text v0.21.0
 	golang.org/x/time v0.8.0
 	golang.org/x/tools v0.27.0
@@ -496,7 +496,6 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.3.0 // indirect
 	github.com/package-url/packageurl-go v0.1.2 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
@@ -836,6 +835,7 @@ require (
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/csaf-poc/csaf_distribution/v3 v3.0.0 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
+	github.com/dgraph-io/ristretto/v2 v2.1.0 // indirect
 	github.com/digitalocean/godo v1.118.0 // indirect
 	github.com/eapache/queue/v2 v2.0.0-20230407133247-75960ed334e4 // indirect
 	github.com/ebitengine/purego v0.8.1 // indirect

@@ -44,7 +44,7 @@ require (
 	go.opentelemetry.io/otel v1.32.0
 	go.opentelemetry.io/otel/metric v1.32.0
 	go.uber.org/atomic v1.11.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.29.0
 	golang.org/x/time v0.8.0
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.35.1
@@ -63,7 +63,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/cgroups/v3 v3.0.2 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
-	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
+	github.com/dgraph-io/ristretto/v2 v2.1.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -78,7 +78,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.114.0 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0-rc.3 // indirect
-	github.com/outcaste-io/ristretto v0.2.1 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

@@ -90,7 +90,8 @@ require (
 	github.com/DataDog/go-sqllexer v0.0.16 // indirect
 	github.com/DataDog/sketches-go v1.4.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgraph-io/ristretto/v2 v2.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.6.0-alpha.5 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -99,7 +100,6 @@ require (
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
@@ -139,7 +139,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect

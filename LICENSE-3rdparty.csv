@@ -874,6 +874,9 @@ core,github.com/csaf-poc/csaf_distribution/v3/util,MIT,Copyright 2021-2023 Germa
 core,github.com/cyphar/filepath-securejoin,BSD-3-Clause,Copyright (C) 2014-2015 Docker Inc & Go Authors. All rights reserved | Copyright (C) 2017-2024 SUSE LLC. All rights reserved
 core,github.com/davecgh/go-spew/spew,ISC,Copyright (c) 2012-2016 Dave Collins <dave@davec.name>
 core,github.com/dennwc/varint,MIT,Copyright (c) 2019 Denys Smirnov
+core,github.com/dgraph-io/ristretto/v2,Apache-2.0,"Copyright (c) 2014 Andreas Briese, eduToolbox@Bri-C GmbH, Sarstedt | Copyright (c) 2019 Ewan Chou | Copyright 2019 Dgraph Labs, Inc. and Contributors | Copyright 2020 Dgraph Labs, Inc. and Contributors | Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved."
+core,github.com/dgraph-io/ristretto/v2/z,MIT,"Copyright (c) 2014 Andreas Briese, eduToolbox@Bri-C GmbH, Sarstedt | Copyright (c) 2019 Ewan Chou | Copyright 2019 Dgraph Labs, Inc. and Contributors | Copyright 2020 Dgraph Labs, Inc. and Contributors | Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved."
+core,github.com/dgraph-io/ristretto/v2/z/simd,MIT,"Copyright (c) 2014 Andreas Briese, eduToolbox@Bri-C GmbH, Sarstedt | Copyright (c) 2019 Ewan Chou | Copyright 2019 Dgraph Labs, Inc. and Contributors | Copyright 2020 Dgraph Labs, Inc. and Contributors | Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved."
 core,github.com/dgryski/go-jump,MIT,Copyright (c) 2014 Damian Gryski <damian@gryski.com>
 core,github.com/dgryski/go-rendezvous,MIT,Copyright (c) 2017-2020 Damian Gryski <damian@gryski.com>
 core,github.com/digitalocean/godo,MIT,Copyright (c) 2013 The go-github AUTHORS. All rights reserved | Copyright (c) 2014-2016 The godo AUTHORS. All rights reserved
@@ -1892,9 +1895,6 @@ core,github.com/openvex/go-vex/pkg/vex,Apache-2.0,Copyright 2023 The OpenVEX Aut
 core,github.com/openzipkin/zipkin-go/model,Apache-2.0,Copyright 2017 The OpenZipkin Authors
 core,github.com/openzipkin/zipkin-go/proto/zipkin_proto3,Apache-2.0,Copyright 2017 The OpenZipkin Authors
 core,github.com/openzipkin/zipkin-go/reporter,Apache-2.0,Copyright 2017 The OpenZipkin Authors
-core,github.com/outcaste-io/ristretto,Apache-2.0,"Copyright (c) 2014 Andreas Briese, eduToolbox@Bri-C GmbH, Sarstedt | Copyright (c) 2019 Ewan Chou | Copyright 2019 Dgraph Labs, Inc. and Contributors | Copyright 2020 Dgraph Labs, Inc. and Contributors | Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved. | Copyright 2021 Dgraph Labs, Inc. and Contributors"
-core,github.com/outcaste-io/ristretto/z,MIT,"Copyright (c) 2014 Andreas Briese, eduToolbox@Bri-C GmbH, Sarstedt | Copyright (c) 2019 Ewan Chou | Copyright 2019 Dgraph Labs, Inc. and Contributors | Copyright 2020 Dgraph Labs, Inc. and Contributors | Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved. | Copyright 2021 Dgraph Labs, Inc. and Contributors"
-core,github.com/outcaste-io/ristretto/z/simd,MIT,"Copyright (c) 2014 Andreas Briese, eduToolbox@Bri-C GmbH, Sarstedt | Copyright (c) 2019 Ewan Chou | Copyright 2019 Dgraph Labs, Inc. and Contributors | Copyright 2020 Dgraph Labs, Inc. and Contributors | Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved. | Copyright 2021 Dgraph Labs, Inc. and Contributors"
 core,github.com/ovh/go-ovh/ovh,BSD-3-Clause,"Copyright (c) 2015-2023, OVH SAS"
 core,github.com/owenrumney/go-sarif/v2/sarif,Unlicense,"copyright interest in the | copyright law | copyright laws, the author or authors"
 core,github.com/package-url/packageurl-go,MIT,Copyright (c) the purl authors
