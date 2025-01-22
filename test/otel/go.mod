@@ -315,3 +315,5 @@ require (
 
 // github.com/golang/mock is unmaintained and archived, v1.6.0 is the last released version
 replace github.com/golang/mock => github.com/golang/mock v1.6.0
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.117.0 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250122094010-34674c6c59a4

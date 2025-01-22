@@ -264,3 +264,7 @@ require (
 	go.opentelemetry.io/collector/receiver/receivertest v0.118.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.56.0 // indirect
 )
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.117.0 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250122094010-34674c6c59a4
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.117.0 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250122094010-34674c6c59a4
