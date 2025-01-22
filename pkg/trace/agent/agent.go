@@ -31,6 +31,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/trace/traceutil"
 	"github.com/DataDog/datadog-agent/pkg/trace/version"
 	"github.com/DataDog/datadog-agent/pkg/trace/writer"
+	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
 )
@@ -136,7 +137,7 @@ type SpanModifier interface {
 
 // NewAgent returns a new Agent object, ready to be started. It takes a context
 // which may be cancelled in order to gracefully stop the agent.
-func NewAgent(ctx context.Context, conf *config.AgentConfig, telemetryCollector telemetry.TelemetryCollector, statsd statsd.ClientInterface, comp compression.Component) *Agent {
+func NewAgent(ctx context.Context, conf *config.AgentConfig, telemetryCollector telemetry.TelemetryCollector, statsd statsd.ClientInterface, comp compression.Component, hostFromAttributesHandler attributes.HostFromAttributesHandler) *Agent {
 	dynConf := sampler.NewDynamicConfig()
 	log.Infof("Starting Agent with processor trace buffer of size %d", conf.TraceBuffer)
 	in := make(chan *api.Payload, conf.TraceBuffer)
@@ -167,7 +168,7 @@ func NewAgent(ctx context.Context, conf *config.AgentConfig, telemetryCollector 
 		Timing:                timing,
 	}
 	agnt.Receiver = api.NewHTTPReceiver(conf, dynConf, in, agnt, telemetryCollector, statsd, timing)
-	agnt.OTLPReceiver = api.NewOTLPReceiver(in, conf, statsd, timing)
+	agnt.OTLPReceiver = api.NewOTLPReceiver(in, conf, statsd, timing, hostFromAttributesHandler)
 	agnt.RemoteConfigHandler = remoteconfighandler.New(conf, agnt.PrioritySampler, agnt.RareSampler, agnt.ErrorsSampler)
 	agnt.TraceWriter = writer.NewTraceWriter(conf, agnt.PrioritySampler, agnt.ErrorsSampler, agnt.RareSampler, telemetryCollector, statsd, timing, comp)
 	return agnt

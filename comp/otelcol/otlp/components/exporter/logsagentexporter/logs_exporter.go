@@ -24,10 +24,11 @@ import (
 
 // Exporter defines fields for the logs agent exporter
 type Exporter struct {
-	set              component.TelemetrySettings
-	logsAgentChannel chan *message.Message
-	logSource        *sources.LogSource
-	translator       *logsmapping.Translator
+	set                       component.TelemetrySettings
+	logsAgentChannel          chan *message.Message
+	logSource                 *sources.LogSource
+	translator                *logsmapping.Translator
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 // NewExporter initializes a new logs agent exporter with the given parameters
@@ -37,6 +38,7 @@ func NewExporter(
 	logSource *sources.LogSource,
 	logsAgentChannel chan *message.Message,
 	attributesTranslator *attributes.Translator,
+	hostFromAttributesHandler attributes.HostFromAttributesHandler,
 ) (*Exporter, error) {
 	translator, err := logsmapping.NewTranslator(set, attributesTranslator, cfg.OtelSource)
 	if err != nil {
@@ -44,10 +46,11 @@ func NewExporter(
 	}
 
 	return &Exporter{
-		set:              set,
-		logsAgentChannel: logsAgentChannel,
-		logSource:        logSource,
-		translator:       translator,
+		set:                       set,
+		logsAgentChannel:          logsAgentChannel,
+		logSource:                 logSource,
+		translator:                translator,
+		hostFromAttributesHandler: hostFromAttributesHandler,
 	}, nil
 }
 
@@ -64,7 +67,7 @@ func (e *Exporter) ConsumeLogs(ctx context.Context, ld plog.Logs) (err error) {
 		}
 	}()
 
-	payloads := e.translator.MapLogs(ctx, ld)
+	payloads := e.translator.MapLogs(ctx, ld, e.hostFromAttributesHandler)
 	for _, ddLog := range payloads {
 		tags := strings.Split(ddLog.GetDdtags(), ",")
 		// Tags are set in the message origin instead

@@ -29,6 +29,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/trace/timing"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-go/v5/statsd"
+	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 )
 
 // ServerlessTraceAgent represents a trace agent in a serverless context
@@ -108,6 +109,8 @@ type StartServerlessTraceAgentArgs struct {
 //
 //nolint:revive // TODO(SERV) Fix revive linter
 func StartServerlessTraceAgent(args StartServerlessTraceAgentArgs) ServerlessTraceAgent {
+	var hostFromAttributesHandler attributes.HostFromAttributesHandler = nil
+
 	if args.Enabled {
 		// Set the serverless config option which will be used to determine if
 		// hostname should be resolved. Skipping hostname resolution saves >1s
@@ -125,7 +128,7 @@ func StartServerlessTraceAgent(args StartServerlessTraceAgentArgs) ServerlessTra
 			tc.Hostname = ""
 			tc.SynchronousFlushing = true
 			tc.AzureContainerAppTags = args.AzureContainerAppTags
-			ta := agent.NewAgent(context, tc, telemetry.NewNoopCollector(), &statsd.NoOpClient{}, zstd.NewComponent())
+			ta := agent.NewAgent(context, tc, telemetry.NewNoopCollector(), &statsd.NoOpClient{}, zstd.NewComponent(), hostFromAttributesHandler)
 			ta.SpanModifier = &spanModifier{
 				coldStartSpanId: args.ColdStartSpanID,
 				lambdaSpanChan:  args.LambdaSpanChan,

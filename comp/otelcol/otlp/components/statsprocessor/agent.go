@@ -22,6 +22,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/trace/timing"
 	"github.com/DataDog/datadog-agent/pkg/trace/writer"
 	"github.com/DataDog/datadog-go/v5/statsd"
+	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 )
 
 // TraceAgent specifies a minimal trace agent instance that is able to process traces and output stats.
@@ -68,12 +69,12 @@ func (n *noopTraceWriter) UpdateAPIKey(_, _ string) {}
 
 // NewAgent creates a new unstarted traceagent using the given context. Call Start to start the traceagent.
 // The out channel will receive outoing stats payloads resulting from spans ingested using the Ingest method.
-func NewAgent(ctx context.Context, out chan *pb.StatsPayload, metricsClient statsd.ClientInterface, timingReporter timing.Reporter) *TraceAgent {
-	return NewAgentWithConfig(ctx, traceconfig.New(), out, metricsClient, timingReporter)
+func NewAgent(ctx context.Context, out chan *pb.StatsPayload, metricsClient statsd.ClientInterface, timingReporter timing.Reporter, hostFromAttributesHandler attributes.HostFromAttributesHandler) *TraceAgent {
+	return NewAgentWithConfig(ctx, traceconfig.New(), out, metricsClient, timingReporter, hostFromAttributesHandler)
 }
 
 // NewAgentWithConfig creates a new traceagent with the given config cfg. Used in tests; use newAgent instead.
-func NewAgentWithConfig(ctx context.Context, cfg *traceconfig.AgentConfig, out chan *pb.StatsPayload, metricsClient statsd.ClientInterface, timingReporter timing.Reporter) *TraceAgent {
+func NewAgentWithConfig(ctx context.Context, cfg *traceconfig.AgentConfig, out chan *pb.StatsPayload, metricsClient statsd.ClientInterface, timingReporter timing.Reporter, hostFromAttributesHandler attributes.HostFromAttributesHandler) *TraceAgent {
 	// disable the HTTP receiver
 	cfg.ReceiverEnabled = false
 	// set the API key to succeed startup; it is never used nor needed
@@ -85,7 +86,7 @@ func NewAgentWithConfig(ctx context.Context, cfg *traceconfig.AgentConfig, out c
 	// Ingest). This gives a better user experience.
 	cfg.Hostname = "__unset__"
 	pchan := make(chan *api.Payload, 1000)
-	a := agent.NewAgent(ctx, cfg, telemetry.NewNoopCollector(), metricsClient, gzip.NewComponent())
+	a := agent.NewAgent(ctx, cfg, telemetry.NewNoopCollector(), metricsClient, gzip.NewComponent(), hostFromAttributesHandler)
 	// replace the Concentrator (the component which computes and flushes APM Stats from incoming
 	// traces) with our own, which uses the 'out' channel.
 	statsWriter := NewOtelStatsWriter(out)
@@ -95,7 +96,7 @@ func NewAgentWithConfig(ctx context.Context, cfg *traceconfig.AgentConfig, out c
 	a.ClientStatsAggregator = stats.NewClientStatsAggregator(cfg, statsWriter, metricsClient)
 	// lastly, start the OTLP receiver, which will be used to introduce ResourceSpans into the traceagent,
 	// so that we can transform them to Datadog spans and receive stats.
-	a.OTLPReceiver = api.NewOTLPReceiver(pchan, cfg, metricsClient, timingReporter)
+	a.OTLPReceiver = api.NewOTLPReceiver(pchan, cfg, metricsClient, timingReporter, hostFromAttributesHandler)
 	// we want to discard all traces that would be written out so replace traceWriter with noop
 	a.TraceWriter = &noopTraceWriter{}
 

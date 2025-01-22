@@ -59,12 +59,13 @@ func (f SourceProviderFunc) Source(ctx context.Context) (source.Source, error) {
 // Exporter translate OTLP metrics into the Datadog format and sends
 // them to the agent serializer.
 type Exporter struct {
-	tr              *metrics.Translator
-	s               serializer.MetricSerializer
-	hostGetter      SourceProviderFunc
-	extraTags       []string
-	enricher        tagenricher
-	apmReceiverAddr string
+	tr                        *metrics.Translator
+	s                         serializer.MetricSerializer
+	hostGetter                SourceProviderFunc
+	extraTags                 []string
+	enricher                  tagenricher
+	apmReceiverAddr           string
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 // TODO: expose the same function in OSS exporter and remove this
@@ -130,6 +131,7 @@ func NewExporter(
 	enricher tagenricher,
 	hostGetter SourceProviderFunc,
 	statsIn chan []byte,
+	hostFromAttributesHandler attributes.HostFromAttributesHandler,
 ) (*Exporter, error) {
 	tr, err := translatorFromConfig(set, attributesTranslator, cfg.Metrics.Metrics, hostGetter, statsIn)
 	if err != nil {
@@ -145,19 +147,20 @@ func NewExporter(
 		extraTags = strings.Split(cfg.Metrics.Tags, ",")
 	}
 	return &Exporter{
-		tr:              tr,
-		s:               s,
-		hostGetter:      hostGetter,
-		enricher:        enricher,
-		apmReceiverAddr: cfg.Metrics.APMStatsReceiverAddr,
-		extraTags:       extraTags,
+		tr:                        tr,
+		s:                         s,
+		hostGetter:                hostGetter,
+		enricher:                  enricher,
+		apmReceiverAddr:           cfg.Metrics.APMStatsReceiverAddr,
+		extraTags:                 extraTags,
+		hostFromAttributesHandler: hostFromAttributesHandler,
 	}, nil
 }
 
 // ConsumeMetrics translates OTLP metrics into the Datadog format and sends
 func (e *Exporter) ConsumeMetrics(ctx context.Context, ld pmetric.Metrics) error {
 	consumer := &serializerConsumer{enricher: e.enricher, extraTags: e.extraTags, apmReceiverAddr: e.apmReceiverAddr}
-	rmt, err := e.tr.MapMetrics(ctx, ld, consumer)
+	rmt, err := e.tr.MapMetrics(ctx, ld, consumer, e.hostFromAttributesHandler)
 	if err != nil {
 		return err
 	}

@@ -50,18 +50,19 @@ var _ (ptraceotlp.GRPCServer) = (*OTLPReceiver)(nil)
 // data on two ports for both plain HTTP and gRPC.
 type OTLPReceiver struct {
 	ptraceotlp.UnimplementedGRPCServer
-	wg             sync.WaitGroup      // waits for a graceful shutdown
-	grpcsrv        *grpc.Server        // the running GRPC server on a started receiver, if enabled
-	out            chan<- *Payload     // the outgoing payload channel
-	conf           *config.AgentConfig // receiver config
-	cidProvider    IDProvider          // container ID provider
-	statsd         statsd.ClientInterface
-	timing         timing.Reporter
-	ignoreResNames map[string]struct{}
+	wg                        sync.WaitGroup      // waits for a graceful shutdown
+	grpcsrv                   *grpc.Server        // the running GRPC server on a started receiver, if enabled
+	out                       chan<- *Payload     // the outgoing payload channel
+	conf                      *config.AgentConfig // receiver config
+	cidProvider               IDProvider          // container ID provider
+	statsd                    statsd.ClientInterface
+	timing                    timing.Reporter
+	ignoreResNames            map[string]struct{}
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 // NewOTLPReceiver returns a new OTLPReceiver which sends any incoming traces down the out channel.
-func NewOTLPReceiver(out chan<- *Payload, cfg *config.AgentConfig, statsd statsd.ClientInterface, timing timing.Reporter) *OTLPReceiver {
+func NewOTLPReceiver(out chan<- *Payload, cfg *config.AgentConfig, statsd statsd.ClientInterface, timing timing.Reporter, hostFromAttributesHandler attributes.HostFromAttributesHandler) *OTLPReceiver {
 	operationAndResourceNamesV2GateEnabled := cfg.HasFeature("enable_operation_and_resource_name_logic_v2")
 	operationAndResourceNamesV2GateEnabledVal := 0.0
 	if operationAndResourceNamesV2GateEnabled {
@@ -103,7 +104,7 @@ func NewOTLPReceiver(out chan<- *Payload, cfg *config.AgentConfig, statsd statsd
 		enableReceiveResourceSpansV2Val = 1.0
 	}
 	_ = statsd.Gauge("datadog.trace_agent.otlp.enable_receive_resource_spans_v2", enableReceiveResourceSpansV2Val, nil, 1)
-	return &OTLPReceiver{out: out, conf: cfg, cidProvider: NewIDProvider(cfg.ContainerProcRoot, cfg.ContainerIDFromOriginInfo), statsd: statsd, timing: timing, ignoreResNames: ignoreResNames}
+	return &OTLPReceiver{out: out, conf: cfg, cidProvider: NewIDProvider(cfg.ContainerProcRoot, cfg.ContainerIDFromOriginInfo), statsd: statsd, timing: timing, ignoreResNames: ignoreResNames, hostFromAttributesHandler: hostFromAttributesHandler}
 }
 
 // Start starts the OTLPReceiver, if any of the servers were configured as active.
@@ -287,7 +288,7 @@ func (o *OTLPReceiver) receiveResourceSpansV2(ctx context.Context, rspans ptrace
 	}
 	// Get the hostname or set to empty if source is empty
 	var hostname string
-	src, srcok := o.conf.OTLPReceiver.AttributesTranslator.ResourceToSource(ctx, rspans.Resource(), traceutil.SignalTypeSet)
+	src, srcok := o.conf.OTLPReceiver.AttributesTranslator.ResourceToSource(ctx, rspans.Resource(), traceutil.SignalTypeSet, o.hostFromAttributesHandler)
 	if srcok {
 		switch src.Kind {
 		case source.HostnameKind:
@@ -339,7 +340,7 @@ func (o *OTLPReceiver) receiveResourceSpansV2(ctx context.Context, rspans ptrace
 func (o *OTLPReceiver) receiveResourceSpansV1(ctx context.Context, rspans ptrace.ResourceSpans, httpHeader http.Header) source.Source {
 	// each rspans is coming from a different resource and should be considered
 	// a separate payload; typically there is only one item in this slice
-	src, srcok := o.conf.OTLPReceiver.AttributesTranslator.ResourceToSource(ctx, rspans.Resource(), traceutil.SignalTypeSet)
+	src, srcok := o.conf.OTLPReceiver.AttributesTranslator.ResourceToSource(ctx, rspans.Resource(), traceutil.SignalTypeSet, o.hostFromAttributesHandler)
 	hostFromMap := func(m map[string]string, key string) {
 		// hostFromMap sets the hostname to m[key] if it is set.
 		if v, ok := m[key]; ok {

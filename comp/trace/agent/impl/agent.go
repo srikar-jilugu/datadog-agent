@@ -101,6 +101,8 @@ type component struct {
 
 // NewAgent creates a new Agent component.
 func NewAgent(deps dependencies) (traceagent.Component, error) {
+	var hostFromAttributesHandler attributes.HostFromAttributesHandler = nil
+
 	c := component{}
 	tracecfg := deps.Config.Object()
 	if !tracecfg.Enabled {
@@ -135,6 +137,7 @@ func NewAgent(deps dependencies) (traceagent.Component, error) {
 		c.telemetryCollector,
 		statsdCl,
 		deps.Compressor,
+		hostFromAttributesHandler,
 	)
 
 	c.config.OnUpdateAPIKey(c.UpdateAPIKey)

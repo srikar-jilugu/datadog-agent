@@ -538,9 +538,9 @@ func GetOTelOperationNameV1(
 }
 
 // GetOtelSource returns the source based on OTel span and resource attributes.
-func GetOtelSource(span ptrace.Span, res pcommon.Resource, tr *attributes.Translator) (source.Source, bool) {
+func GetOtelSource(span ptrace.Span, res pcommon.Resource, tr *attributes.Translator, hostFromAttributesHandler attributes.HostFromAttributesHandler) (source.Source, bool) {
 	ctx := context.Background()
-	src, srcok := tr.ResourceToSource(ctx, res, SignalTypeSet)
+	src, srcok := tr.ResourceToSource(ctx, res, SignalTypeSet, hostFromAttributesHandler)
 	if !srcok {
 		if v := GetOTelAttrValInResAndSpanAttrs(span, res, false, "_dd.hostname"); v != "" {
 			src = source.Source{Kind: source.HostnameKind, Identifier: v}
@@ -551,8 +551,8 @@ func GetOtelSource(span ptrace.Span, res pcommon.Resource, tr *attributes.Transl
 }
 
 // GetOTelHostname returns the DD hostname based on OTel span and resource attributes.
-func GetOTelHostname(span ptrace.Span, res pcommon.Resource, tr *attributes.Translator, fallbackHost string) string {
-	src, srcok := GetOtelSource(span, res, tr)
+func GetOTelHostname(span ptrace.Span, res pcommon.Resource, tr *attributes.Translator, fallbackHost string, hostFromAttributesHandler attributes.HostFromAttributesHandler) string {
+	src, srcok := GetOtelSource(span, res, tr, hostFromAttributesHandler)
 	if srcok {
 		switch src.Kind {
 		case source.HostnameKind:

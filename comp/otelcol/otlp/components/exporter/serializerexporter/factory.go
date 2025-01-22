@@ -27,11 +27,12 @@ const (
 )
 
 type factory struct {
-	s          serializer.MetricSerializer
-	enricher   tagenricher
-	hostGetter SourceProviderFunc
-	statsIn    chan []byte
-	wg         *sync.WaitGroup // waits for consumeStatsPayload to exit
+	s                         serializer.MetricSerializer
+	enricher                  tagenricher
+	hostGetter                SourceProviderFunc
+	statsIn                   chan []byte
+	wg                        *sync.WaitGroup // waits for consumeStatsPayload to exit
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 type tagenricher interface {
@@ -40,13 +41,14 @@ type tagenricher interface {
 }
 
 // NewFactory creates a new serializer exporter factory.
-func NewFactory(s serializer.MetricSerializer, enricher tagenricher, hostGetter func(context.Context) (string, error), statsIn chan []byte, wg *sync.WaitGroup) exp.Factory {
+func NewFactory(s serializer.MetricSerializer, enricher tagenricher, hostGetter func(context.Context) (string, error), statsIn chan []byte, wg *sync.WaitGroup, hostFromAttributesHandler attributes.HostFromAttributesHandler) exp.Factory {
 	f := &factory{
-		s:          s,
-		enricher:   enricher,
-		hostGetter: hostGetter,
-		statsIn:    statsIn,
-		wg:         wg,
+		s:                         s,
+		enricher:                  enricher,
+		hostGetter:                hostGetter,
+		statsIn:                   statsIn,
+		wg:                        wg,
+		hostFromAttributesHandler: hostFromAttributesHandler,
 	}
 	cfgType, _ := component.NewType(TypeStr)
 
@@ -69,7 +71,7 @@ func (f *factory) createMetricExporter(ctx context.Context, params exp.Settings,
 		return nil, err
 	}
 
-	newExp, err := NewExporter(params.TelemetrySettings, attributesTranslator, f.s, cfg, f.enricher, f.hostGetter, f.statsIn)
+	newExp, err := NewExporter(params.TelemetrySettings, attributesTranslator, f.s, cfg, f.enricher, f.hostGetter, f.statsIn, f.hostFromAttributesHandler)
 	if err != nil {
 		return nil, err
 	}

@@ -36,12 +36,13 @@ type Config struct {
 }
 
 type factory struct {
-	logsAgentChannel chan *message.Message
+	logsAgentChannel          chan *message.Message
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 // NewFactory creates a new logsagentexporter factory.
-func NewFactory(logsAgentChannel chan *message.Message) exp.Factory {
-	f := &factory{logsAgentChannel: logsAgentChannel}
+func NewFactory(logsAgentChannel chan *message.Message, hostFromAttributesHandler attributes.HostFromAttributesHandler) exp.Factory {
+	f := &factory{logsAgentChannel: logsAgentChannel, hostFromAttributesHandler: hostFromAttributesHandler}
 	cfgType, _ := component.NewType(TypeStr)
 
 	return exp.NewFactory(
@@ -72,7 +73,7 @@ func (f *factory) createLogsExporter(
 		return nil, err
 	}
 
-	exporter, err := NewExporter(set.TelemetrySettings, cfg, logSource, f.logsAgentChannel, attributesTranslator)
+	exporter, err := NewExporter(set.TelemetrySettings, cfg, logSource, f.logsAgentChannel, attributesTranslator, f.hostFromAttributesHandler)
 	if err != nil {
 		return nil, err
 	}

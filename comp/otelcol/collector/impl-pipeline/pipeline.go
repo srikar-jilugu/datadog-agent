@@ -30,6 +30,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/serializer"
 	"github.com/DataDog/datadog-agent/pkg/util/option"
+	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 )
 
 const (
@@ -75,16 +76,17 @@ type Provides struct {
 }
 
 type collectorImpl struct {
-	authToken      authtoken.Component
-	col            *otlp.Pipeline
-	config         config.Component
-	log            log.Component
-	serializer     serializer.MetricSerializer
-	logsAgent      option.Option[logsagentpipeline.Component]
-	inventoryAgent inventoryagent.Component
-	tagger         tagger.Component
-	client         *http.Client
-	ctx            context.Context
+	authToken                 authtoken.Component
+	col                       *otlp.Pipeline
+	config                    config.Component
+	log                       log.Component
+	serializer                serializer.MetricSerializer
+	logsAgent                 option.Option[logsagentpipeline.Component]
+	inventoryAgent            inventoryagent.Component
+	tagger                    tagger.Component
+	client                    *http.Client
+	ctx                       context.Context
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 func (c *collectorImpl) start(context.Context) error {
@@ -100,7 +102,7 @@ func (c *collectorImpl) start(context.Context) error {
 		}
 	}
 	var err error
-	col, err := otlp.NewPipelineFromAgentConfig(c.config, c.serializer, logch, c.tagger)
+	col, err := otlp.NewPipelineFromAgentConfig(c.config, c.serializer, logch, c.tagger, c.hostFromAttributesHandler)
 	if err != nil {
 		// failure to start the OTLP component shouldn't fail startup
 		c.log.Errorf("Error creating the OTLP ingest pipeline: %v", err)
@@ -129,6 +131,7 @@ func (c *collectorImpl) Status() datatype.CollectorStatus {
 
 // NewComponent creates a new Component for this module and returns any errors on failure.
 func NewComponent(reqs Requires) (Provides, error) {
+	var hostFromAttributesHandler attributes.HostFromAttributesHandler = nil
 
 	timeoutSeconds := reqs.Config.GetInt("otelcollector.extension_timeout")
 	if timeoutSeconds == 0 {
@@ -137,15 +140,16 @@ func NewComponent(reqs Requires) (Provides, error) {
 	client := apiutil.GetClientWithTimeout(time.Duration(timeoutSeconds)*time.Second, false)
 
 	collector := &collectorImpl{
-		authToken:      reqs.Authtoken,
-		config:         reqs.Config,
-		log:            reqs.Log,
-		serializer:     reqs.Serializer,
-		logsAgent:      reqs.LogsAgent,
-		inventoryAgent: reqs.InventoryAgent,
-		tagger:         reqs.Tagger,
-		client:         client,
-		ctx:            context.Background(),
+		authToken:                 reqs.Authtoken,
+		config:                    reqs.Config,
+		log:                       reqs.Log,
+		serializer:                reqs.Serializer,
+		logsAgent:                 reqs.LogsAgent,
+		inventoryAgent:            reqs.InventoryAgent,
+		tagger:                    reqs.Tagger,
+		client:                    client,
+		ctx:                       context.Background(),
+		hostFromAttributesHandler: hostFromAttributesHandler,
 	}
 
 	reqs.Lc.Append(compdef.Hook{

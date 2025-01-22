@@ -11,6 +11,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/obfuscate"
 	"github.com/DataDog/datadog-agent/pkg/trace/log"
 	"github.com/DataDog/datadog-agent/pkg/trace/transform"
+	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.17.0"
@@ -37,8 +38,9 @@ func OTLPTracesToConcentratorInputs(
 	conf *config.AgentConfig,
 	containerTagKeys []string,
 	peerTagKeys []string,
+	hostFromAttributesHandler attributes.HostFromAttributesHandler,
 ) []Input {
-	return OTLPTracesToConcentratorInputsWithObfuscation(traces, conf, containerTagKeys, peerTagKeys, nil)
+	return OTLPTracesToConcentratorInputsWithObfuscation(traces, conf, containerTagKeys, peerTagKeys, nil, hostFromAttributesHandler)
 }
 
 // OTLPTracesToConcentratorInputsWithObfuscation converts eligible OTLP spans to Concentrator Input.
@@ -52,6 +54,7 @@ func OTLPTracesToConcentratorInputsWithObfuscation(
 	containerTagKeys []string,
 	peerTagKeys []string,
 	obfuscator *obfuscate.Obfuscator,
+	hostFromAttributesHandler attributes.HostFromAttributesHandler,
 ) []Input {
 	spanByID, resByID, scopeByID := traceutil.IndexOTelSpans(traces)
 	topLevelByKind := conf.HasFeature("enable_otlp_compute_top_level_by_span_kind")
@@ -74,7 +77,7 @@ func OTLPTracesToConcentratorInputsWithObfuscation(
 			continue
 		}
 		env := traceutil.GetOTelEnv(otelres)
-		hostname := traceutil.GetOTelHostname(otelspan, otelres, conf.OTLPReceiver.AttributesTranslator, conf.Hostname)
+		hostname := traceutil.GetOTelHostname(otelspan, otelres, conf.OTLPReceiver.AttributesTranslator, conf.Hostname, hostFromAttributesHandler)
 		version := traceutil.GetOTelAttrValInResAndSpanAttrs(otelspan, otelres, true, semconv.AttributeServiceVersion)
 		cid := traceutil.GetOTelAttrValInResAndSpanAttrs(otelspan, otelres, true, semconv.AttributeContainerID, semconv.AttributeK8SPodUID)
 		var ctags []string

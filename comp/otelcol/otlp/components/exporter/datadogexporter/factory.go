@@ -39,12 +39,13 @@ type factory struct {
 	attributesErr          error
 	onceSetupTraceAgentCmp sync.Once
 
-	registry       *featuregate.Registry
-	s              serializer.MetricSerializer
-	logsAgent      logsagentpipeline.Component
-	h              serializerexporter.SourceProviderFunc
-	traceagentcmp  traceagent.Component
-	mclientwrapper *metricsclient.StatsdClientWrapper
+	registry                  *featuregate.Registry
+	s                         serializer.MetricSerializer
+	logsAgent                 logsagentpipeline.Component
+	h                         serializerexporter.SourceProviderFunc
+	traceagentcmp             traceagent.Component
+	mclientwrapper            *metricsclient.StatsdClientWrapper
+	hostFromAttributesHandler attributes.HostFromAttributesHandler
 }
 
 // setupTraceAgentCmp sets up the trace agent component.
@@ -71,14 +72,16 @@ func newFactoryWithRegistry(
 	logsagent logsagentpipeline.Component,
 	h serializerexporter.SourceProviderFunc,
 	mclientwrapper *metricsclient.StatsdClientWrapper,
+	hostFromAttributesHandler attributes.HostFromAttributesHandler,
 ) exporter.Factory {
 	f := &factory{
-		registry:       registry,
-		s:              s,
-		logsAgent:      logsagent,
-		traceagentcmp:  traceagentcmp,
-		h:              h,
-		mclientwrapper: mclientwrapper,
+		registry:                  registry,
+		s:                         s,
+		logsAgent:                 logsagent,
+		traceagentcmp:             traceagentcmp,
+		h:                         h,
+		mclientwrapper:            mclientwrapper,
+		hostFromAttributesHandler: hostFromAttributesHandler,
 	}
 
 	return exporter.NewFactory(
@@ -111,8 +114,9 @@ func NewFactory(
 	logsAgent logsagentpipeline.Component,
 	h serializerexporter.SourceProviderFunc,
 	mclientwrapper *metricsclient.StatsdClientWrapper,
+	hostFromAttributesHandler attributes.HostFromAttributesHandler,
 ) exporter.Factory {
-	return newFactoryWithRegistry(featuregate.GlobalRegistry(), traceagentcmp, s, logsAgent, h, mclientwrapper)
+	return newFactoryWithRegistry(featuregate.GlobalRegistry(), traceagentcmp, s, logsAgent, h, mclientwrapper, hostFromAttributesHandler)
 }
 
 // CreateDefaultConfig creates the default exporter configuration
@@ -198,7 +202,7 @@ func (f *factory) createMetricsExporter(
 	statsIn := make(chan []byte, 1000)
 	statsv := set.BuildInfo.Command + set.BuildInfo.Version
 	f.consumeStatsPayload(ctx, &wg, statsIn, statsv, fmt.Sprintf("datadogexporter-%s-%s", set.BuildInfo.Command, set.BuildInfo.Version), set.Logger)
-	sf := serializerexporter.NewFactory(f.s, &tagEnricher{}, f.h, statsIn, &wg)
+	sf := serializerexporter.NewFactory(f.s, &tagEnricher{}, f.h, statsIn, &wg, f.hostFromAttributesHandler)
 	ex := &serializerexporter.ExporterConfig{
 		Metrics: serializerexporter.MetricsConfig{
 			Metrics: cfg.Metrics,
@@ -252,7 +256,7 @@ func (f *factory) createLogsExporter(
 	if provider := f.logsAgent.GetPipelineProvider(); provider != nil {
 		logch = provider.NextPipelineChan()
 	}
-	lf := logsagentexporter.NewFactory(logch)
+	lf := logsagentexporter.NewFactory(logch, f.hostFromAttributesHandler)
 	lc := &logsagentexporter.Config{
 		OtelSource:    "otel_agent",
 		LogSourceName: logsagentexporter.LogSourceName,
