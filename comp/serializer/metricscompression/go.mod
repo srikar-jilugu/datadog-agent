@@ -21,7 +21,7 @@ replace (
 
 require (
 	github.com/DataDog/datadog-agent/comp/core/config v0.61.0
-	github.com/DataDog/datadog-agent/pkg/util/compression v0.56.0-rc.3
+	github.com/DataDog/datadog-agent/pkg/util/compression v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.59.0
 )
 

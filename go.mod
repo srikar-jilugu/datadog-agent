@@ -588,7 +588,7 @@ require (
 )
 
 require (
-	github.com/DataDog/datadog-agent/pkg/util/compression v0.56.0-rc.3
+	github.com/DataDog/datadog-agent/pkg/util/compression v0.0.0-20250123092007-9394a87c7579
 	github.com/shirou/gopsutil/v4 v4.24.12
 	go.opentelemetry.io/collector/component/componenttest v0.117.0
 )

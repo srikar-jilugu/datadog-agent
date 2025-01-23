@@ -76,7 +76,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/logs/sender v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/logs/status/statusinterface v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/status/health v0.56.0-rc.3
-	github.com/DataDog/datadog-agent/pkg/util/compression v0.56.0-rc.3
+	github.com/DataDog/datadog-agent/pkg/util/compression v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/util/log v0.60.1
 	github.com/DataDog/datadog-agent/pkg/util/startstop v0.56.0-rc.3
 	github.com/hashicorp/go-multierror v1.1.1
