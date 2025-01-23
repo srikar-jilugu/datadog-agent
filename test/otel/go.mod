@@ -111,7 +111,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/proto v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/trace v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/util/compression v0.0.0-20250123092007-9394a87c7579
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.117.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123175841-b1ed159fb31d
 )
 
 require go.opentelemetry.io/collector/extension/xextension v0.117.0 // indirect

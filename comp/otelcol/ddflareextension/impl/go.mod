@@ -116,12 +116,12 @@ require (
 	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123092007-9394a87c7579
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.117.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.117.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.117.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.117.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.117.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.117.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.0.0-20250123175841-b1ed159fb31d
+	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.0.0-20250123175841-b1ed159fb31d
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20250123175841-b1ed159fb31d
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.0.0-20250123175841-b1ed159fb31d
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.0.0-20250123175841-b1ed159fb31d
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.0.0-20250123175841-b1ed159fb31d
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v0.117.0
 	go.opentelemetry.io/collector/component/componentstatus v0.117.0
@@ -411,15 +411,15 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/onsi/ginkgo/v2 v2.20.2 // indirect
 	github.com/onsi/gomega v1.34.1 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.117.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.117.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123175841-b1ed159fb31d // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.0.0-20250123175841-b1ed159fb31d // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opencontainers/runtime-spec v1.2.0 // indirect
