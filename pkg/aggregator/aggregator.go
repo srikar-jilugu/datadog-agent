@@ -617,6 +617,17 @@ func (agg *BufferedAggregator) appendDefaultSeries(start time.Time, series metri
 		SourceTypeName: "System",
 	})
 
+	// Send a metric reporting agent state for fleet automation
+	fleetTags := append(agg.tags(true), fmt.Sprintf("config_id:%s", agg.configID))
+	series.Append(&metrics.Serie{
+		Name:           fmt.Sprintf("datadog.%s.fleet.running", agg.agentName),
+		Points:         []metrics.Point{{Value: 1, Ts: float64(start.Unix())}},
+		Tags:           tagset.CompositeTagsFromSlice(fleetTags),
+		Host:           agg.hostname,
+		MType:          metrics.APIGaugeType,
+		SourceTypeName: "System",
+	})
+
 	if agg.haAgent.Enabled() {
 		haAgentTags := append(agg.tags(false), "agent_state:"+string(agg.haAgent.GetState()))
 		// Send along a metric to show if HA Agent is running with agent_state tag.
@@ -882,9 +893,6 @@ func (agg *BufferedAggregator) tags(withVersion bool) []string {
 		tags = append(tags, "version:"+version.AgentVersion)
 		if version.AgentPackageVersion != "" {
 			tags = append(tags, "package_version:"+version.AgentPackageVersion)
-		}
-		if agg.configID != "" {
-			tags = append(tags, "config_id:"+agg.configID)
 		}
 	}
 	// nil to empty string
