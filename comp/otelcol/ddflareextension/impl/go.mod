@@ -574,3 +574,33 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.117.0 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250122094010-34674c6c59a4
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.117.0 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/translator/prometheus v0.0.0-20250122094010-34674c6c59a4
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/connector/datadogconnector v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/extension/pprofextension v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/processor/transformprocessor v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/internal/common v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/internal/filter v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/internal/pdatautil v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/ottl v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/pdatautil v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123182014-8d2eced359c8
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.0.0-20250123182014-8d2eced359c8 => github.com/ogaca-dd/opentelemetry-collector-contrib/pkg/translator/prometheus v0.0.0-20250123182014-8d2eced359c8
