@@ -47,7 +47,7 @@ replace (
 require (
 	github.com/DataDog/agent-payload/v5 v5.0.140
 	github.com/DataDog/datadog-agent/comp/otelcol/ddflareextension/def v0.56.2
-	github.com/DataDog/datadog-agent/pkg/util/option v0.59.1
+	github.com/DataDog/datadog-agent/pkg/util/option v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/util/pointer v0.59.0
 	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.59.0
 	github.com/DataDog/datadog-agent/pkg/util/testutil v0.56.2

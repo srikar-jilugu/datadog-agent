@@ -18,7 +18,7 @@ require (
 
 require (
 	github.com/DataDog/datadog-agent/comp/def v0.56.0-rc.3 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/option v0.55.0 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/option v0.0.0-20250123092007-9394a87c7579 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
