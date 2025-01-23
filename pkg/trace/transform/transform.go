@@ -106,20 +106,20 @@ func isDatadogAPMConventionKey(k string) bool {
 }
 
 func setMetaOTLPWithHTTPMappings(k string, value string, ddspan *pb.Span) {
-	datadogKey, found := attributes.HTTPMappings[k]
-	switch {
-	case found && value != "":
-		ddspan.Meta[datadogKey] = value
-	case strings.HasPrefix(k, "http.request.header."):
-		key := fmt.Sprintf("http.request.headers.%s", strings.TrimPrefix(k, "http.request.header."))
-		ddspan.Meta[key] = value
-		// Exclude Datadog APM conventions.
-		// These are handled above explicitly.
-	case !isDatadogAPMConventionKey(k):
-		SetMetaOTLP(ddspan, k, value)
-	default:
-		return
-	}
+	// datadogKey, found := attributes.HTTPMappings[k]
+	// switch {
+	// case found && value != "":
+	// 	ddspan.Meta[datadogKey] = value
+	// case strings.HasPrefix(k, "http.request.header."):
+	// 	key := fmt.Sprintf("http.request.headers.%s", strings.TrimPrefix(k, "http.request.header."))
+	// 	ddspan.Meta[key] = value
+	// 	// Exclude Datadog APM conventions.
+	// 	// These are handled above explicitly.
+	// case !isDatadogAPMConventionKey(k):
+	// 	SetMetaOTLP(ddspan, k, value)
+	// default:
+	// 	return
+	// }
 }
 
 // OtelSpanToDDSpan converts an OTel span to a DD span.
