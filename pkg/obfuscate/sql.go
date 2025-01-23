@@ -12,7 +12,6 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-	"unsafe"
 
 	sqllexer "github.com/DataDog/go-sqllexer"
 )
@@ -344,26 +343,15 @@ type ObfuscatedQuery struct {
 // of this ObfuscatedQuery.
 // Cost returns the approximate memory usage of the ObfuscatedQuery struct in bytes.
 func (oq *ObfuscatedQuery) Cost() int64 {
-	// Base size of the ObfuscatedQuery struct
-	totalSize := int64(unsafe.Sizeof(*oq)) // Includes the `Query` and `Metadata` fields
-
-	// Add size of the Query string: 16 bytes for the string header + string content
-	totalSize += int64(len(oq.Query)) + 16
-
-	// Add the fixed size of the SQLMetadata struct
-	totalSize += int64(unsafe.Sizeof(oq.Metadata))
-
-	// Add the size of the dynamically allocated fields already calculated in Metadata.Size
-	totalSize += oq.Metadata.Size
-
-	// Add the size of slice headers in SQLMetadata for Commands, Comments, and Procedures
-	// Each slice header is 24 bytes (pointer + length + capacity) on a 64-bit system
-	totalSize += 3 * 24 // 3 slices (Commands, Comments, Procedures)
-
-	// Add the string header for TablesCSV (16 bytes)
-	totalSize += 16
-
-	return totalSize
+	// The cost of the ObfuscatedQuery struct is the sum of the length of the query string,
+	// the size of the metadata struct, and the size of the struct itself and its fields headers.
+	// 312 comes from
+	// - 112 bytes for the ObfuscatedQuery struct itself
+	// - 96 bytes for the Metadata struct itself
+	// - 16 bytes for the Query string header
+	// - 16 bytes for the TablesCSV string header
+	// - 24 * 3 bytes for the Comments, Commands, and Procedures slices headers
+	return int64(len(oq.Query)) + oq.Metadata.Size + 312
 }
 
 // attemptObfuscation attempts to obfuscate the SQL query loaded into the tokenizer, using the given set of filters.
