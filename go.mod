@@ -252,7 +252,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/open-policy-agent/opa v0.70.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123181613-8f73a66e0bd0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123182014-8d2eced359c8 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/opencontainers/runtime-spec v1.2.0
@@ -581,7 +581,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/kouhin/envflag v0.0.0-20150818174321-0e9a86061649
 	github.com/lorenzosaino/go-sysctl v0.3.1
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123181613-8f73a66e0bd0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123182014-8d2eced359c8
 	go.opentelemetry.io/collector/config/configtelemetry v0.118.0
 )
 
@@ -737,7 +737,7 @@ require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/kr/pretty v0.3.1
 	// todo: update datadog connector with breaking changes from https://github.com/DataDog/datadog-agent/pull/26347.
-	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.0.0-20250123181613-8f73a66e0bd0
+	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.0.0-20250123182014-8d2eced359c8
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/prometheus-community/pro-bing v0.4.1
 	github.com/rickar/props v1.0.0
@@ -925,53 +925,53 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/dockerobserver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecsobserver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecstaskobserver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/experimentalmetricmetadata v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/zipkin v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/fluentforwardreceiver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/receivercreator v0.0.0-20250123181613-8f73a66e0bd0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.0.0-20250123181613-8f73a66e0bd0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/dockerobserver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecsobserver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecstaskobserver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/experimentalmetricmetadata v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/zipkin v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/fluentforwardreceiver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/receivercreator v0.0.0-20250123182014-8d2eced359c8 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.0.0-20250123182014-8d2eced359c8 // indirect
 	github.com/openshift/client-go v0.0.0-20210521082421-73d9475a9142 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/openvex/discovery v0.1.1-0.20240802171711-7c54efc57553 // indirect
