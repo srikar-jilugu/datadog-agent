@@ -311,7 +311,8 @@ func (o *Obfuscator) ObfuscateSQLStringWithOptions(in string, opts *SQLConfig) (
 	if err != nil {
 		return oq, err
 	}
-	o.queryCache.Set(in, oq, oq.Cost())
+	// set cost to 0 to dynamically evaluate the true cost of the item
+	o.queryCache.Set(in, oq, 0)
 	return oq, nil
 }
 
@@ -507,7 +508,7 @@ func (o *Obfuscator) ObfuscateWithSQLLexer(in string, opts *SQLConfig) (*Obfusca
 		},
 	}
 
-	o.queryCache.Set(in, oq, oq.Cost())
+	o.queryCache.Set(in, oq, 0)
 
 	return oq, nil
 }
