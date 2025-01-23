@@ -55,7 +55,7 @@ replace (
 
 require (
 	github.com/DataDog/datadog-agent/comp/logs/agent/config v0.56.0-rc.3
-	github.com/DataDog/datadog-agent/comp/serializer/logscompression v0.61.0
+	github.com/DataDog/datadog-agent/comp/serializer/logscompression v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/config/mock v0.59.0
 	github.com/DataDog/datadog-agent/pkg/config/model v0.61.0
 	github.com/DataDog/datadog-agent/pkg/logs/client v0.56.0-rc.3
