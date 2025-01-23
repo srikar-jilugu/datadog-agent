@@ -71,7 +71,7 @@ func newMeasuredCache(opts cacheOptions) *measuredCache {
 		// to fit 476K of them into 5MB of cost.
 		//
 		// We average it to 500K and multiply 10x as the documentation recommends.
-		NumCounters: 500000 * 10,
+		NumCounters: 5000000 / 400 * 10,
 
 		BufferItems: 64,   // default recommended value
 		Metrics:     true, // enable hit/miss counters
