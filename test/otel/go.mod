@@ -117,8 +117,8 @@ require (
 require go.opentelemetry.io/collector/extension/xextension v0.118.0 // indirect
 
 require (
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.24.0 // indirect
-	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.24.0 // indirect
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.0.0-20250123192813-a2659e29b424 // indirect
+	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.0.0-20250123192813-a2659e29b424 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	go.opentelemetry.io/collector/featuregate v1.24.0 // indirect
@@ -187,8 +187,8 @@ require (
 	github.com/DataDog/dd-sensitive-data-scanner/sds-go/go v0.0.0-20240816154533-f7f9beb53a42 // indirect
 	github.com/DataDog/go-sqllexer v0.0.20 // indirect
 	github.com/DataDog/go-tuf v1.1.0-0.5.2 // indirect
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.24.0 // indirect
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/logs v0.24.0 // indirect
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.0.0-20250123192813-a2659e29b424 // indirect
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/logs v0.0.0-20250123192813-a2659e29b424 // indirect
 	github.com/DataDog/sketches-go v1.4.6 // indirect
 	github.com/DataDog/viper v1.14.0 // indirect
 	github.com/DataDog/zstd v1.5.6 // indirect

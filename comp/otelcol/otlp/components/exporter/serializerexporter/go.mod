@@ -72,9 +72,9 @@ require (
 	github.com/DataDog/datadog-agent/pkg/serializer v0.0.0-20250123182127-b55818e09cf4
 	github.com/DataDog/datadog-agent/pkg/tagset v0.0.0-20250123182127-b55818e09cf4
 	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123182127-b55818e09cf4
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.24.0
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.24.0
-	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.24.0
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.0.0-20250123192813-a2659e29b424
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.0.0-20250123192813-a2659e29b424
+	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.0.0-20250123192813-a2659e29b424
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123182014-8d2eced359c8
 	github.com/stretchr/testify v1.10.0

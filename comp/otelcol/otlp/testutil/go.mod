@@ -37,8 +37,8 @@ require (
 	github.com/DataDog/datadog-agent/pkg/config/model v0.0.0-20250123182127-b55818e09cf4
 	github.com/DataDog/datadog-agent/pkg/config/setup v0.0.0-20250123182127-b55818e09cf4
 	github.com/DataDog/datadog-agent/pkg/proto v0.0.0-20250123182127-b55818e09cf4
-	github.com/DataDog/opentelemetry-mapping-go/pkg/inframetadata v0.24.0
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.24.0
+	github.com/DataDog/opentelemetry-mapping-go/pkg/inframetadata v0.0.0-20250123192813-a2659e29b424
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.0.0-20250123192813-a2659e29b424
 	github.com/DataDog/sketches-go v1.4.6
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/pdata v1.24.0

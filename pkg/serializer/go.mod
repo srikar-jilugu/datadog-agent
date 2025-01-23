@@ -82,7 +82,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/json v0.0.0-20250123182127-b55818e09cf4
 	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123182127-b55818e09cf4
 	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123182127-b55818e09cf4
-	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.24.0
+	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.0.0-20250123192813-a2659e29b424
 	github.com/gogo/protobuf v1.3.2
 	github.com/json-iterator/go v1.1.12
 	github.com/protocolbuffers/protoscope v0.0.0-20221109213918-8e7a6aafa2c9

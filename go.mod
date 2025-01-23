@@ -167,9 +167,9 @@ require (
 	github.com/DataDog/ebpf-manager v0.7.7
 	github.com/DataDog/gopsutil v1.2.2
 	github.com/DataDog/nikos v1.12.9
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.24.0
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.24.0
-	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.24.0
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.0.0-20250123192813-a2659e29b424
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.0.0-20250123192813-a2659e29b424
+	github.com/DataDog/opentelemetry-mapping-go/pkg/quantile v0.0.0-20250123192813-a2659e29b424
 	github.com/DataDog/sketches-go v1.4.6
 	github.com/DataDog/viper v1.14.0
 	// TODO: pin to a WPA released version once there is a release that includes the apis module
@@ -786,8 +786,8 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/system/socket v0.0.0-20250123182127-b55818e09cf4 // indirect
 	github.com/DataDog/datadog-api-client-go/v2 v2.34.0 // indirect
 	github.com/DataDog/dd-sensitive-data-scanner/sds-go/go v0.0.0-20240816154533-f7f9beb53a42 // indirect
-	github.com/DataDog/opentelemetry-mapping-go/pkg/inframetadata v0.24.0 // indirect
-	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/logs v0.24.0 // indirect
+	github.com/DataDog/opentelemetry-mapping-go/pkg/inframetadata v0.0.0-20250123192813-a2659e29b424 // indirect
+	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/logs v0.0.0-20250123192813-a2659e29b424 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 // indirect
 	github.com/Intevation/gval v1.3.0 // indirect
 	github.com/Intevation/jsonpath v0.2.1 // indirect
