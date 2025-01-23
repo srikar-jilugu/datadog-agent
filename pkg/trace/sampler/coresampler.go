@@ -33,38 +33,46 @@ type metrics struct {
 	value sync.Map
 }
 
+type metricsAggregationKey struct {
+	ServiceSignature
+	SamplingPriority
+}
+
 type metricsValue struct {
 	seen int64
 	kept int64
 }
 
-func (m *metrics) record(sampled bool, serviceSignature ServiceSignature) {
+func (m *metrics) record(sampled bool, metricsAggregationKey metricsAggregationKey) {
 	initialValue := metricsValue{seen: 1}
 	if sampled {
 		initialValue.kept = 1
 	}
-	if v, load := m.value.LoadOrStore(serviceSignature, initialValue); load {
+	if v, load := m.value.LoadOrStore(metricsAggregationKey, initialValue); load {
 		loadedMetricsValue := v.(metricsValue)
 		loadedMetricsValue.seen++
 		if sampled {
 			loadedMetricsValue.kept++
 		}
-		m.value.Store(serviceSignature, loadedMetricsValue)
+		m.value.Store(metricsAggregationKey, loadedMetricsValue)
 	}
 }
 
 func (m *metrics) report() {
 	m.value.Range(func(key, value any) bool {
-		serviceSignature := key.(ServiceSignature)
+		aggKey := key.(metricsAggregationKey)
 		metricsValue := value.(metricsValue)
-		tags := append(m.tags, serviceSignature.metricTags()...)
+		tags := append(m.tags, aggKey.metricTags()...)
+		if aggKey.SamplingPriority != PriorityNone {
+			tags = append(tags, "sampling_priority:"+aggKey.SamplingPriority.String())
+		}
 		if metricsValue.seen > 0 {
 			_ = m.statsd.Count(metricSamplerSeen, metricsValue.seen, tags, 1)
 		}
 		if metricsValue.kept > 0 {
 			_ = m.statsd.Count(metricSamplerKept, metricsValue.kept, tags, 1)
 		}
-		m.value.Delete(serviceSignature) // reset counters
+		m.value.Delete(aggKey) // reset counters
 		return true
 	})
 }

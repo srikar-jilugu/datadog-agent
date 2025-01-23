@@ -64,38 +64,32 @@ func getTestTraceWithService(service string, s *PrioritySampler) (*pb.TraceChunk
 
 func TestPrioritySample(t *testing.T) {
 	tests := []struct {
-		name            string
 		priority        SamplingPriority
 		expectedSampled bool
 	}{
 		{
-			name:            "none",
 			priority:        PriorityNone,
 			expectedSampled: false,
 		},
 		{
-			name:            "manual_drop",
 			priority:        PriorityUserDrop,
 			expectedSampled: false,
 		},
 		{
-			name:            "auto_drop",
 			priority:        PriorityAutoDrop,
 			expectedSampled: false,
 		},
 		{
-			name:            "auto_keep",
 			priority:        PriorityAutoKeep,
 			expectedSampled: true,
 		},
 		{
-			name:            "manual_keep",
 			priority:        PriorityUserKeep,
 			expectedSampled: true,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.priority.String(), func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			statsdClient := mockStatsd.NewMockClientInterface(ctrl)
@@ -110,6 +104,11 @@ func TestPrioritySample(t *testing.T) {
 				"target_service:service-a",
 				"target_env:testEnv",
 			}
+			if tt.priority == PriorityNone {
+				expectedTagsA = append(expectedTagsA, "sampling_priority:auto_drop")
+			} else {
+				expectedTagsA = append(expectedTagsA, "sampling_priority:"+tt.priority.String())
+			}
 			chunkA, rootA := getTestTraceWithService("service-a", s)
 			chunkA.Priority = int32(tt.priority)
 			assert.Equal(t, tt.expectedSampled, s.Sample(time.Now(), chunkA, rootA, defaultEnv, 0))
@@ -118,6 +117,11 @@ func TestPrioritySample(t *testing.T) {
 				"sampler:priority",
 				"target_service:service-b",
 				"target_env:testEnv",
+			}
+			if tt.priority == PriorityNone {
+				expectedTagsB = append(expectedTagsB, "sampling_priority:auto_drop")
+			} else {
+				expectedTagsB = append(expectedTagsB, "sampling_priority:"+tt.priority.String())
 			}
 			chunkB, rootB := getTestTraceWithService("service-b", s)
 			chunkB.Priority = int32(tt.priority)
@@ -131,7 +135,7 @@ func TestPrioritySample(t *testing.T) {
 			} else {
 				statsdClient.EXPECT().Count(metricSamplerSeen, int64(2), expectedTagsA, float64(1)).Times(1)
 				statsdClient.EXPECT().Count(metricSamplerSeen, int64(2), expectedTagsB, float64(1)).Times(1)
-				statsdClient.EXPECT().Count(metricSamplerKept, gomock.Any(), expectedTagsA, float64(1)).Times(0)
+				statsdClient.EXPECT().Count(metricSamplerKept, gomock.Any(), gomock.Any(), float64(1)).Times(0)
 			}
 			statsdClient.EXPECT().Gauge(metricSamplerSize, gomock.Any(), []string{"sampler:priority"}, float64(1)).Times(1)
 			s.sampler.report()

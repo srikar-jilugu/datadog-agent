@@ -110,7 +110,7 @@ func (s *PrioritySampler) Sample(now time.Time, trace *pb.TraceChunk, root *pb.S
 	sampled := samplingPriority > 0
 
 	serviceSignature := ServiceSignature{Name: root.Service, Env: toSamplerEnv(tracerEnv, s.agentEnv)}
-	s.sampler.metrics.record(sampled, serviceSignature)
+	s.sampler.metrics.record(sampled, metricsAggregationKey{serviceSignature, samplingPriority})
 
 	// Short-circuit and return without counting the trace in the sampling rate logic
 	// if its value has not been set automatically by the client lib.

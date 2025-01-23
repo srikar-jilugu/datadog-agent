@@ -116,7 +116,7 @@ func (ps *ProbabilisticSampler) Sample(root *trace.Span) (sampled bool) {
 	}
 
 	defer func() {
-		ps.metrics.record(sampled, ServiceSignature{Name: root.Name})
+		ps.metrics.record(sampled, metricsAggregationKey{ServiceSignature{Name: root.Service}, PriorityNone})
 	}()
 
 	tid := make([]byte, 16)

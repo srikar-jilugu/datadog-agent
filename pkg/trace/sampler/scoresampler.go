@@ -72,7 +72,7 @@ func (s *ScoreSampler) Sample(now time.Time, trace pb.Trace, root *pb.Span, env 
 	rate := s.getSignatureSampleRate(signature)
 
 	sampled := s.applySampleRate(root, rate)
-	s.metrics.record(sampled, ServiceSignature{Name: root.Service, Env: env})
+	s.metrics.record(sampled, metricsAggregationKey{ServiceSignature{Name: root.Service, Env: env}, PriorityNone})
 	return sampled
 }
 

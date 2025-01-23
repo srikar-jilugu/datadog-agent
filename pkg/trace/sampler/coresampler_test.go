@@ -40,7 +40,7 @@ func TestSamplerAccessRace(t *testing.T) {
 			defer wg.Done()
 			for i := 0; i < loopCount; i++ {
 				s.countWeightedSig(time.Now().Add(time.Duration(5*(j+i))*time.Second), serviceSignature.Hash(), 5)
-				s.metrics.record(true, serviceSignature)
+				s.metrics.record(true, metricsAggregationKey{serviceSignature, PriorityNone})
 				s.report()
 				s.getSignatureSampleRate(Signature(i % 3))
 				s.getAllSignatureSampleRates()
