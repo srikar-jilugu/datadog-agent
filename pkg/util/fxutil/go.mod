@@ -3,7 +3,7 @@ module github.com/DataDog/datadog-agent/pkg/util/fxutil
 go 1.22.0
 
 require (
-	github.com/DataDog/datadog-agent/comp/def v0.56.0-rc.3
+	github.com/DataDog/datadog-agent/comp/def v0.0.0-20250123092007-9394a87c7579
 	github.com/DataDog/datadog-agent/pkg/util/option v0.0.0-20250123092007-9394a87c7579
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0

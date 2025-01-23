@@ -30,16 +30,16 @@ replace (
 )
 
 require (
-	github.com/DataDog/datadog-agent/comp/core/log/def v0.61.0
-	github.com/DataDog/datadog-agent/pkg/util/log v0.60.1
-	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.61.0
+	github.com/DataDog/datadog-agent/comp/core/log/def v0.0.0-20250123092007-9394a87c7579
+	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123092007-9394a87c7579
+	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.0.0-20250123092007-9394a87c7579
 )
 
 require (
-	github.com/DataDog/datadog-agent/pkg/config/model v0.61.0 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.60.0-devel // indirect
-	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.60.1 // indirect
-	github.com/DataDog/datadog-agent/pkg/version v0.59.1 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/model v0.0.0-20250123092007-9394a87c7579 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.0.0-20250123092007-9394a87c7579 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.0.0-20250123092007-9394a87c7579 // indirect
+	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123092007-9394a87c7579 // indirect
 	github.com/DataDog/viper v1.14.0 // indirect
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
