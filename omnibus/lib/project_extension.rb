@@ -53,9 +53,13 @@ module Omnibus
         cmd = Array.new.tap do |arr|
           arr << "dd-wcs"
           arr << "sign"
+          arr << "--cert"
+          arr << "s3://windows-code-signing-certificates/certs/beta/kms-signed.crt"
+          arr << "--config"
+          arr << "s3://windows-code-signing-certificates/certs/beta/config.json"
           arr << "\"#{file}\""
         end.join(" ")
-    
+
         status = shellout(cmd)
         if status.exitstatus != 0
           log.warn(self.class.name) do

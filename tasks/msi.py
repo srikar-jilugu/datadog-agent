@@ -162,7 +162,9 @@ def _fix_makesfxca_dll(path):
 def sign_file(ctx, path, force=False):
     dd_wcs_enabled = os.environ.get('SIGN_WINDOWS_DD_WCS')
     if dd_wcs_enabled or force:
-        return ctx.run(f'dd-wcs sign "{path}"')
+        return ctx.run(
+            f'dd-wcs sign --cert s3://windows-code-signing-certificates/certs/beta/kms-signed.crt --config s3://windows-code-signing-certificates/certs/beta/config.json "{path}"'
+        )
 
 
 def _build(
