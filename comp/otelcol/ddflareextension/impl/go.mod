@@ -219,7 +219,7 @@ require (
 	github.com/DataDog/datadog-agent/comp/otelcol/otlp/components/metricsclient v0.60.1 // indirect
 	github.com/DataDog/datadog-agent/comp/otelcol/otlp/components/statsprocessor v0.60.1 // indirect
 	github.com/DataDog/datadog-agent/comp/otelcol/otlp/testutil v0.57.0-devel.0.20240718200853-81bf3b2e412d // indirect
-	github.com/DataDog/datadog-agent/comp/serializer/logscompression v0.61.0 // indirect
+	github.com/DataDog/datadog-agent/comp/serializer/logscompression v0.0.0-20250123092007-9394a87c7579 // indirect
 	github.com/DataDog/datadog-agent/comp/trace/agent/def v0.59.0-rc.6 // indirect
 	github.com/DataDog/datadog-agent/comp/trace/compression/def v0.60.1 // indirect
 	github.com/DataDog/datadog-agent/comp/trace/compression/impl-gzip v0.60.1 // indirect
