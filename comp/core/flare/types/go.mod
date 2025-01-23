@@ -5,7 +5,7 @@ go 1.22.0
 replace github.com/DataDog/datadog-agent/comp/core/flare/builder => ../builder
 
 require (
-	github.com/DataDog/datadog-agent/comp/core/flare/builder v0.0.0-20250123092007-9394a87c7579
+	github.com/DataDog/datadog-agent/comp/core/flare/builder v0.0.0-20250123182127-b55818e09cf4
 	go.uber.org/fx v1.23.0
 )
 

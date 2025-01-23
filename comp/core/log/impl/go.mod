@@ -35,37 +35,37 @@ replace (
 )
 
 require (
-	github.com/DataDog/datadog-agent/comp/core/config v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/comp/core/log/def v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/comp/def v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/pkg/config/mock v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.0.0-20250123092007-9394a87c7579
+	github.com/DataDog/datadog-agent/comp/core/config v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/comp/core/log/def v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/comp/def v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/pkg/config/mock v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.0.0-20250123182127-b55818e09cf4
 	github.com/stretchr/testify v1.10.0
 )
 
 require (
-	github.com/DataDog/datadog-agent/comp/core/flare/builder v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/comp/core/flare/types v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/comp/core/secrets v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/collector/check/defaults v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/env v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/model v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/nodetreemodel v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/setup v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/structure v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/executable v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/filesystem v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/hostname/validate v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/option v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/pointer v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/system v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/system/socket v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/winutil v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123092007-9394a87c7579 // indirect
+	github.com/DataDog/datadog-agent/comp/core/flare/builder v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/comp/core/flare/types v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/comp/core/secrets v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/collector/check/defaults v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/env v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/model v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/nodetreemodel v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/setup v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/structure v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/executable v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/filesystem v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/hostname/validate v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/option v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/pointer v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/system v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/system/socket v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/winutil v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123182127-b55818e09cf4 // indirect
 	github.com/DataDog/viper v1.14.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect

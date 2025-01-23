@@ -30,17 +30,17 @@ replace (
 )
 
 require (
-	github.com/DataDog/datadog-agent/comp/core/log/def v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123092007-9394a87c7579
-	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.0.0-20250123092007-9394a87c7579
+	github.com/DataDog/datadog-agent/comp/core/log/def v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/pkg/util/log v0.0.0-20250123182127-b55818e09cf4
+	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.0.0-20250123182127-b55818e09cf4
 )
 
 require (
-	github.com/DataDog/datadog-agent/pkg/config/model v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/nodetreemodel v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.0.0-20250123092007-9394a87c7579 // indirect
-	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123092007-9394a87c7579 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/model v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/nodetreemodel v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.0.0-20250123182127-b55818e09cf4 // indirect
+	github.com/DataDog/datadog-agent/pkg/version v0.0.0-20250123182127-b55818e09cf4 // indirect
 	github.com/DataDog/viper v1.14.0 // indirect
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect

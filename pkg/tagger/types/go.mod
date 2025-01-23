@@ -4,4 +4,4 @@ go 1.22.0
 
 replace github.com/DataDog/datadog-agent/comp/core/tagger/origindetection => ../../../comp/core/tagger/origindetection
 
-require github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.0.0-20250123092007-9394a87c7579
+require github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.0.0-20250123182127-b55818e09cf4

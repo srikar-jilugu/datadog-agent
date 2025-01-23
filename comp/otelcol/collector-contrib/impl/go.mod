@@ -7,7 +7,7 @@ go 1.22.7
 toolchain go1.23.3
 
 require (
-	github.com/DataDog/datadog-agent/comp/otelcol/collector-contrib/def v0.0.0-20250123092007-9394a87c7579
+	github.com/DataDog/datadog-agent/comp/otelcol/collector-contrib/def v0.0.0-20250123182127-b55818e09cf4
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.0.0-20250123182014-8d2eced359c8
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter v0.0.0-20250123182014-8d2eced359c8
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20250123182014-8d2eced359c8
