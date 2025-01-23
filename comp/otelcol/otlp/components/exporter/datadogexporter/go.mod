@@ -108,7 +108,7 @@ require (
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.24.0
 	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics v0.24.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123181248-9c0549cd5efa
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.0.0-20250123181613-8f73a66e0bd0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v0.118.0
 	go.opentelemetry.io/collector/config/confignet v1.24.0
@@ -273,7 +273,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123181248-9c0549cd5efa // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.0.0-20250123181613-8f73a66e0bd0 // indirect
 	github.com/opencontainers/runtime-spec v1.2.0 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
