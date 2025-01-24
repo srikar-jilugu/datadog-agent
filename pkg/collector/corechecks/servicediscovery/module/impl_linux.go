@@ -18,10 +18,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	agentPayload "github.com/DataDog/agent-payload/v5/process"
 	"github.com/shirou/gopsutil/v4/process"
+	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
+	"golang.org/x/sys/unix"
 
 	"github.com/DataDog/datadog-agent/cmd/system-probe/api/module"
 	sysconfigtypes "github.com/DataDog/datadog-agent/cmd/system-probe/config/types"
@@ -66,6 +70,8 @@ type serviceInfo struct {
 	startTimeMilli       uint64
 	cpuTime              uint64
 	cpuUsage             float64
+	rxBytes              uint64
+	txBytes              uint64
 }
 
 // discovery is an implementation of the Module interface for the discovery module.
@@ -194,6 +200,7 @@ type socketInfo struct {
 
 // namespaceInfo stores information related to each network namespace.
 type namespaceInfo struct {
+	tcpInfoMap map[uint64]tcpInfo
 	// listeningSockets maps socket inode numbers to socket information for listening sockets.
 	listeningSockets map[uint64]socketInfo
 }
@@ -294,10 +301,51 @@ func newNetIPSocket(file string, expectedState uint64, shouldIgnore func(uint16)
 	return netIPSocket, nil
 }
 
-// getNsInfo gets the list of open ports with socket inodes for all supported
+type tcpInfo struct {
+	rx uint64
+	tx uint64
+}
+
+func getSockTCPStats(nsHandle netns.NsHandle) (map[uint64]tcpInfo, error) {
+	Family4 := uint8(syscall.AF_INET)
+	Family6 := uint8(syscall.AF_INET6)
+	families := []uint8{Family4, Family6}
+
+	handle, err := netlink.NewHandleAt(nsHandle, unix.NETLINK_SOCK_DIAG)
+	if err != nil {
+		return nil, err
+	}
+	defer handle.Close()
+
+	tcpInfoMap := make(map[uint64]tcpInfo)
+
+	for _, wantFamily := range families {
+		res, err := handle.SocketDiagTCPInfo(wantFamily)
+		if err != nil {
+			return nil, err
+		}
+		for _, i := range res {
+			info := i.TCPInfo
+			if info == nil {
+				continue
+			}
+
+			tcpInfoMap[uint64(i.InetDiagMsg.INode)] = tcpInfo{
+				rx: info.Bytes_received,
+				tx: info.Bytes_sent,
+			}
+
+			// log.Debugf("inode %x rx/tx %v/%v", i.InetDiagMsg.INode, info.Bytes_received, info.Bytes_sent)
+		}
+	}
+
+	return tcpInfoMap, nil
+}
+
+// parseNsInfo gets the list of open ports with socket inodes for all supported
 // protocols for the provided namespace. Based on snapshotBoundSockets() in
 // pkg/security/security_profile/activity_tree/process_node_snapshot.go.
-func getNsInfo(pid int) (*namespaceInfo, error) {
+func parseNsInfo(pid int, nsHandle netns.NsHandle) (*namespaceInfo, error) {
 	// Don't ignore ephemeral ports on TCP, unlike on UDP (see below).
 	var noIgnore func(uint16) bool
 	tcp, err := newNetIPSocket(kernel.HostProc(fmt.Sprintf("%d/net/tcp", pid)), tcpListen, noIgnore)
@@ -335,7 +383,12 @@ func getNsInfo(pid int) (*namespaceInfo, error) {
 			}
 		}
 	}
+
+	tcpInfoMap, err := getSockTCPStats(nsHandle)
+	// log.Info("getSockTCPStats", err)
+
 	return &namespaceInfo{
+		tcpInfoMap:       tcpInfoMap,
 		listeningSockets: listeningSockets,
 	}, nil
 }
@@ -446,6 +499,36 @@ func (s *discovery) getServiceInfo(pid int32) (*serviceInfo, error) {
 // service.
 const maxNumberOfPorts = 50
 
+func getNsInfo(context parsingContext, pid int32) (*namespaceInfo, error) {
+	nsHandle, err := kernel.GetNetNamespaceFromPid(context.procRoot, int(pid))
+	if err != nil {
+		return nil, err
+	}
+
+	defer nsHandle.Close()
+
+	ns, err := kernel.GetInoForNs(nsHandle)
+	if err != nil {
+		return nil, err
+	}
+
+	// The socket and network address information are different for each
+	// network namespace.  Since namespaces can be shared between multiple
+	// processes, we cache them to only parse them once per call to this
+	// function.
+	nsInfo, ok := context.netNsInfo[ns]
+	if !ok {
+		nsInfo, err = parseNsInfo(int(pid), nsHandle)
+		if err != nil {
+			return nil, err
+		}
+
+		context.netNsInfo[ns] = nsInfo
+	}
+
+	return nsInfo, nil
+}
+
 // getService gets information for a single service.
 func (s *discovery) getService(context parsingContext, pid int32) *model.Service {
 	if s.shouldIgnorePid(pid) {
@@ -464,23 +547,9 @@ func (s *discovery) getService(context parsingContext, pid int32) *model.Service
 		return nil
 	}
 
-	ns, err := kernel.GetNetNsInoFromPid(context.procRoot, int(pid))
+	nsInfo, err := getNsInfo(context, pid)
 	if err != nil {
 		return nil
-	}
-
-	// The socket and network address information are different for each
-	// network namespace.  Since namespaces can be shared between multiple
-	// processes, we cache them to only parse them once per call to this
-	// function.
-	nsInfo, ok := context.netNsInfo[ns]
-	if !ok {
-		nsInfo, err = getNsInfo(int(pid))
-		if err != nil {
-			return nil
-		}
-
-		context.netNsInfo[ns] = nsInfo
 	}
 
 	var ports []uint16
@@ -499,6 +568,16 @@ func (s *discovery) getService(context parsingContext, pid int32) *model.Service
 
 	if len(ports) == 0 {
 		return nil
+	}
+
+	var rx uint64
+	var tx uint64
+
+	for _, socket := range sockets {
+		if tcpInfo, ok := nsInfo.tcpInfoMap[socket]; ok {
+			rx += tcpInfo.rx
+			tx += tcpInfo.tx
+		}
 	}
 
 	if len(ports) > maxNumberOfPorts {
@@ -556,6 +635,8 @@ func (s *discovery) getService(context parsingContext, pid int32) *model.Service
 		CommandLine:         info.cmdLine,
 		StartTimeMilli:      info.startTimeMilli,
 		CPUCores:            info.cpuUsage,
+		RxBytes:             rx,
+		TxBytes:             tx,
 	}
 }
 

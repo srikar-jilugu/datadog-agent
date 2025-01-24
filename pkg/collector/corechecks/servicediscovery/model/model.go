@@ -25,6 +25,8 @@ type Service struct {
 	StartTimeMilli             uint64   `json:"start_time"`
 	CPUCores                   float64  `json:"cpu_cores"`
 	ContainerID                string   `json:"container_id"`
+	RxBytes                    uint64   `json:"rx_bytes"`
+	TxBytes                    uint64   `json:"tx_bytes"`
 }
 
 // ServicesResponse is the response for the system-probe /discovery/services endpoint.
