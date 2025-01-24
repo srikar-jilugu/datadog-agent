@@ -70,8 +70,6 @@ type serviceInfo struct {
 	startTimeMilli       uint64
 	cpuTime              uint64
 	cpuUsage             float64
-	rxBytes              uint64
-	txBytes              uint64
 }
 
 // discovery is an implementation of the Module interface for the discovery module.
@@ -385,7 +383,9 @@ func parseNsInfo(pid int, nsHandle netns.NsHandle) (*namespaceInfo, error) {
 	}
 
 	tcpInfoMap, err := getSockTCPStats(nsHandle)
-	// log.Info("getSockTCPStats", err)
+	if err != nil {
+		log.Error("getSockTCPStats error", err)
+	}
 
 	return &namespaceInfo{
 		tcpInfoMap:       tcpInfoMap,
@@ -573,10 +573,12 @@ func (s *discovery) getService(context parsingContext, pid int32) *model.Service
 	var rx uint64
 	var tx uint64
 
-	for _, socket := range sockets {
-		if tcpInfo, ok := nsInfo.tcpInfoMap[socket]; ok {
-			rx += tcpInfo.rx
-			tx += tcpInfo.tx
+	if nsInfo.tcpInfoMap != nil {
+		for _, socket := range sockets {
+			if tcpInfo, ok := nsInfo.tcpInfoMap[socket]; ok {
+				rx += tcpInfo.rx
+				tx += tcpInfo.tx
+			}
 		}
 	}
 
