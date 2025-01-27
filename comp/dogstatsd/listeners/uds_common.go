@@ -234,7 +234,6 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 		}
 	}
 
-
 	var prevPid int
 	for {
 		var n int
