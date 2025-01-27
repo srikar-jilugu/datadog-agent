@@ -278,13 +278,18 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 			// Read the expected packet length (in stream mode)
 			b := []byte{0, 0, 0, 0}
 			_, err = io.ReadFull(conn, b)
-			expectedPacketLength := binary.LittleEndian.Uint32(b)
-
-			switch {
-			case err == io.EOF, errors.Is(err, io.ErrUnexpectedEOF):
-				log.Debugf("dogstatsd-uds: %s connection closed", l.transport)
+			if err != nil {
+				switch {
+				case errors.Is(err, io.EOF):
+					log.Debugf("dogstatsd-uds: %s connection closed", l.transport)
+				case errors.Is(err, io.ErrUnexpectedEOF):
+					log.Errorf("dogstatsd-uds: %s connection closed while reading payload length", l.transport)
+				default:
+					log.Errorf("dogstatsd-uds: %s: error reading payload length", l.transport)
+				}
 				return nil
 			}
+			expectedPacketLength := binary.LittleEndian.Uint32(b)
 			if expectedPacketLength > uint32(len(packet.Buffer)) {
 				log.Info("dogstatsd-uds: packet length too large, dropping connection")
 				return nil
