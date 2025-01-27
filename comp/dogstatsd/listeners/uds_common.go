@@ -234,6 +234,8 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 		}
 	}
 
+
+	var prevPid int
 	for {
 		var n int
 		var oobn int
@@ -294,9 +296,10 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 			maxPacketLength = uint32(len(packet.Buffer))
 		}
 
+		var flags int
 		for err == nil {
 			if oob != nil {
-				n, oobn, _, _, err = conn.ReadMsgUnix(packet.Buffer[n:maxPacketLength], oobS[oobn:])
+				n, oobn, flags, _, err = conn.ReadMsgUnix(packet.Buffer[n:maxPacketLength], oobS[oobn:])
 			} else {
 				n, _, err = conn.ReadFromUnix(packet.Buffer[n:maxPacketLength])
 			}
@@ -324,7 +327,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 			// Extract container id from credentials
 			pid, container, taggingErr := processUDSOrigin(oobS[:oobn], l.wmeta, l.pidMap)
 			if taggingErr != nil {
-				log.Warnf("dogstatsd-uds: error processing origin, data will not be tagged: oobn=%d, oob=%#v (%d/%d): %v", oobn, oob, len(*oob), cap(*oob), taggingErr)
+				log.Warnf("dogstatsd-uds: error processing origin, data will not be tagged: prevPid=%d, flags=%x, oobn=%d, oob=%#v (%d/%d): %v", prevPid, flags, oobn, oob, len(*oob), cap(*oob), taggingErr)
 				udsOriginDetectionErrors.Add(1)
 				l.telemetryStore.tlmUDSOriginDetectionError.Inc(tlmListenerID, l.transport)
 			} else {
@@ -333,6 +336,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 				if capBuff != nil {
 					capBuff.ContainerID = container
 				}
+				prevPid = pid
 			}
 			if capBuff != nil {
 				capBuff.Oob = oob
