@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-// Package metadata defines the metadata for the OpenTelemetry Extension component.
+// Package metadata defines metadata for the Datadog Fleet Automation Extension.
 package metadata
 
 import (
