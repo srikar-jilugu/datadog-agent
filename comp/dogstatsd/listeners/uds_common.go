@@ -335,7 +335,9 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 				if capBuff != nil {
 					capBuff.ContainerID = container
 				}
-				prevPid = pid
+				if l.transport == "unix" {
+					prevPid = pid
+				}
 			}
 			if capBuff != nil {
 				capBuff.Oob = oob
