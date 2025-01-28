@@ -239,7 +239,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 		var n int
 		var oobn int
 		var oob *[]byte
-		var oobS []byte
+		var oobS [32]byte
 		var err error
 
 		// retrieve an available packet from the packet pool,
@@ -261,7 +261,6 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 		if l.OriginDetection {
 			// Read datagram + credentials in ancillary data
 			oob = l.oobPoolManager.Get()
-			oobS = *oob
 		}
 
 		if rateLimiter != nil {
@@ -340,11 +339,12 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 				}
 			}
 			if capBuff != nil {
+				copy(*oob, oobS[:])
 				capBuff.Oob = oob
 				capBuff.Pid = int32(pid)
 				capBuff.Pb.Pid = int32(pid)
 				capBuff.Pb.AncillarySize = int32(oobn)
-				capBuff.Pb.Ancillary = oobS[:oobn]
+				capBuff.Pb.Ancillary = (*oob)[:oobn]
 			}
 
 			// Return the buffer back to the pool for reuse
