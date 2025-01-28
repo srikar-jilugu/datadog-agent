@@ -1657,7 +1657,10 @@ func TestInjectLibInitContainer(t *testing.T) {
 			if tt.mem != "" {
 				conf.SetWithoutSource("admission_controller.auto_instrumentation.init_resources.memory", tt.mem)
 			}
-			filter, _ := NewInjectionFilter(conf)
+			filterCfg, err := NewInjectionFilterConfig(conf)
+			require.NoError(t, err)
+
+			filter, _ := NewInjectionFilter(filterCfg)
 			wh, err := NewWebhook(wmeta, conf, filter)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("injectLibInitContainer() error = %v, wantErr %v", err, tt.wantErr)
@@ -3326,8 +3329,10 @@ func TestInjectAutoInstrumentation(t *testing.T) {
 					f()
 				}
 			}
+			filterCfg, err := NewInjectionFilterConfig(mockConfig)
+			require.NoError(t, err)
 
-			filter, _ := NewInjectionFilter(mockConfig)
+			filter, _ := NewInjectionFilter(filterCfg)
 			webhook, errInitAPMInstrumentation := NewWebhook(wmeta, mockConfig, filter)
 			if tt.wantWebhookInitErr {
 				require.Error(t, errInitAPMInstrumentation)
@@ -3336,7 +3341,7 @@ func TestInjectAutoInstrumentation(t *testing.T) {
 
 			require.NoError(t, errInitAPMInstrumentation)
 
-			_, err := webhook.inject(tt.pod, tt.pod.Namespace, fake.NewSimpleDynamicClient(scheme.Scheme))
+			_, err = webhook.inject(tt.pod, tt.pod.Namespace, fake.NewSimpleDynamicClient(scheme.Scheme))
 			require.False(t, (err != nil) != tt.wantErr)
 
 			container := tt.pod.Spec.Containers[0]
@@ -3591,7 +3596,9 @@ func TestShouldInject(t *testing.T) {
 }
 
 func mustWebhook(t *testing.T, wmeta workloadmeta.Component, ddConfig config.Component) *Webhook {
-	filter, _ := NewInjectionFilter(ddConfig)
+	filterCfg, err := NewInjectionFilterConfig(ddConfig)
+	require.NoError(t, err)
+	filter, _ := NewInjectionFilter(filterCfg)
 	webhook, err := NewWebhook(wmeta, ddConfig, filter)
 	require.NoError(t, err)
 	return webhook

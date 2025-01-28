@@ -87,11 +87,17 @@ func TestFailingInjectionConfig(t *testing.T) {
 			c.SetWithoutSource("apm_config.instrumentation.enabled", tt.instrumentationEnabled)
 			c.SetWithoutSource("apm_config.instrumentation.enabled_namespaces", tt.enabledNamespaces)
 			c.SetWithoutSource("apm_config.instrumentation.disabled_namespaces", tt.disabledNamespaces)
+			cfg, err := NewInjectionFilterConfig(c)
+			if tt.expectedFilterError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
 
-			nsFilter, _ := NewInjectionFilter(c)
+			nsFilter, _ := NewInjectionFilter(cfg)
 			require.NotNil(t, nsFilter, "we should always get a filter")
 
-			_, err := NewWebhook(wmeta, c, nsFilter)
+			_, err = NewWebhook(wmeta, c, nsFilter)
 			if tt.expectedWebhookError {
 				require.Error(t, err)
 			} else {
