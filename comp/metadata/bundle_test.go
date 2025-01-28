@@ -13,6 +13,7 @@ import (
 	authtokenimpl "github.com/DataDog/datadog-agent/comp/api/authtoken/fetchonlyimpl"
 	"github.com/DataDog/datadog-agent/comp/collector/collector/collectorimpl"
 	"github.com/DataDog/datadog-agent/comp/core"
+	haagentmock "github.com/DataDog/datadog-agent/comp/haagent/mock"
 	"github.com/DataDog/datadog-agent/comp/logs/agent"
 	"github.com/DataDog/datadog-agent/comp/metadata/runner/runnerimpl"
 	"github.com/DataDog/datadog-agent/pkg/serializer"
@@ -29,6 +30,7 @@ func TestBundleDependencies(t *testing.T) {
 			return option.None[agent.Component]()
 		}),
 		authtokenimpl.Module(),
+		haagentmock.Module(),
 	)
 }
 
