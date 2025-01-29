@@ -46,6 +46,7 @@ nav:
 - Home:
   - About: index.md
   - Setup: setup.md
+  - Developer Workflow: devflow.md
 - Guidelines:
   - Contributing: guidelines/contributing.md
   - Documentation: guidelines/docs.md
