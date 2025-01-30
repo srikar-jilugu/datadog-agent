@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	haagentmock "github.com/DataDog/datadog-agent/comp/haagent/mock"
 	"go.uber.org/fx"
 	"golang.org/x/exp/maps"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	log "github.com/DataDog/datadog-agent/comp/core/log/def"
 	logmock "github.com/DataDog/datadog-agent/comp/core/log/mock"
+	haagentmock "github.com/DataDog/datadog-agent/comp/haagent/mock"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
 	"github.com/DataDog/datadog-agent/pkg/serializer"
@@ -27,7 +27,7 @@ import (
 )
 
 func getProvides(t *testing.T, confOverrides map[string]any) (provides, error) {
-	return newInventoryOtelProvider(
+	return newInventoryHaAgentProvider(
 		fxutil.Test[dependencies](
 			t,
 			fx.Provide(func() log.Component { return logmock.New(t) }),
@@ -46,10 +46,7 @@ func getTestInventoryPayload(t *testing.T, confOverrides map[string]any) *invent
 }
 
 func TestGetPayload(t *testing.T) {
-	overrides := map[string]any{
-		"otelcollector.enabled":               true,
-		"otelcollector.submit_dummy_metadata": true,
-	}
+	overrides := map[string]any{}
 
 	io := getTestInventoryPayload(t, overrides)
 	io.hostname = "hostname-for-test"
@@ -73,10 +70,10 @@ func TestGetPayload(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	overrides := map[string]any{
-		"ha_agent.enabled": true,
-	}
+	overrides := map[string]any{}
 	io := getTestInventoryPayload(t, overrides)
+	haAgentMock := io.haAgent.(haagentmock.Component)
+	haAgentMock.SetEnabled(true)
 
 	// Collect metadata
 	io.refreshMetadata()
@@ -84,8 +81,9 @@ func TestGet(t *testing.T) {
 	p := io.Get()
 
 	// verify that the return map is a copy
-	p["provided_configuration"] = ""
-	assert.NotEqual(t, p["provided_configuration"], io.data["provided_configuration"])
+	p["config_id"] = ""
+	assert.Equal(t, "config01", io.data["config_id"])
+	assert.NotEqual(t, p["config_id"], io.data["config_id"])
 }
 
 func TestFlareProviderFilename(t *testing.T) {

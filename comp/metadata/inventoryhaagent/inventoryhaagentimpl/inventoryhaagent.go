@@ -38,7 +38,7 @@ import (
 // Module defines the fx options for this component.
 func Module() fxutil.Module {
 	return fxutil.Component(
-		fx.Provide(newInventoryOtelProvider))
+		fx.Provide(newInventoryHaAgentProvider))
 }
 
 type haAgentMetadata = map[string]interface{}
@@ -97,7 +97,7 @@ type provides struct {
 	Endpoint             api.AgentEndpointProvider
 }
 
-func newInventoryOtelProvider(deps dependencies) (provides, error) {
+func newInventoryHaAgentProvider(deps dependencies) (provides, error) {
 	hname, _ := hostname.Get(context.Background())
 	// HTTP client need not verify otel-agent cert since it's self-signed
 	// at start-up. TLS used for encryption not authentication.
