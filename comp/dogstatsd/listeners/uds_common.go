@@ -301,7 +301,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 
 		for err == nil {
 			if oob != nil {
-				n, oobn, _, _, err = conn.ReadMsgUnix(packet.Buffer[n:maxPacketLength], oobS[oobn:])
+				n, oobn, _, _, err = conn.ReadMsgUnix(packet.Buffer[n:maxPacketLength], oobS)
 			} else {
 				n, _, err = conn.ReadFromUnix(packet.Buffer[n:maxPacketLength])
 			}
