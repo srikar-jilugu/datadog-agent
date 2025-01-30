@@ -43,7 +43,7 @@ func (io *inventoryhaagent) HTML(_ bool, buffer io.Writer) error {
 }
 
 func (io *inventoryhaagent) populateStatus(stats map[string]interface{}) {
-	stats["haagent_metadata"] = io.Get()
+	stats["ha_agent_metadata"] = io.Get()
 }
 
 func (io *inventoryhaagent) getStatusInfo() map[string]interface{} {

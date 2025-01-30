@@ -28,7 +28,7 @@ The payload is a JSON dict with the following fields
 - `hostname` - **string**: the hostname of the otel-agent as shown on the status page.
 - `uuid` - **string**: a unique identifier of the otel-agent, used in case the hostname is empty.
 - `timestamp` - **int**: the timestamp when the payload was created.
-- `haagent_metadata` - **dict of string to JSON type**:
+- `ha_agent_metadata` - **dict of string to JSON type**:
   - `version` - **string**: the version of the OTel Agent in use.
   - `extension_version` - **string**: the version of the DD Extensions in use in the OTel Agent.
   - `command` - **string**: the command used to launch the OTel Agent.
@@ -50,7 +50,7 @@ Here an example of an inventory payload:
 ```
 {
     "hostname": "COMP-GQ7WQN6HYC",
-    "haagent_metadata": {
+    "ha_agent_metadata": {
         "command": "otelcol",
         "description": "foo bar",
         "version": "1.0.0",

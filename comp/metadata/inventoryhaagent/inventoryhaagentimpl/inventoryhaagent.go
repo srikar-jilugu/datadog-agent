@@ -47,7 +47,7 @@ type haAgentMetadata = map[string]interface{}
 type Payload struct {
 	Hostname  string          `json:"hostname"`
 	Timestamp int64           `json:"timestamp"`
-	Metadata  haAgentMetadata `json:"haagent_metadata"`
+	Metadata  haAgentMetadata `json:"ha_agent_metadata"`
 	UUID      string          `json:"uuid"`
 }
 

@@ -114,7 +114,7 @@ func TestStatusHeaderProvider(t *testing.T) {
 
 			keys := maps.Keys(stats)
 
-			assert.Contains(t, keys, "haagent_metadata")
+			assert.Contains(t, keys, "ha_agent_metadata")
 		}},
 		{"Text", func(t *testing.T) {
 			b := new(bytes.Buffer)
