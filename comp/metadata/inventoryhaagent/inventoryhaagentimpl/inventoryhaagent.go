@@ -11,9 +11,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
@@ -75,7 +73,6 @@ type inventoryhaagent struct {
 	data       haAgentMetadata
 	hostname   string
 	authToken  authtoken.Component
-	f          *freshConfig
 	httpClient *http.Client
 	haAgent    haagent.Component
 }
@@ -120,18 +117,6 @@ func newInventoryOtelProvider(deps dependencies) (provides, error) {
 		haAgent: deps.HaAgent,
 	}
 
-	//getter := i.fetchRemoteOtelConfig
-	//if i.conf.GetBool("otelcollector.submit_dummy_metadata") {
-	//	getter = i.fetchDummyOtelConfig
-	//}
-
-	var err error
-	i.f, err = newFreshConfig(deps.Config.GetString("otelcollector.extension_url"))
-	if err != nil {
-		// panic?
-		return provides{}, err
-	}
-
 	i.InventoryPayload = util.CreateInventoryPayload(deps.Config, deps.Log, deps.Serializer, i.getPayload, "ha-agent.json")
 
 	if i.Enabled {
@@ -150,54 +135,6 @@ func newInventoryOtelProvider(deps dependencies) (provides, error) {
 		StatusHeaderProvider: status.NewHeaderInformationProvider(i),
 		Endpoint:             api.NewAgentEndpointProvider(i.writePayloadAsJSON, "/metadata/inventory-ha-agent", "GET"),
 	}, nil
-}
-
-func (i *inventoryhaagent) parseResponseFromJSON(body []byte) (haAgentMetadata, error) {
-	var c interface{}
-
-	err := json.Unmarshal(body, &c)
-	if err != nil {
-		i.log.Errorf("Error unmarshaling the response:", err)
-		return nil, err
-	}
-
-	conf := c.(haAgentMetadata)
-
-	// Sources and environment are not relevant for the metadata payload
-	delete(conf, "sources")
-	delete(conf, "environment")
-
-	return conf, nil
-}
-
-func (i *inventoryhaagent) fetchRemoteOtelConfig(u *url.URL) (haAgentMetadata, error) {
-	// Create a Bearer string by appending string access token
-	bearer := "Bearer " + i.authToken.Get()
-
-	// Create a new request using http
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		i.log.Errorf("Error building request: ", err)
-		return nil, err
-	}
-
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
-
-	resp, err := i.httpClient.Do(req)
-	if err != nil {
-		i.log.Errorf("Error on response: ", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		i.log.Errorf("Error while reading the response bytes:", err)
-		return nil, err
-	}
-
-	return i.parseResponseFromJSON(body)
 }
 
 func (i *inventoryhaagent) fetchOtelAgentMetadata() {

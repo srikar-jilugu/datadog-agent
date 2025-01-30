@@ -6,72 +6,12 @@
 package inventoryhaagentimpl
 
 import (
-	"net/url"
-	"sync"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/util/scrubber"
 )
 
-const freshnessTO = 30 * time.Second
 const httpTO = 5 * time.Second
-
-type configGetter func(*url.URL) (haAgentMetadata, error)
-
-type freshConfig struct {
-	stale       bool
-	conf        haAgentMetadata
-	collectFunc configGetter
-	source      *url.URL
-	t           *time.Timer
-	mu          sync.RWMutex
-}
-
-func newFreshConfig(source string) (*freshConfig, error) {
-	u, err := url.Parse(source)
-	if err != nil {
-		return nil, err
-	}
-
-	return &freshConfig{
-		stale:  true,
-		source: u,
-	}, nil
-}
-
-func (f *freshConfig) isStale() bool {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-
-	return f.stale
-}
-
-func (f *freshConfig) getConfig() (haAgentMetadata, error) {
-	if !f.isStale() {
-		return f.conf, nil
-	}
-
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	c, err := f.collectFunc(f.source)
-	if err != nil {
-		return nil, err
-	}
-
-	f.conf = c
-	f.stale = false
-
-	// mark as stale after TO period
-	f.t = time.AfterFunc(freshnessTO, func() {
-		f.mu.Lock()
-		defer f.mu.Unlock()
-
-		f.stale = true
-	})
-
-	return f.conf, nil
-}
 
 func scrub(s string) string {
 	// Errors come from internal use of a Reader interface. Since we are reading from a buffer, no errors
