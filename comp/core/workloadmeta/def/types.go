@@ -973,7 +973,7 @@ type ECSTask struct {
 	Tags                    MapTags
 	ContainerInstanceTags   MapTags
 	ClusterName             string
-	AWSAccountID            int
+	AWSAccountID            string
 	Region                  string
 	AvailabilityZone        string
 	Family                  string
