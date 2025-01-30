@@ -289,7 +289,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 				}
 				return nil
 			}
-			expectedPacketLength := binary.LittleEndian.Uint32(b)
+			expectedPacketLength = binary.LittleEndian.Uint32(b)
 			if expectedPacketLength > uint32(len(packet.Buffer)) {
 				log.Info("dogstatsd-uds: packet length too large, dropping connection")
 				return nil
