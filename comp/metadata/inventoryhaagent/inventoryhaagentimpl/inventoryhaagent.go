@@ -145,7 +145,7 @@ func newInventoryOtelProvider(deps dependencies) (provides, error) {
 		Provider:             i.MetadataProvider(),
 		FlareProvider:        i.FlareProvider(),
 		StatusHeaderProvider: status.NewHeaderInformationProvider(i),
-		Endpoint:             api.NewAgentEndpointProvider(i.writePayloadAsJSON, "/metadata/inventory-otel", "GET"),
+		Endpoint:             api.NewAgentEndpointProvider(i.writePayloadAsJSON, "/metadata/inventory-ha-agent", "GET"),
 	}, nil
 }
 

@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent/inventoryhaagentimpl"
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
@@ -138,6 +139,7 @@ func Commands(globalParams *command.GlobalParams) []*cobra.Command {
 				hostimpl.Module(),
 				inventoryhostimpl.Module(),
 				inventoryotelimpl.Module(),
+				inventoryhaagentimpl.Module(),
 				resourcesimpl.Module(),
 				authtokenimpl.Module(),
 				// inventoryagent require a serializer. Since we're not actually sending the payload to
