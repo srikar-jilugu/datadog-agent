@@ -10,11 +10,9 @@ import (
 	"testing"
 	"time"
 
+	haagentmock "github.com/DataDog/datadog-agent/comp/haagent/mock"
 	"go.uber.org/fx"
 	"golang.org/x/exp/maps"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	authtokenimpl "github.com/DataDog/datadog-agent/comp/api/authtoken/fetchonlyimpl"
 	"github.com/DataDog/datadog-agent/comp/core/config"
@@ -25,6 +23,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/serializer"
 	serializermock "github.com/DataDog/datadog-agent/pkg/serializer/mocks"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func getProvides(t *testing.T, confOverrides map[string]any) (provides, error) {
@@ -36,6 +35,7 @@ func getProvides(t *testing.T, confOverrides map[string]any) (provides, error) {
 			fx.Replace(config.MockParams{Overrides: confOverrides}),
 			fx.Provide(func() serializer.MetricSerializer { return serializermock.NewMetricSerializer(t) }),
 			authtokenimpl.Module(),
+			haagentmock.Module(),
 		),
 	)
 }
@@ -54,16 +54,18 @@ func TestGetPayload(t *testing.T) {
 	io := getTestInventoryPayload(t, overrides)
 	io.hostname = "hostname-for-test"
 
+	haAgentMock := io.haAgent.(haagentmock.Component)
+	haAgentMock.SetEnabled(true)
+
 	startTime := time.Now().UnixNano()
 
 	p := io.getPayload()
 	payload := p.(*Payload)
 
-	// payload should contain dummy data
-	d, err := io.fetchDummyOtelConfig(nil)
-	require.Nil(t, err)
-
-	data := copyAndScrub(d)
+	data := copyAndScrub(haAgentMetadata{
+		"enabled":   true,
+		"config_id": "config01",
+	})
 
 	assert.True(t, payload.Timestamp > startTime)
 	assert.Equal(t, "hostname-for-test", payload.Hostname)
@@ -72,8 +74,7 @@ func TestGetPayload(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	overrides := map[string]any{
-		"otelcollector.enabled":               true,
-		"otelcollector.submit_dummy_metadata": true,
+		"ha_agent.enabled": true,
 	}
 	io := getTestInventoryPayload(t, overrides)
 
@@ -82,11 +83,6 @@ func TestGet(t *testing.T) {
 
 	p := io.Get()
 
-	// Grab dummy data
-	d, err := io.fetchDummyOtelConfig(nil)
-	assert.Nil(t, err)
-	assert.Equal(t, d, io.data)
-
 	// verify that the return map is a copy
 	p["provided_configuration"] = ""
 	assert.NotEqual(t, p["provided_configuration"], io.data["provided_configuration"])
@@ -94,7 +90,7 @@ func TestGet(t *testing.T) {
 
 func TestFlareProviderFilename(t *testing.T) {
 	io := getTestInventoryPayload(t, nil)
-	assert.Equal(t, "otel.json", io.FlareFileName)
+	assert.Equal(t, "ha-agent.json", io.FlareFileName)
 }
 
 func TestConfigRefresh(t *testing.T) {

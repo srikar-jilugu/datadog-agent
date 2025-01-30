@@ -14,7 +14,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"sync"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	flaretypes "github.com/DataDog/datadog-agent/comp/core/flare/types"
 	log "github.com/DataDog/datadog-agent/comp/core/log/def"
 	"github.com/DataDog/datadog-agent/comp/core/status"
+	haagent "github.com/DataDog/datadog-agent/comp/haagent/def"
 	"github.com/DataDog/datadog-agent/comp/metadata/internal/util"
 	iointerface "github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent"
 	"github.com/DataDog/datadog-agent/comp/metadata/runner/runnerimpl"
@@ -77,6 +77,7 @@ type inventoryhaagent struct {
 	authToken  authtoken.Component
 	f          *freshConfig
 	httpClient *http.Client
+	haAgent    haagent.Component
 }
 
 type dependencies struct {
@@ -86,6 +87,7 @@ type dependencies struct {
 	Config     config.Component
 	Serializer serializer.MetricSerializer
 	AuthToken  authtoken.Component
+	HaAgent    haagent.Component
 }
 
 type provides struct {
@@ -115,21 +117,22 @@ func newInventoryOtelProvider(deps dependencies) (provides, error) {
 			Transport: tr,
 			Timeout:   httpTO,
 		},
+		haAgent: deps.HaAgent,
 	}
 
-	getter := i.fetchRemoteOtelConfig
-	if i.conf.GetBool("otelcollector.submit_dummy_metadata") {
-		getter = i.fetchDummyOtelConfig
-	}
+	//getter := i.fetchRemoteOtelConfig
+	//if i.conf.GetBool("otelcollector.submit_dummy_metadata") {
+	//	getter = i.fetchDummyOtelConfig
+	//}
 
 	var err error
-	i.f, err = newFreshConfig(deps.Config.GetString("otelcollector.extension_url"), getter)
+	i.f, err = newFreshConfig(deps.Config.GetString("otelcollector.extension_url"))
 	if err != nil {
 		// panic?
 		return provides{}, err
 	}
 
-	i.InventoryPayload = util.CreateInventoryPayload(deps.Config, deps.Log, deps.Serializer, i.getPayload, "otel.json")
+	i.InventoryPayload = util.CreateInventoryPayload(deps.Config, deps.Log, deps.Serializer, i.getPayload, "ha-agent.json")
 
 	if i.Enabled {
 		// TODO: if there's an update on the OTel side we currently will not be
@@ -197,38 +200,17 @@ func (i *inventoryhaagent) fetchRemoteOtelConfig(u *url.URL) (haAgentMetadata, e
 	return i.parseResponseFromJSON(body)
 }
 
-func (i *inventoryhaagent) fetchDummyOtelConfig(_ *url.URL) (haAgentMetadata, error) {
-	dummy, err := dummyFS.ReadFile(path.Join("dummy_data", "response.json"))
-	if err != nil {
-		i.log.Errorf("Unable to read embedded dummy data:", err)
-		return nil, err
-	}
-
-	return i.parseResponseFromJSON(dummy)
-}
-
 func (i *inventoryhaagent) fetchOtelAgentMetadata() {
-	isEnabled := i.conf.GetBool("otelcollector.enabled")
+	isEnabled := i.haAgent.Enabled()
 
 	if !isEnabled {
-		i.log.Infof("OTel Metadata unavailable as OTel collector is disabled")
+		i.log.Infof("HA Agent Metadata unavailable as HA Agent is disabled")
 		i.data = nil
-
-		return
-	}
-	data, err := i.f.getConfig()
-	if err != nil {
-		i.log.Errorf("Unable to fetch fresh inventory metadata: ", err)
-		return
-	}
-
-	i.data = data
-	if i.data == nil {
-		i.log.Infof("OTel config returned empty")
 		return
 	}
 
 	i.data["enabled"] = isEnabled
+	i.data["config_id"] = i.haAgent.GetConfigID()
 }
 
 func (i *inventoryhaagent) refreshMetadata() {

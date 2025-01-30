@@ -6,16 +6,12 @@
 package inventoryhaagentimpl
 
 import (
-	"embed"
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/util/scrubber"
 )
-
-//go:embed dummy_data
-var dummyFS embed.FS
 
 const freshnessTO = 30 * time.Second
 const httpTO = 5 * time.Second
@@ -31,16 +27,15 @@ type freshConfig struct {
 	mu          sync.RWMutex
 }
 
-func newFreshConfig(source string, f configGetter) (*freshConfig, error) {
+func newFreshConfig(source string) (*freshConfig, error) {
 	u, err := url.Parse(source)
 	if err != nil {
 		return nil, err
 	}
 
 	return &freshConfig{
-		stale:       true,
-		source:      u,
-		collectFunc: f,
+		stale:  true,
+		source: u,
 	}, nil
 }
 
