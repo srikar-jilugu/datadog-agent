@@ -102,7 +102,6 @@ import (
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryagent"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventorychecks"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent"
-	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent/inventoryhaagentimpl"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhost"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryotel"
 	"github.com/DataDog/datadog-agent/comp/metadata/packagesigning"
@@ -476,7 +475,6 @@ func getSharedFxOption() fx.Option {
 		networkpath.Bundle(),
 		remoteagentregistryfx.Module(),
 		haagentfx.Module(),
-		inventoryhaagentimpl.Module(),
 		metricscompressorfx.Module(),
 	)
 }
