@@ -117,6 +117,7 @@ components_classic_style = [
     'comp/metadata/inventorychecks/inventorychecksimpl',
     'comp/metadata/inventoryhost/inventoryhostimpl',
     'comp/metadata/inventoryotel/inventoryotelimpl',
+    'comp/metadata/inventoryhaagent/inventoryhaagentimpl',
     'comp/metadata/packagesigning/packagesigningimpl',
     'comp/metadata/resources/resourcesimpl',
     'comp/metadata/runner/runnerimpl',
@@ -326,7 +327,9 @@ def locate_fx_source_files(root_path):
             continue
         if entry.name.startswith('fx'):
             for subentry in entry.iterdir():
-                results.append(subentry)
+                if subentry.is_file() and subentry.suffix == '.go':
+                    results.append(subentry)
+
     return results
 
 
