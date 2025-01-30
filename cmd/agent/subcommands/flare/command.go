@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent/inventoryhaagentimpl"
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
@@ -49,6 +48,7 @@ import (
 	haagentfx "github.com/DataDog/datadog-agent/comp/haagent/fx"
 	"github.com/DataDog/datadog-agent/comp/metadata/host/hostimpl"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryagent/inventoryagentimpl"
+	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent/inventoryhaagentimpl"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhost/inventoryhostimpl"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryotel/inventoryotelimpl"
 	"github.com/DataDog/datadog-agent/comp/metadata/resources/resourcesimpl"

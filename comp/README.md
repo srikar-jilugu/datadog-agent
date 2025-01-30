@@ -301,7 +301,7 @@ Package inventorychecks implements a component to generate the 'check_metadata' 
 
 ### [comp/metadata/inventoryhaagent](https://pkg.go.dev/github.com/DataDog/datadog-agent/comp/metadata/inventoryhaagent)
 
-Package inventoryhaagent implements a component to generate the 'datadog_agent' metadata payload for inventory.
+Package inventoryhaagent implements a component to generate the 'ha_agent_metadata' metadata payload for inventory.
 
 ### [comp/metadata/inventoryhost](https://pkg.go.dev/github.com/DataDog/datadog-agent/comp/metadata/inventoryhost)
 

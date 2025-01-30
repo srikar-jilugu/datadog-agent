@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-// Package inventoryhaagentimpl implements a component to generate the 'datadog_agent' metadata payload for inventory.
+// Package inventoryhaagentimpl implements a component to generate the 'ha_agent_metadata' metadata payload for inventory.
 package inventoryhaagentimpl
 
 import (
