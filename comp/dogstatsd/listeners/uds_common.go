@@ -14,7 +14,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -365,7 +364,7 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 
 		if err != nil {
 			// connection has been closed
-			if strings.HasSuffix(err.Error(), " use of closed network connection") {
+			if errors.Is(err, net.ErrClosed) {
 				return nil
 			}
 
