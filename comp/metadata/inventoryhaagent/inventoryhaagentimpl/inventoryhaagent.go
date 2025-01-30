@@ -120,10 +120,6 @@ func newInventoryHaAgentProvider(deps dependencies) (provides, error) {
 	i.InventoryPayload = util.CreateInventoryPayload(deps.Config, deps.Log, deps.Serializer, i.getPayload, "ha-agent.json")
 
 	if i.Enabled {
-		// TODO: if there's an update on the OTel side we currently will not be
-		//       notified. Is this a problem? Runtime changes are expected to be
-		//       triggered by FA, so maybe this is OK.
-		//
 		// We want to be notified when the configuration is updated
 		deps.Config.OnUpdate(func(_ string, _, _ any) { i.Refresh() })
 	}
@@ -137,7 +133,7 @@ func newInventoryHaAgentProvider(deps dependencies) (provides, error) {
 	}, nil
 }
 
-func (i *inventoryhaagent) fetchOtelAgentMetadata() {
+func (i *inventoryhaagent) refreshMetadata() {
 	isEnabled := i.haAgent.Enabled()
 
 	if !isEnabled {
@@ -148,11 +144,7 @@ func (i *inventoryhaagent) fetchOtelAgentMetadata() {
 
 	i.data["enabled"] = isEnabled
 	i.data["config_id"] = i.haAgent.GetConfigID()
-}
-
-func (i *inventoryhaagent) refreshMetadata() {
-	// Core Agent / agent
-	i.fetchOtelAgentMetadata()
+	i.data["state"] = string(i.haAgent.GetState())
 }
 
 func (i *inventoryhaagent) getPayload() marshaler.JSONMarshaler {

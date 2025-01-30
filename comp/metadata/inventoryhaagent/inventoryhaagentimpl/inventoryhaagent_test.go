@@ -62,6 +62,7 @@ func TestGetPayload(t *testing.T) {
 	data := copyAndScrub(haAgentMetadata{
 		"enabled":   true,
 		"config_id": "config01",
+		"state":     "standby",
 	})
 
 	assert.True(t, payload.Timestamp > startTime)
