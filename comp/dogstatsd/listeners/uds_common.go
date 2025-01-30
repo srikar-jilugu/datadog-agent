@@ -300,12 +300,15 @@ func (l *UDSListener) handleConnection(conn netUnixConn, closeFunc CloseFunction
 		}
 
 		for err == nil {
+			var nRead int
 			if oob != nil {
-				n, oobn, _, _, err = conn.ReadMsgUnix(packet.Buffer[n:maxPacketLength], oobS)
+				nRead, oobn, _, _, err = conn.ReadMsgUnix(packet.Buffer[n:maxPacketLength], oobS)
 			} else {
-				n, _, err = conn.ReadFromUnix(packet.Buffer[n:maxPacketLength])
+				nRead, _, err = conn.ReadFromUnix(packet.Buffer[n:maxPacketLength])
 			}
-			if n == 0 && oobn == 0 && l.transport == "unix" {
+			n += nRead
+
+			if nRead == 0 && oobn == 0 && l.transport == "unix" {
 				log.Debugf("dogstatsd-uds: %s connection closed", l.transport)
 				return nil
 			}
