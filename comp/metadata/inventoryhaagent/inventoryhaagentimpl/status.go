@@ -17,7 +17,7 @@ var templatesFS embed.FS
 
 // Name renders the name
 func (io *inventoryhaagent) Name() string {
-	return "OTel metadata"
+	return "HA Agent metadata"
 }
 
 // Index renders the index
