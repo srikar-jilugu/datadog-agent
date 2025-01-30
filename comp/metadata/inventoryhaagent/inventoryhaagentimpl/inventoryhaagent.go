@@ -99,7 +99,7 @@ type provides struct {
 
 func newInventoryHaAgentProvider(deps dependencies) (provides, error) {
 	hname, _ := hostname.Get(context.Background())
-	// HTTP client need not verify otel-agent cert since it's self-signed
+	// HTTP client need not verify ha-agent cert since it's self-signed
 	// at start-up. TLS used for encryption not authentication.
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
