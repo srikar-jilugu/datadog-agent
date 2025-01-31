@@ -15,6 +15,8 @@ import (
 	"go.opentelemetry.io/collector/extension"
 	"go.opentelemetry.io/collector/extension/extensioncapabilities"
 	"go.uber.org/zap"
+
+	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
 )
 
 type fleetAutomationExtension struct {
@@ -24,6 +26,8 @@ type fleetAutomationExtension struct {
 	telemetry       component.TelemetrySettings
 	collectorConfig *confmap.Conf
 	mu              sync.RWMutex
+
+	forwarder *defaultforwarder.DefaultForwarder
 }
 
 var _ extensioncapabilities.ConfigWatcher = (*fleetAutomationExtension)(nil)
@@ -66,9 +70,13 @@ func (e *fleetAutomationExtension) Shutdown(_ context.Context) error {
 }
 
 func newExtension(config *Config, telemetry component.TelemetrySettings) *fleetAutomationExtension {
+	cfg := newConfigComponent(telemetry, config)
+	log := newLogComponent(telemetry)
+	forwarder := defaultforwarder.NewDefaultForwarder(cfg, log, defaultforwarder.NewOptions(cfg, log, nil))
 	return &fleetAutomationExtension{
 		extensionConfig: config,
 		telemetry:       telemetry,
 		collectorConfig: &confmap.Conf{},
+		forwarder:       forwarder,
 	}
 }
