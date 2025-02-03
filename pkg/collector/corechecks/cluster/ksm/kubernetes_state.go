@@ -743,6 +743,7 @@ func (k *KSMCheck) hostnameAndTags(labels map[string]string, labelJoiner *labelJ
 		tagList = append(tagList, owners...)
 	}
 
+	log.Debugf("labelJoiner.metricsToJoin: %#v, labels=%#v, labelsToAdd=%#v, tagList=%#v", maps.Keys(labelJoiner.metricsToJoin), labels, labelsToAdd, tagList)
 	return hostname, tagList
 }
 

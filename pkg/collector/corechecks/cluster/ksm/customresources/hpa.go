@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	basemetrics "k8s.io/component-base/metrics"
 
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"k8s.io/kube-state-metrics/v2/pkg/customresource"
 	"k8s.io/kube-state-metrics/v2/pkg/metric"
 	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
@@ -220,6 +221,7 @@ func (f *hpav2Factory) MetricFamilyGenerators() []generator.FamilyGenerator {
 			basemetrics.STABLE,
 			"",
 			wrapHPAFunc(func(a *autoscaling.HorizontalPodAutoscaler) *metric.Family {
+				log.Debugf("wrapHPAFunc kube_horizontalpodautoscaler_status_current_replicas | a.Labels: %#v", a.Labels)
 				return &metric.Family{
 					Metrics: []*metric.Metric{
 						{
@@ -328,6 +330,7 @@ func (f *hpav2Factory) MetricFamilyGenerators() []generator.FamilyGenerator {
 			"",
 			wrapHPAFunc(func(a *autoscaling.HorizontalPodAutoscaler) *metric.Family {
 				labelKeys, labelValues := kubeMapToPrometheusLabels("label", a.Labels)
+				log.Debugf("wrapHPAFunc | kube_horizontalpodautoscaler_labels | a.Labels: %#v, labelKeys: %#v, labelValues: %#v", a.Labels, labelKeys, labelValues)
 				return &metric.Family{
 					Metrics: []*metric.Metric{
 						{
