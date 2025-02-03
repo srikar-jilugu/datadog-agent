@@ -53,14 +53,20 @@ func (e *fleetAutomationExtension) NotifyConfig(_ context.Context, conf *confmap
 	e.telemetry.Logger.Info("Received new collector configuration")
 	e.printCollectorConfig()
 	var c otelMetadata
-	e.collectorConfig.Unmarshal(c)
+	err := e.collectorConfig.Unmarshal(c)
+	if err != nil {
+		e.telemetry.Logger.Error("Failed to unmarshal collector configuration", zap.Error(err))
+	}
 	p := Payload{
 		Hostname:  metadata.Type.String(),
 		Timestamp: time.Now().UnixNano(),
 		Metadata:  c,
 		UUID:      uuid.GetUUID(),
 	}
-	e.serializer.SendMetadata(&p)
+	err = e.serializer.SendMetadata(&p)
+	if err != nil {
+		e.telemetry.Logger.Error("Failed to send fleet automation payload to Datadog backend", zap.Error(err))
+	}
 	return nil
 }
 
