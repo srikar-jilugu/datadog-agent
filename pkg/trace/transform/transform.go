@@ -148,6 +148,8 @@ func isDatadogAPMConventionKey(k string) bool {
 	return k == "service.name" || k == "operation.name" || k == "resource.name" || k == "span.type" || k == "http.method" || k == "http.status_code" || strings.HasPrefix(k, "datadog.")
 }
 
+// SetOTLPToDDHTTPMappingsInMeta looks for a key in the Datadog HTTP convention that matches the given key from the
+// OTLP HTTP convention. If there is a match, add the found Datadog key + given value to the given map and return true
 func SetOTLPToDDHTTPMappingsInMeta(k string, value string, metaMap map[string]string) bool {
 	datadogKey, found := attributes.HTTPMappings[k]
 	switch {
