@@ -14,6 +14,8 @@ import (
 
 type otelMetadata = map[string]interface{}
 
+var _ marshaler.JSONMarshaler = (*Payload)(nil)
+
 // Payload handles the JSON unmarshalling of the metadata payload
 type Payload struct {
 	Hostname  string       `json:"hostname"`

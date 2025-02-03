@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
@@ -21,6 +22,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/serializer"
 	"github.com/DataDog/datadog-agent/pkg/util/compression"
 	"github.com/DataDog/datadog-agent/pkg/util/compression/selector"
+	"github.com/DataDog/datadog-agent/pkg/util/uuid"
 )
 
 type fleetAutomationExtension struct {
@@ -50,6 +52,15 @@ func (e *fleetAutomationExtension) NotifyConfig(_ context.Context, conf *confmap
 	e.collectorConfig = conf
 	e.telemetry.Logger.Info("Received new collector configuration")
 	e.printCollectorConfig()
+	var c otelMetadata
+	e.collectorConfig.Unmarshal(c)
+	p := Payload{
+		Hostname:  metadata.Type.String(),
+		Timestamp: time.Now().UnixNano(),
+		Metadata:  c,
+		UUID:      uuid.GetUUID(),
+	}
+	e.serializer.SendMetadata(&p)
 	return nil
 }
 

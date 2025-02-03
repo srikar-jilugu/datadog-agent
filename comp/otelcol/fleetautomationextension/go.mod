@@ -10,6 +10,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/config/setup v0.62.1
 	github.com/DataDog/datadog-agent/pkg/serializer v0.62.1
 	github.com/DataDog/datadog-agent/pkg/util/compression v0.64.0-devel
+	github.com/DataDog/datadog-agent/pkg/util/uuid v0.62.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.118.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v0.118.0
@@ -51,6 +52,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/telemetry v0.62.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/backoff v0.62.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/buf v0.62.1 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/cache v0.62.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/common v0.62.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/executable v0.62.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/filesystem v0.62.1 // indirect
@@ -217,6 +219,7 @@ replace (
 	github.com/DataDog/datadog-agent/pkg/telemetry => ../../../pkg/telemetry
 	github.com/DataDog/datadog-agent/pkg/util/backoff => ../../../pkg/util/backoff
 	github.com/DataDog/datadog-agent/pkg/util/buf => ../../../pkg/util/buf
+	github.com/DataDog/datadog-agent/pkg/util/cache => ../../../pkg/util/cache
 	github.com/DataDog/datadog-agent/pkg/util/common => ../../../pkg/util/common
 	github.com/DataDog/datadog-agent/pkg/util/compression => ../../../pkg/util/compression
 	github.com/DataDog/datadog-agent/pkg/util/executable => ../../../pkg/util/executable
@@ -232,6 +235,7 @@ replace (
 	github.com/DataDog/datadog-agent/pkg/util/sort => ../../../pkg/util/sort
 	github.com/DataDog/datadog-agent/pkg/util/system => ../../../pkg/util/system
 	github.com/DataDog/datadog-agent/pkg/util/system/socket => ../../../pkg/util/system/socket
+	github.com/DataDog/datadog-agent/pkg/util/uuid => ../../../pkg/util/uuid
 	github.com/DataDog/datadog-agent/pkg/util/winutil => ../../../pkg/util/winutil
 	github.com/DataDog/datadog-agent/pkg/version => ../../../pkg/version
 )
