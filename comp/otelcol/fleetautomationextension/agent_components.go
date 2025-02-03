@@ -9,11 +9,12 @@ import (
 	"runtime"
 	"strings"
 
+	"go.opentelemetry.io/collector/component"
+
 	coreconfig "github.com/DataDog/datadog-agent/comp/core/config"
 	corelog "github.com/DataDog/datadog-agent/comp/core/log/def"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
-	"go.opentelemetry.io/collector/component"
 )
 
 func newLogComponent(set component.TelemetrySettings) corelog.Component {
@@ -48,5 +49,9 @@ func newConfigComponent(set component.TelemetrySettings, cfg *Config) coreconfig
 	// add logs config pipelines config value, see https://github.com/DataDog/datadog-agent/pull/31190
 	logsPipelines := min(4, runtime.GOMAXPROCS(0))
 	pkgconfig.Set("logs_config.pipelines", logsPipelines, pkgconfigmodel.SourceDefault)
+	// Set values for serializer
+	pkgconfig.Set("enable_payloads.events", true, pkgconfigmodel.SourceDefault)
+	pkgconfig.Set("enable_payloads.json_to_v1_intake", true, pkgconfigmodel.SourceDefault)
+	pkgconfig.Set("enable_sketch_stream_payload_serialization", true, pkgconfigmodel.SourceDefault)
 	return pkgconfig
 }

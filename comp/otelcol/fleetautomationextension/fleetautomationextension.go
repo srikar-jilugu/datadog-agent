@@ -17,6 +17,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
+	"github.com/DataDog/datadog-agent/comp/otelcol/fleetautomationextension/internal/metadata"
+	"github.com/DataDog/datadog-agent/pkg/serializer"
+	"github.com/DataDog/datadog-agent/pkg/util/compression"
+	"github.com/DataDog/datadog-agent/pkg/util/compression/selector"
 )
 
 type fleetAutomationExtension struct {
@@ -27,7 +31,9 @@ type fleetAutomationExtension struct {
 	collectorConfig *confmap.Conf
 	mu              sync.RWMutex
 
-	forwarder *defaultforwarder.DefaultForwarder
+	forwarder  *defaultforwarder.DefaultForwarder
+	compressor *compression.Compressor
+	serializer *serializer.Serializer
 }
 
 var _ extensioncapabilities.ConfigWatcher = (*fleetAutomationExtension)(nil)
@@ -72,11 +78,16 @@ func (e *fleetAutomationExtension) Shutdown(_ context.Context) error {
 func newExtension(config *Config, telemetry component.TelemetrySettings) *fleetAutomationExtension {
 	cfg := newConfigComponent(telemetry, config)
 	log := newLogComponent(telemetry)
+	// Initialize forwarder, compressor, and serializer components to forward OTel Inventory to REDAPL backend
 	forwarder := defaultforwarder.NewDefaultForwarder(cfg, log, defaultforwarder.NewOptions(cfg, log, nil))
+	compressor := selector.NewCompressor(compression.NoneKind, 0)
+	serializer := serializer.NewSerializer(forwarder, nil, compressor, cfg, metadata.Type.String())
 	return &fleetAutomationExtension{
 		extensionConfig: config,
 		telemetry:       telemetry,
 		collectorConfig: &confmap.Conf{},
 		forwarder:       forwarder,
+		compressor:      &compressor,
+		serializer:      serializer,
 	}
 }
