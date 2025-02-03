@@ -27,6 +27,7 @@ const (
 	RunPath = "/opt/datadog-packages/run"
 )
 
+// SetRepositoryPermissions sets the permissions on the repository directory
 func SetRepositoryPermissions(path string) error {
 	return os.Chmod(path, 0755)
 }
