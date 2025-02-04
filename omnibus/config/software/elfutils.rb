@@ -26,7 +26,7 @@ license "LGPL-3.0-or-later"
 license_file "COPYING-LGPLV3"
 skip_transitive_dependency_licensing true
 
-version("0.189") { source sha256: "39bd8f1a338e2b7cd4abc3ff11a0eddc6e690f69578a57478d8179b4148708c8" }
+version("0.192") { source sha256: "616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4" }
 
 ship_source_offer true
 
