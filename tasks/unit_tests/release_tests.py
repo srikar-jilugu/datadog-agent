@@ -1293,3 +1293,41 @@ class TestTagModules(unittest.TestCase):
             mock_modules.return_value = mock_dict
             release.tag_modules(c, version="version")
         self.assertEqual(c.run.call_count, 34)
+
+
+class TestNextRcVersion(unittest.TestCase):
+    @patch(
+        'tasks.libs.releasing.version.current_version_for_release_branch',
+        new=MagicMock(return_value=Version.from_tag("7.55.0-rc.1")),
+    )
+    def test_rc(self):
+        next_rc = release.next_rc_version(None, None)
+
+        self.assertEqual(next_rc, Version.from_tag("7.55.0-rc.2"))
+
+    @patch(
+        'tasks.libs.releasing.version.current_version_for_release_branch',
+        new=MagicMock(return_value=Version.from_tag("7.55.0-rc.9")),
+    )
+    def test_rc2(self):
+        next_rc = release.next_rc_version(None, None)
+
+        self.assertEqual(next_rc, Version.from_tag("7.55.0-rc.10"))
+
+    @patch(
+        'tasks.libs.releasing.version.current_version_for_release_branch',
+        new=MagicMock(return_value=Version.from_tag("6.53.1")),
+    )
+    def test_not_rc(self):
+        next_rc = release.next_rc_version(None, None)
+
+        self.assertEqual(next_rc, Version.from_tag("6.53.2-rc.1"))
+
+    @patch(
+        'tasks.libs.releasing.version.current_version_for_release_branch',
+        new=MagicMock(return_value=Version.from_tag("6.53.1")),
+    )
+    def test_not_patch(self):
+        next_rc = release.next_rc_version(None, None, patch_version=False)
+
+        self.assertEqual(next_rc, Version.from_tag("6.54.0-rc.1"))

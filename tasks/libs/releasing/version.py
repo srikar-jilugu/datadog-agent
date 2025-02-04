@@ -129,7 +129,7 @@ def current_version_for_release_branch(ctx, release_branch) -> Version:
     return versions[-1]
 
 
-def next_rc_version(ctx, release_branch, patch_version=False) -> Version:
+def next_rc_version(ctx, release_branch, patch_version=True) -> Version:
     # Fetch previous version from the most recent tag on the branch
     previous_version = current_version_for_release_branch(ctx, release_branch)
 
@@ -147,7 +147,7 @@ def next_rc_version(ctx, release_branch, patch_version=False) -> Version:
                 new_version = previous_version.non_devel_version()
                 new_version = new_version.next_version(rc=True)
             else:
-                new_version = previous_version.next_version(bump_patch=True, rc=True)
+                new_version = previous_version.next_version(bump_minor=True, rc=True)
 
     return new_version
 
