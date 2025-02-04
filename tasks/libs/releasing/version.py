@@ -147,7 +147,7 @@ def next_rc_version(ctx, release_branch, patch_version=False) -> Version:
                 new_version = previous_version.non_devel_version()
                 new_version = new_version.next_version(rc=True)
             else:
-                new_version = previous_version.next_version(bump_minor=True, rc=True)
+                new_version = previous_version.next_version(bump_patch=True, rc=True)
 
     return new_version
 
