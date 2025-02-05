@@ -107,10 +107,8 @@ func (d *Downloader) Download(ctx context.Context, packageURL string) (*Download
 	}
 	var image oci.Image
 	switch url.Scheme {
-	case "oci":
+	case "oci", "file":
 		image, err = d.downloadRegistry(ctx, strings.TrimPrefix(packageURL, "oci://"))
-	case "file":
-		image, err = d.downloadFile(url.Path)
 	default:
 		return nil, fmt.Errorf("unsupported package URL scheme: %s", url.Scheme)
 	}
