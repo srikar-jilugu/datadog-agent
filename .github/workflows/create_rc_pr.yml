@@ -116,6 +116,9 @@ jobs:
                 is_qualification=$(inv -e release.is-qualification -r 6.53.x --output)
                 echo "is_qualification: $is_qualification"
                 echo "IS_QUALIFICATION=$is_qualification" >> $GITHUB_ENV
+                echo "check github env"
+                cat $GITHUB_ENV | grep IS_QUALIFICATION
+                echo "end github env check"
                 echo IS_AGENT6_RELEASE: $IS_AGENT6_RELEASE
                 echo IS_QUALIFICATION: $IS_QUALIFICATION
                 echo HAS_CHANGES: ${{ steps.check_for_changes.outputs.CHANGES }}
