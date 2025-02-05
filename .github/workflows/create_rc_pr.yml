@@ -113,6 +113,9 @@ jobs:
               run: |
                 is_qualification=$(inv -e release.is-qualification -r 6.53.x --output)
                 echo "IS_QUALIFICATION=$is_qualification" >> $GITHUB_ENV
+                echo IS_AGENT6_RELEASE: $IS_AGENT6_RELEASE
+                echo IS_QUALIFICATION: $IS_QUALIFICATION
+                echo HAS_CHANGES: ${{ steps.check_for_changes.outputs.CHANGES }}
 
             - name: Create RC PR
               if: ${{ steps.check_for_changes.outputs.CHANGES == 'true' || ( env.IS_AGENT6_RELEASE == 'true' && env.IS_QUALIFICATION == 'false') }}
