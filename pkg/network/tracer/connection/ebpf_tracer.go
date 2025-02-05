@@ -11,6 +11,7 @@ package connection
 import (
 	"errors"
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/network/protocols"
 	"io"
 	"sync"
 	"time"
@@ -771,7 +772,7 @@ func (t *ebpfTracer) setupTLSTagsMapCleaner(m *manager.Manager) {
 		return
 	}
 
-	TLSTagsMapCleaner, err := ddebpf.NewMapCleaner[netebpf.ConnTuple, netebpf.TLSTagsWrapper](TLSTagsMap, 1024, probes.EnhancedTLSTagsMap, "npm_tracer")
+	TLSTagsMapCleaner, err := ddebpf.NewMapCleaner[netebpf.ConnTuple, netebpf.TLSTagsWrapper](TLSTagsMap, protocols.DefaultMapCleanerBatchSize, probes.EnhancedTLSTagsMap, "npm_tracer")
 	if err != nil {
 		log.Errorf("error creating map cleaner: %s", err)
 		return
