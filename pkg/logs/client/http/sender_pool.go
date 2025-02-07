@@ -7,10 +7,13 @@
 package http
 
 import (
+	"math"
+	"sync"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 const (
@@ -22,6 +25,8 @@ const (
 type SenderPool interface {
 	// Perform an operation with the sender concurrency implementation.
 	Run(func())
+	RecordLatency(latency time.Duration)
+	Resize(bool)
 }
 
 // limitedSenderPool is a senderPool implementation that limits the number of concurrent senders.
@@ -47,6 +52,9 @@ func (l *limitedSenderPool) Run(doWork func()) {
 	}()
 }
 
+func (l *limitedSenderPool) RecordLatency(_ time.Duration) {}
+func (l *limitedSenderPool) Resize(_ bool)                 {}
+
 type latencyThrottledSenderPool struct {
 	pool                     chan struct{}
 	virtualLatency           time.Duration
@@ -59,6 +67,7 @@ type latencyThrottledSenderPool struct {
 	samples                  int
 	ewmaSampleInterval       time.Duration
 	alpha                    float64
+	sync.Mutex
 }
 
 // NewLatencyThrottledSenderPool returns a new senderPool implementation that limits the number of concurrent senders.
@@ -85,14 +94,62 @@ func newLatencyThrottledSenderPoolWithOptions(ewmaSampleInterval time.Duration, 
 	return sp
 }
 
+func (l *latencyThrottledSenderPool) RecordLatency(latency time.Duration) {
+	l.Lock()
+	l.windowSum += float64(latency)
+	l.samples++
+	l.Unlock()
+}
+
+func (l *latencyThrottledSenderPool) Resize(backoffError bool) {
+	if time.Since(l.virtualLatencyLastSample) >= l.ewmaSampleInterval && l.samples > 0 {
+		l.Lock()
+		windowSum := l.windowSum
+		samples := l.samples
+		l.windowSum = 0
+		l.samples = 0
+		l.Unlock()
+
+		avgLatency := windowSum / float64(samples)
+		l.virtualLatency = time.Duration(float64(l.virtualLatency)*(1.0-ewmaAlpha) + (avgLatency * ewmaAlpha))
+		l.virtualLatencyLastSample = time.Now()
+		log.Infof("TEST: virtual latency = %v", l.virtualLatency)
+
+		targetWorkers := int(math.Ceil(float64(l.virtualLatency) / float64(l.targetVirtualLatency)))
+		log.Infof("TEST: target workers = %d", targetWorkers)
+
+		if backoffError {
+			// Backoff quickly on sender error
+			workersToDrop := l.inUseWorkers / 2
+			for i := 0; i < workersToDrop; i++ {
+				<-l.pool
+				l.inUseWorkers--
+			}
+		} else if targetWorkers > l.inUseWorkers && l.inUseWorkers < l.maxWorkers {
+			// If the virtual latency is above the target, add a worker to the pool.
+			l.pool <- struct{}{}
+			l.inUseWorkers++
+		} else if targetWorkers < l.inUseWorkers {
+			// else if the virtual latency is below the target, remove a worker from the pool if there is more than 1.
+			<-l.pool
+			l.inUseWorkers--
+		}
+
+		metrics.TlmNumSenders.Set(float64(l.inUseWorkers), l.destMeta.TelemetryName())
+		metrics.TlmVirtualLatency.Set(float64(l.virtualLatency/time.Millisecond), l.destMeta.TelemetryName())
+		log.Infof("TEST: worker count at {%d} after resize", l.inUseWorkers)
+	}
+
+}
+
 func (l *latencyThrottledSenderPool) Run(doWork func()) {
-	now := time.Now()
+	//now := time.Now()
 	<-l.pool
 	go func() {
 		doWork()
 		l.pool <- struct{}{}
 	}()
-	l.resizePoolIfNeeded(now)
+	//l.resizePoolIfNeeded(now)
 }
 
 // Concurrency is scaled by attempting to converge on a target virtual latency.
@@ -122,6 +179,7 @@ func (l *latencyThrottledSenderPool) resizePoolIfNeeded(then time.Time) {
 		<-l.pool
 		l.inUseWorkers--
 	}
+
 	metrics.TlmNumSenders.Set(float64(l.inUseWorkers), l.destMeta.TelemetryName())
 	metrics.TlmVirtualLatency.Set(float64(l.virtualLatency/time.Millisecond), l.destMeta.TelemetryName())
 }

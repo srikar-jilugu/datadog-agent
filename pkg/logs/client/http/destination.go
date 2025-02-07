@@ -218,6 +218,7 @@ func (d *Destination) run(input chan *message.Payload, output chan *message.Payl
 }
 
 func (d *Destination) sendConcurrent(payload *message.Payload, output chan *message.Payload, isRetrying chan bool) {
+	d.senderPool.Resize(d.lastRetryError != nil)
 	d.wg.Add(1)
 	d.senderPool.Run(func() {
 		d.sendAndRetry(payload, output, isRetrying)
@@ -315,10 +316,9 @@ func (d *Destination) unconditionalSend(payload *message.Payload) (err error) {
 
 	req = req.WithContext(ctx)
 	resp, err := d.client.Do(req)
-
-	latency := time.Since(then).Milliseconds()
-	metrics.TlmSenderLatency.Observe(float64(latency))
-	metrics.SenderLatency.Set(latency)
+	latency := time.Since(then)
+	metrics.TlmSenderLatency.Observe(float64(latency.Milliseconds()))
+	metrics.SenderLatency.Set(latency.Milliseconds())
 
 	if err != nil {
 		if ctx.Err() == context.Canceled {
@@ -358,6 +358,7 @@ func (d *Destination) unconditionalSend(payload *message.Payload) (err error) {
 		return client.NewRetryableError(errServer)
 	} else {
 		d.pipelineMonitor.ReportComponentEgress(payload, d.destMeta.MonitorTag())
+		d.senderPool.RecordLatency(latency)
 		return nil
 	}
 }
