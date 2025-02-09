@@ -9,6 +9,7 @@
 package model
 
 import (
+	"github.com/google/gopacket"
 	"net"
 	"net/netip"
 	"reflect"
@@ -591,6 +592,24 @@ type DNSEvent struct {
 	Class uint16 `field:"question.class"`                                                  // SECLDoc[question.class] Definition:`the class looked up by the DNS question` Constants:`DNS qclasses`
 	Size  uint16 `field:"question.length"`                                                 // SECLDoc[question.length] Definition:`the total DNS request size in bytes`
 	Count uint16 `field:"question.count"`                                                  // SECLDoc[question.count] Definition:`the total count of questions in the DNS request`
+}
+
+// DNSHeader represents a DNS header
+type DNSHeader struct {
+	Id      uint16 `field:"id"`
+	Flags   uint16 `field:"question.flags"`
+	QdCount uint16 `field:"question.length"`
+	AnCount uint16 `field:"question.count"`
+	NsCount uint16 `field:"question.length"`
+	ArCount uint16 `field:"question.count"`
+}
+
+// DNSResponseEvent represents a DNS response event
+type DNSResponseEvent struct {
+	NetworkContext
+	DNSHeader
+	CaptureInfo gopacket.CaptureInfo `field:"-"`
+	Data        []byte               `field:"-"`
 }
 
 // Matches returns true if the two DNS events matches
