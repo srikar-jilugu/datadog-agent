@@ -506,10 +506,9 @@ func (o *OTLPReceiver) createChunks(tracesByID map[uint64]pb.Trace, prioritiesBy
 			Spans: spans,
 		}
 		if o.conf.ProbabilisticSamplerEnabled {
-			// SamplingPriority is not related to the decision of ProbabilisticSampler and ErrorsSampler.
 			chunk.Priority = int32(sampler.PriorityNone)
-			// Skip making a sampling decision at this point.
-			// Either ProbabilisticSampler enabled by this config or ErrorsSampler will decide.
+			// Skip the probabilistic sampler of OTLPReceiver.
+			// Do not set `_dd.p.dm` because Probability Sampler enabled by this config or Error Sampler will be a decision maker.
 			traceChunks = append(traceChunks, chunk)
 			continue
 		}
@@ -524,8 +523,7 @@ func (o *OTLPReceiver) createChunks(tracesByID map[uint64]pb.Trace, prioritiesBy
 			samplingPriorty = o.sample(k)
 			decisionMaker = "-9"
 		}
-		// `_dd.p.dm` must not be set even if a drop decision is applied to the trace here.
-		// Traces with a drop decision by the OTLPReceiver’s probabilistic sampler are re-evaluated by ErrorsSampler later.
+		// Do not set `_dd.p.dm` when sampling priorty is drop because Error Sampler will be a decision maker for the dropped traces.
 		if samplingPriorty.IsKeep() {
 			traceutil.SetMeta(spans[0], "_dd.p.dm", decisionMaker)
 		}
