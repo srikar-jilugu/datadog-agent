@@ -37,6 +37,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/admission/validate/kubernetesadmissionevents"
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/autoscaling/workload"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Controller is an interface implemented by ControllerV1 and ControllerV1beta1.
@@ -189,6 +190,12 @@ func generateAutoInstrumentationWebhook(wmeta workloadmeta.Component, datadogCon
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auto instrumentation mutator config: %v", err)
 	}
+
+	ic, err := autoinstrumentation.NewInstrumentationConfig(datadogConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create auto instrumentation config: %v", err)
+	}
+	log.Errorf("Autoinstrumentation Config: %s", spew.Sdump(ic))
 
 	// For auto instrumentation, we need all the mutators to be applied for SSI to function. Specifically, we need
 	// things like the Datadog socket to be mounted from the config webhook and the DD_ENV, DD_SERVICE, and DD_VERSION
