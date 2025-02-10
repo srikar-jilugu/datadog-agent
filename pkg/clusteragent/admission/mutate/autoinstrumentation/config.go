@@ -18,6 +18,7 @@ import (
 
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/davecgh/go-spew/spew"
 )
 
 // InstrumentationConfig is a struct to store the configuration for the autoinstrumentation logic. It can be populated
@@ -150,6 +151,7 @@ func (n NamespaceSelector) AsLabelSelector() (labels.Selector, error) {
 // configuration is invalid.
 func NewInstrumentationConfig(datadogConfig config.Component) (*InstrumentationConfig, error) {
 	cfg := &InstrumentationConfig{}
+	log.Errorf("NewInstrumentationConfig Targets: %s\n", spew.Sdump(cfg.Targets))
 	err := datadogConfig.UnmarshalKey("apm_config.instrumentation", cfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse apm_config.instrumentation: %w", err)
