@@ -36,7 +36,6 @@ require (
 	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/config/utils v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/proto v0.60.0 // indirect
-	github.com/DataDog/datadog-agent/pkg/tagger/types v0.60.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/tagset v0.60.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/cache v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/common v0.60.0 // indirect
@@ -154,8 +153,6 @@ replace github.com/DataDog/datadog-agent/pkg/config/setup => ../../../../pkg/con
 replace github.com/DataDog/datadog-agent/pkg/config/teeconfig => ../../../../pkg/config/teeconfig
 
 replace github.com/DataDog/datadog-agent/pkg/proto => ../../../../pkg/proto
-
-replace github.com/DataDog/datadog-agent/pkg/tagger/types => ../../../../pkg/tagger/types
 
 replace github.com/DataDog/datadog-agent/pkg/tagset => ../../../../pkg/tagset
 

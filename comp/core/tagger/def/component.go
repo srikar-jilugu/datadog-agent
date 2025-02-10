@@ -12,7 +12,6 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/tagger/origindetection"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/telemetry"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 )
 
@@ -50,7 +49,7 @@ type Component interface {
 	GlobalTags(cardinality types.TagCardinality) ([]string, error)
 	SetNewCaptureTagger(newCaptureTagger Component)
 	ResetCaptureTagger()
-	EnrichTags(tb tagset.TagsAccumulator, originInfo taggertypes.OriginInfo)
+	EnrichTags(tb tagset.TagsAccumulator, originInfo origindetection.OriginInfo)
 	ChecksCardinality() types.TagCardinality
 	DogstatsdCardinality() types.TagCardinality
 }

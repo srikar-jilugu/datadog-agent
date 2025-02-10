@@ -17,7 +17,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/metrics/event"
 	"github.com/DataDog/datadog-agent/pkg/metrics/servicecheck"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 )
 
 var (
@@ -1124,7 +1123,7 @@ func TestEnrichTags(t *testing.T) {
 		args               args
 		wantedTags         []string
 		wantedHost         string
-		wantedOrigin       taggertypes.OriginInfo
+		wantedOrigin       origindetection.OriginInfo
 		wantedMetricSource metrics.MetricSource
 	}{
 		{
@@ -1140,7 +1139,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags:         nil,
 			wantedHost:         "foo",
-			wantedOrigin:       taggertypes.OriginInfo{},
+			wantedOrigin:       origindetection.OriginInfo{},
 			wantedMetricSource: metrics.MetricSourceDogstatsd,
 		},
 		{
@@ -1157,7 +1156,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags:         []string{"env:prod"},
 			wantedHost:         "foo",
-			wantedOrigin:       taggertypes.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}},
+			wantedOrigin:       origindetection.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}},
 			wantedMetricSource: metrics.MetricSourceDogstatsd,
 		},
 		{
@@ -1174,7 +1173,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags:         nil,
 			wantedHost:         "foo",
-			wantedOrigin:       taggertypes.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}},
+			wantedOrigin:       origindetection.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}},
 			wantedMetricSource: metrics.MetricSourceDogstatsd,
 		},
 		{
@@ -1191,7 +1190,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "my-id",
@@ -1213,7 +1212,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "none",
@@ -1235,7 +1234,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "42",
@@ -1257,7 +1256,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "42",
@@ -1280,7 +1279,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "42",
@@ -1303,7 +1302,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "42",
@@ -1326,7 +1325,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "42",
@@ -1349,7 +1348,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: 123,
 					PodUID:    "42",
@@ -1375,7 +1374,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID:   123,
 					ContainerID: "container-id",
@@ -1401,7 +1400,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID:   123,
 					ContainerID: "container-id",
@@ -1425,7 +1424,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				ExternalData: origindetection.ExternalData{
 					Init:          false,
 					ContainerName: "container_name",
@@ -1454,7 +1453,7 @@ func TestEnrichTags(t *testing.T) {
 			},
 			wantedTags: []string{"env:prod"},
 			wantedHost: "foo",
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID:   123,
 					ContainerID: "container-id",
@@ -1474,7 +1473,7 @@ func TestEnrichTags(t *testing.T) {
 				cardinality: types.NoneCardinalityString,
 			},
 			wantedTags: nil,
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				Cardinality: "none",
 			},
 			wantedMetricSource: metrics.MetricSourceDogstatsd,
@@ -1485,7 +1484,7 @@ func TestEnrichTags(t *testing.T) {
 				cardinality: types.HighCardinalityString,
 			},
 			wantedTags: nil,
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				Cardinality: "high",
 			},
 			wantedMetricSource: metrics.MetricSourceDogstatsd,
@@ -1497,7 +1496,7 @@ func TestEnrichTags(t *testing.T) {
 				cardinality: types.NoneCardinalityString,
 			},
 			wantedTags: []string{"env:prod", "dd.internal.card:high"},
-			wantedOrigin: taggertypes.OriginInfo{
+			wantedOrigin: origindetection.OriginInfo{
 				Cardinality: "none",
 			},
 			wantedMetricSource: metrics.MetricSourceDogstatsd,

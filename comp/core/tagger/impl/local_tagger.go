@@ -20,7 +20,6 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/tagger/telemetry"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/option"
@@ -243,7 +242,7 @@ func (t *localTagger) SetNewCaptureTagger(tagger.Component) {}
 
 func (t *localTagger) ResetCaptureTagger() {}
 
-func (t *localTagger) EnrichTags(tagset.TagsAccumulator, taggertypes.OriginInfo) {}
+func (t *localTagger) EnrichTags(tagset.TagsAccumulator, origindetection.OriginInfo) {}
 
 func (t *localTagger) ChecksCardinality() types.TagCardinality {
 	return types.LowCardinality

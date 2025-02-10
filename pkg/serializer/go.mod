@@ -36,7 +36,6 @@ replace (
 	github.com/DataDog/datadog-agent/pkg/proto => ../proto
 	github.com/DataDog/datadog-agent/pkg/remoteconfig/state => ../remoteconfig/state/
 	github.com/DataDog/datadog-agent/pkg/status/health => ../status/health
-	github.com/DataDog/datadog-agent/pkg/tagger/types => ../tagger/types/
 	github.com/DataDog/datadog-agent/pkg/tagset => ../tagset
 	github.com/DataDog/datadog-agent/pkg/telemetry => ../telemetry
 	github.com/DataDog/datadog-agent/pkg/trace => ../trace
@@ -67,6 +66,7 @@ replace (
 require (
 	github.com/DataDog/agent-payload/v5 v5.0.143
 	github.com/DataDog/datadog-agent/comp/core/config v0.64.0-devel
+	github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.62.0-rc.1
 	github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/comp/forwarder/orchestrator/orchestratorinterface v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/comp/serializer/metricscompression v0.56.0-rc.3
@@ -75,7 +75,6 @@ require (
 	github.com/DataDog/datadog-agent/pkg/config/model v0.64.0-devel
 	github.com/DataDog/datadog-agent/pkg/metrics v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/process/util/api v0.56.0-rc.3
-	github.com/DataDog/datadog-agent/pkg/tagger/types v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/tagset v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/telemetry v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/util/compression v0.56.0-rc.3
@@ -97,7 +96,6 @@ require (
 	github.com/DataDog/datadog-agent/comp/core/log/def v0.64.0-devel // indirect
 	github.com/DataDog/datadog-agent/comp/core/secrets v0.59.0 // indirect
 	github.com/DataDog/datadog-agent/comp/core/status v0.56.0-rc.3 // indirect
-	github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.62.0-rc.1 // indirect
 	github.com/DataDog/datadog-agent/comp/core/telemetry v0.60.1 // indirect
 	github.com/DataDog/datadog-agent/comp/def v0.59.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/api v0.61.0 // indirect

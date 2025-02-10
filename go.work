@@ -105,7 +105,6 @@ use (
 	pkg/security/seclwin
 	pkg/serializer
 	pkg/status/health
-	pkg/tagger/types
 	pkg/tagset
 	pkg/telemetry
 	pkg/trace

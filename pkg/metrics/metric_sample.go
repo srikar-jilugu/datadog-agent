@@ -6,7 +6,7 @@
 package metrics
 
 import (
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/origindetection"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 )
 
@@ -39,7 +39,7 @@ var (
 )
 
 // EnrichTagsfn can be used to Enrich tags with origin detection tags.
-type EnrichTagsfn func(tb tagset.TagsAccumulator, origin taggertypes.OriginInfo)
+type EnrichTagsfn func(tb tagset.TagsAccumulator, origin origindetection.OriginInfo)
 
 // String returns a string representation of MetricType
 func (m MetricType) String() string {
@@ -104,7 +104,7 @@ type MetricSample struct {
 	SampleRate      float64
 	Timestamp       float64
 	FlushFirstValue bool
-	OriginInfo      taggertypes.OriginInfo
+	OriginInfo      origindetection.OriginInfo
 	ListenerID      string
 	NoIndex         bool
 	Source          MetricSource

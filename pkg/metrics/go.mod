@@ -19,7 +19,6 @@ replace (
 	github.com/DataDog/datadog-agent/pkg/config/setup => ../config/setup
 	github.com/DataDog/datadog-agent/pkg/config/structure => ../config/structure
 	github.com/DataDog/datadog-agent/pkg/config/teeconfig => ../config/teeconfig
-	github.com/DataDog/datadog-agent/pkg/tagger/types => ../../pkg/tagger/types
 	github.com/DataDog/datadog-agent/pkg/tagset => ../tagset/
 	github.com/DataDog/datadog-agent/pkg/telemetry => ../telemetry/
 	github.com/DataDog/datadog-agent/pkg/util/buf => ../util/buf/
@@ -39,11 +38,11 @@ replace (
 )
 
 require (
+	github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.62.0-rc.1
 	github.com/DataDog/datadog-agent/pkg/aggregator/ckey v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/config/mock v0.57.1
 	github.com/DataDog/datadog-agent/pkg/config/model v0.64.0-devel
 	github.com/DataDog/datadog-agent/pkg/config/structure v0.59.0
-	github.com/DataDog/datadog-agent/pkg/tagger/types v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/tagset v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/telemetry v0.56.0-rc.3
 	github.com/DataDog/datadog-agent/pkg/util/buf v0.56.0-rc.3
@@ -55,7 +54,6 @@ require (
 
 require (
 	github.com/DataDog/datadog-agent/comp/core/secrets v0.59.0 // indirect
-	github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.62.0-rc.1 // indirect
 	github.com/DataDog/datadog-agent/comp/core/telemetry v0.60.1 // indirect
 	github.com/DataDog/datadog-agent/comp/def v0.57.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/collector/check/defaults v0.59.0 // indirect

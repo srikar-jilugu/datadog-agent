@@ -19,7 +19,6 @@ require (
 	github.com/DataDog/datadog-agent/comp/def v0.61.0
 	github.com/DataDog/datadog-agent/pkg/config/mock v0.61.0
 	github.com/DataDog/datadog-agent/pkg/proto v0.60.0
-	github.com/DataDog/datadog-agent/pkg/tagger/types v0.60.0
 	github.com/DataDog/datadog-agent/pkg/tagset v0.60.0
 	github.com/DataDog/datadog-agent/pkg/util/cache v0.61.0
 	github.com/DataDog/datadog-agent/pkg/util/common v0.60.0
@@ -196,8 +195,6 @@ replace github.com/DataDog/datadog-agent/comp/def => ../../../def
 replace github.com/DataDog/datadog-agent/pkg/config/mock => ../../../../pkg/config/mock
 
 replace github.com/DataDog/datadog-agent/pkg/proto => ../../../../pkg/proto
-
-replace github.com/DataDog/datadog-agent/pkg/tagger/types => ../../../../pkg/tagger/types
 
 replace github.com/DataDog/datadog-agent/pkg/tagset => ../../../../pkg/tagset
 

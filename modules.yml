@@ -213,8 +213,6 @@ modules:
     used_by_otel: true
   pkg/status/health:
     used_by_otel: true
-  pkg/tagger/types:
-    used_by_otel: true
   pkg/tagset:
     used_by_otel: true
   pkg/telemetry:

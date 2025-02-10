@@ -34,7 +34,6 @@ import (
 	coretelemetry "github.com/DataDog/datadog-agent/comp/core/telemetry"
 	compdef "github.com/DataDog/datadog-agent/comp/def"
 	pb "github.com/DataDog/datadog-agent/pkg/proto/pbgo/core"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/common"
@@ -427,7 +426,7 @@ func (t *remoteTagger) ResetCaptureTagger() {}
 // on the origin info. Only the core agent or dogstatsd can have origin info,
 // and they always use the local tagger.
 // This function can only add the global tags.
-func (t *remoteTagger) EnrichTags(tb tagset.TagsAccumulator, _ taggertypes.OriginInfo) {
+func (t *remoteTagger) EnrichTags(tb tagset.TagsAccumulator, _ origindetection.OriginInfo) {
 	if err := t.AccumulateTagsFor(types.GetGlobalEntityID(), t.dogstatsdCardinality, tb); err != nil {
 		t.log.Error(err.Error())
 	}

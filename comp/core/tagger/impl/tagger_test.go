@@ -24,7 +24,6 @@ import (
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	workloadmetafxmock "github.com/DataDog/datadog-agent/comp/core/workloadmeta/fx-mock"
 	configmock "github.com/DataDog/datadog-agent/pkg/config/mock"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/metrics"
 	collectormock "github.com/DataDog/datadog-agent/pkg/util/containers/metrics/mock"
@@ -90,17 +89,17 @@ func TestEnrichTags(t *testing.T) {
 	// Local data tests
 	for _, tt := range []struct {
 		name         string
-		originInfo   taggertypes.OriginInfo
+		originInfo   origindetection.OriginInfo
 		expectedTags []string
 	}{
 		{
 			name:         "no origin",
-			originInfo:   taggertypes.OriginInfo{},
+			originInfo:   origindetection.OriginInfo{},
 			expectedTags: []string{},
 		},
 		{
 			name: "with local data (containerID) and low cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ContainerID: containerID,
 				},
@@ -110,7 +109,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with local data (containerID) and high cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ContainerID: containerID,
 				},
@@ -120,7 +119,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with local data (podUID) and low cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					PodUID: podUID,
 				},
@@ -130,7 +129,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with local data (podUID) and high cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					PodUID: podUID,
 				},
@@ -140,7 +139,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with local data (ProcessID, PodUID) and high cardinality, APM origin",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				LocalData: origindetection.LocalData{
 					ProcessID: processID,
 					PodUID:    podUID,
@@ -160,13 +159,13 @@ func TestEnrichTags(t *testing.T) {
 	// External data tests
 	for _, tt := range []struct {
 		name         string
-		originInfo   taggertypes.OriginInfo
+		originInfo   origindetection.OriginInfo
 		expectedTags []string
 		setup        func() // register the proper meta collector for the test
 	}{
 		{
 			name: "with external data (containerName) and high cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				ProductOrigin: origindetection.ProductOriginAPM,
 				ExternalData: origindetection.ExternalData{
 					Init:          false,
@@ -179,7 +178,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with external data (containerName, podUID) and low cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				ProductOrigin: origindetection.ProductOriginAPM,
 				ExternalData: origindetection.ExternalData{
 					Init:          false,
@@ -193,7 +192,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with external data (podUID) and high cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				ProductOrigin: origindetection.ProductOriginAPM,
 				ExternalData: origindetection.ExternalData{
 					Init:   false,
@@ -206,7 +205,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with external data (containerName, podUID) and high cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				ProductOrigin: origindetection.ProductOriginAPM,
 				ExternalData: origindetection.ExternalData{
 					Init:          false,
@@ -220,7 +219,7 @@ func TestEnrichTags(t *testing.T) {
 		},
 		{
 			name: "with external data (containerName, podUID, initContainer) and low cardinality",
-			originInfo: taggertypes.OriginInfo{
+			originInfo: origindetection.OriginInfo{
 				ProductOrigin: origindetection.ProductOriginAPM,
 				ExternalData: origindetection.ExternalData{
 					Init:          true,
@@ -269,7 +268,7 @@ func TestEnrichTagsOrchestrator(t *testing.T) {
 
 	fakeTagger.SetTags(types.NewEntityID(types.ContainerID, "bar"), "fooSource", []string{"container-low"}, []string{"container-orch"}, nil, nil)
 	tb := tagset.NewHashingTagsAccumulator()
-	tagger.EnrichTags(tb, taggertypes.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}, Cardinality: "orchestrator"})
+	tagger.EnrichTags(tb, origindetection.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}, Cardinality: "orchestrator"})
 	assert.Equal(t, []string{"container-low", "container-orch"}, tb.Get())
 }
 
@@ -303,7 +302,7 @@ func TestEnrichTagsOptOut(t *testing.T) {
 
 	tb := tagset.NewHashingTagsAccumulator()
 	// Test with none cardinality
-	tagger.EnrichTags(tb, taggertypes.OriginInfo{
+	tagger.EnrichTags(tb, origindetection.OriginInfo{
 		LocalData: origindetection.LocalData{
 			ProcessID:   123,
 			ContainerID: "container-id",
@@ -314,7 +313,7 @@ func TestEnrichTagsOptOut(t *testing.T) {
 	assert.Equal(t, []string{}, tb.Get())
 
 	// Test without none cardinality
-	tagger.EnrichTags(tb, taggertypes.OriginInfo{
+	tagger.EnrichTags(tb, origindetection.OriginInfo{
 		LocalData: origindetection.LocalData{
 			ProcessID:   123,
 			ContainerID: "container-id",
@@ -502,7 +501,7 @@ func TestGlobalTags(t *testing.T) {
 	defer cleanUp()
 
 	tb := tagset.NewHashingTagsAccumulator()
-	tagger.EnrichTags(tb, taggertypes.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}, Cardinality: "orchestrator"})
+	tagger.EnrichTags(tb, origindetection.OriginInfo{LocalData: origindetection.LocalData{ProcessID: 123}, Cardinality: "orchestrator"})
 	assert.Equal(t, []string{"container-low", "container-orch", "global-low", "global-orch"}, tb.Get())
 }
 

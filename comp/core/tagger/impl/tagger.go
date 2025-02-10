@@ -31,7 +31,6 @@ import (
 	coretelemetry "github.com/DataDog/datadog-agent/comp/core/telemetry"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	compdef "github.com/DataDog/datadog-agent/comp/def"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 	"github.com/DataDog/datadog-agent/pkg/util/common"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/metrics"
@@ -364,7 +363,7 @@ func (t *TaggerWrapper) ResetCaptureTagger() {
 // This function is dupliacted in the remote tagger `impl-remote`.
 // When modifying this function make sure to update the copy `impl-remote` as well.
 // TODO: extract this function to a share function so it can be used in both implementations
-func (t *TaggerWrapper) EnrichTags(tb tagset.TagsAccumulator, originInfo taggertypes.OriginInfo) {
+func (t *TaggerWrapper) EnrichTags(tb tagset.TagsAccumulator, originInfo origindetection.OriginInfo) {
 	cardinality := taggerCardinality(originInfo.Cardinality, t.dogstatsdCardinality, t.log)
 	metaCollector := metrics.GetProvider(option.New(t.wmeta)).GetMetaCollector()
 
@@ -511,7 +510,7 @@ func (t *TaggerWrapper) GenerateContainerIDFromOriginInfo(originInfo origindetec
 }
 
 // GenerateContainerIDFromProcessID generates a container ID from ProcessID.
-func (t *TaggerWrapper) GenerateContainerIDFromProcessID(originInfo taggertypes.OriginInfo, metricsProvider provider.ContainerIDForPIDRetriever) (string, error) {
+func (t *TaggerWrapper) GenerateContainerIDFromProcessID(originInfo origindetection.OriginInfo, metricsProvider provider.ContainerIDForPIDRetriever) (string, error) {
 	return metricsProvider.GetContainerIDForPID(int(originInfo.LocalData.ProcessID), pidCacheTTL)
 }
 

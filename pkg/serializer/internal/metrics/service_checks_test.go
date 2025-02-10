@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/DataDog/datadog-agent/comp/core/tagger/origindetection"
 	metricscompression "github.com/DataDog/datadog-agent/comp/serializer/metricscompression/impl"
 	"github.com/DataDog/datadog-agent/pkg/config/mock"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
@@ -22,7 +23,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/serializer/internal/stream"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
 	"github.com/DataDog/datadog-agent/pkg/serializer/split"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 )
 
 func TestMarshalJSONServiceChecks(t *testing.T) {
@@ -33,7 +33,7 @@ func TestMarshalJSONServiceChecks(t *testing.T) {
 		Status:     servicecheck.ServiceCheckOK,
 		Message:    "my_service is up",
 		Tags:       []string{"tag1", "tag2:yes"},
-		OriginInfo: taggertypes.OriginInfo{},
+		OriginInfo: origindetection.OriginInfo{},
 	}}
 
 	payload, err := serviceChecks.MarshalJSON()
@@ -52,7 +52,7 @@ func TestSplitServiceChecks(t *testing.T) {
 			Status:     servicecheck.ServiceCheckOK,
 			Message:    "this is fine",
 			Tags:       []string{"tag1", "tag2:yes"},
-			OriginInfo: taggertypes.OriginInfo{},
+			OriginInfo: origindetection.OriginInfo{},
 		}
 		serviceChecks = append(serviceChecks, &sc)
 	}
@@ -75,7 +75,7 @@ func createServiceCheck(checkName string) *servicecheck.ServiceCheck {
 		Status:     servicecheck.ServiceCheckUnknown,
 		Message:    "4",
 		Tags:       []string{"5", "6"},
-		OriginInfo: taggertypes.OriginInfo{},
+		OriginInfo: origindetection.OriginInfo{},
 	}
 }
 

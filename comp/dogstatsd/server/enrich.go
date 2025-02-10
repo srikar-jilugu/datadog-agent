@@ -14,7 +14,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	metricsevent "github.com/DataDog/datadog-agent/pkg/metrics/event"
 	"github.com/DataDog/datadog-agent/pkg/metrics/servicecheck"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 )
 
 var (
@@ -37,12 +36,12 @@ type enrichConfig struct {
 }
 
 // extractTagsMetadata returns tags (client tags + host tag) and information needed to query tagger (origins, cardinality).
-func extractTagsMetadata(tags []string, processID uint32, localData origindetection.LocalData, externalData origindetection.ExternalData, cardinality string, conf enrichConfig) ([]string, string, taggertypes.OriginInfo, metrics.MetricSource) {
+func extractTagsMetadata(tags []string, processID uint32, localData origindetection.LocalData, externalData origindetection.ExternalData, cardinality string, conf enrichConfig) ([]string, string, origindetection.OriginInfo, metrics.MetricSource) {
 	host := conf.defaultHostname
 	metricSource := metrics.MetricSourceDogstatsd
 
 	// Add Origin Detection metadata
-	origin := taggertypes.OriginInfo{
+	origin := origindetection.OriginInfo{
 		LocalData:     localData,
 		ExternalData:  externalData,
 		ProductOrigin: origindetection.ProductOriginDogStatsD,

@@ -117,7 +117,6 @@ replace (
 	github.com/DataDog/datadog-agent/pkg/serializer => ./pkg/serializer/
 	github.com/DataDog/datadog-agent/pkg/status/health => ./pkg/status/health
 	github.com/DataDog/datadog-agent/pkg/tagger/tags => ./pkg/tagger/tags
-	github.com/DataDog/datadog-agent/pkg/tagger/types => ./pkg/tagger/types
 	github.com/DataDog/datadog-agent/pkg/tagset => ./pkg/tagset/
 	github.com/DataDog/datadog-agent/pkg/telemetry => ./pkg/telemetry/
 	github.com/DataDog/datadog-agent/pkg/trace => ./pkg/trace
@@ -717,7 +716,6 @@ require (
 	github.com/DataDog/datadog-agent/pkg/security/seclwin v0.56.0
 	github.com/DataDog/datadog-agent/pkg/serializer v0.59.0
 	github.com/DataDog/datadog-agent/pkg/status/health v0.61.0
-	github.com/DataDog/datadog-agent/pkg/tagger/types v0.60.0
 	github.com/DataDog/datadog-agent/pkg/tagset v0.60.0
 	github.com/DataDog/datadog-agent/pkg/telemetry v0.61.0
 	github.com/DataDog/datadog-agent/pkg/util/backoff v0.61.0

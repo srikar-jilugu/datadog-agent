@@ -21,11 +21,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/DataDog/datadog-agent/comp/core/tagger/origindetection"
 	metricscompression "github.com/DataDog/datadog-agent/comp/serializer/metricscompression/impl"
 	configmock "github.com/DataDog/datadog-agent/pkg/config/mock"
 	"github.com/DataDog/datadog-agent/pkg/metrics/event"
 	"github.com/DataDog/datadog-agent/pkg/serializer/internal/stream"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/util/compression"
 )
 
@@ -41,7 +41,7 @@ func TestMarshal(t *testing.T) {
 			AlertType:      event.AlertTypeError,
 			AggregationKey: "test aggregation",
 			SourceTypeName: "test source",
-			OriginInfo:     taggertypes.OriginInfo{},
+			OriginInfo:     origindetection.OriginInfo{},
 		}},
 		Hostname: "",
 	}
@@ -80,7 +80,7 @@ func TestMarshalJSON(t *testing.T) {
 			AlertType:      event.AlertTypeError,
 			AggregationKey: "my_agg_key",
 			SourceTypeName: "custom_source_type",
-			OriginInfo:     taggertypes.OriginInfo{},
+			OriginInfo:     origindetection.OriginInfo{},
 		}},
 
 		Hostname: "test-hostname",
@@ -100,7 +100,7 @@ func TestMarshalJSONOmittedFields(t *testing.T) {
 			Text:       "event description",
 			Ts:         12345,
 			Host:       "my-hostname",
-			OriginInfo: taggertypes.OriginInfo{},
+			OriginInfo: origindetection.OriginInfo{},
 		}},
 		Hostname: "test-hostname",
 	}
@@ -125,7 +125,7 @@ func TestSplitEvents(t *testing.T) {
 			AlertType:      event.AlertTypeError,
 			AggregationKey: "my_agg_key",
 			SourceTypeName: "custom_source_type",
-			OriginInfo:     taggertypes.OriginInfo{},
+			OriginInfo:     origindetection.OriginInfo{},
 		}
 		events.EventsArr = append(events.EventsArr, &e)
 
@@ -238,7 +238,7 @@ func createEvent(sourceTypeName string) *event.Event {
 		AggregationKey: "9",
 		SourceTypeName: sourceTypeName,
 		EventType:      "10",
-		OriginInfo:     taggertypes.OriginInfo{},
+		OriginInfo:     origindetection.OriginInfo{},
 	}
 }
 

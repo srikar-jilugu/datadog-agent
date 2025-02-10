@@ -14,7 +14,6 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/tagger/tagstore"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/telemetry"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
-	taggertypes "github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 )
 
@@ -182,7 +181,7 @@ func (f *FakeTagger) SetNewCaptureTagger(tagger.Component) {}
 func (f *FakeTagger) ResetCaptureTagger() {}
 
 // EnrichTags noop
-func (f *FakeTagger) EnrichTags(tagset.TagsAccumulator, taggertypes.OriginInfo) {}
+func (f *FakeTagger) EnrichTags(tagset.TagsAccumulator, origindetection.OriginInfo) {}
 
 // ChecksCardinality noop
 func (f *FakeTagger) ChecksCardinality() types.TagCardinality {
