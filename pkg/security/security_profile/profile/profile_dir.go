@@ -239,23 +239,22 @@ func (dp *DirectoryProvider) loadProfile(profilePath string) error {
 	dp.Lock()
 	selectors := make([]cgroupModel.WorkloadSelector, len(dp.selectors))
 	copy(selectors, dp.selectors)
-	profileMapping := maps.Clone(dp.profileMapping)
-	propagateCb := dp.onNewProfileCallback
-	dp.Unlock()
-
-	// prioritize a persited profile over activity dumps
-	if existingProfile, ok := profileMapping[profileManagerSelector]; ok {
+	// Check existing profile while holding lock
+	if existingProfile, ok := dp.profileMapping[profileManagerSelector]; ok {
 		if existingProfile.selector.Tag == "*" && profile.Selector.GetImageTag() != "*" {
+			dp.Unlock()
 			seclog.Debugf("ignoring %s: a persisted profile already exists for workload %s", profilePath, profileManagerSelector.String())
 			return nil
 		}
 	}
 
-	// update profile mapping
+	// update profile mapping while still holding lock
 	dp.profileMapping[profileManagerSelector] = profileFSEntry{
 		path:     profilePath,
 		selector: workloadSelector,
 	}
+	propagateCb := dp.onNewProfileCallback
+	dp.Unlock()
 
 	seclog.Debugf("security profile %s loaded from file system", workloadSelector)
 
@@ -301,7 +300,7 @@ func (dp *DirectoryProvider) findProfile(path string) (cgroupModel.WorkloadSelec
 func (dp *DirectoryProvider) getProfiles() map[cgroupModel.WorkloadSelector]profileFSEntry {
 	dp.Lock()
 	defer dp.Unlock()
-	return dp.profileMapping
+	return maps.Clone(dp.profileMapping)
 }
 
 // OnLocalStorageCleanup removes the provided files from the entries of the directory provider
@@ -330,8 +329,8 @@ func (dp *DirectoryProvider) OnLocalStorageCleanup(files []string) {
 
 func (dp *DirectoryProvider) deleteProfile(selector cgroupModel.WorkloadSelector) {
 	dp.Lock()
-	defer dp.Unlock()
 	delete(dp.profileMapping, selector)
+	dp.Unlock()
 }
 
 func (dp *DirectoryProvider) onHandleFilesFromWatcher() {
