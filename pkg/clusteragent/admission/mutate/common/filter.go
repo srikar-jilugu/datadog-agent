@@ -26,8 +26,6 @@ type MutationFilter interface {
 	ShouldMutatePod(pod *corev1.Pod) bool
 	// IsNamespaceEligible returns true if a namespace is eligible for injection/mutation.
 	IsNamespaceEligible(ns string) bool
-	// InitError returns an error if the InjectionFilter failed to initialize.
-	InitError() error
 }
 
 // DefaultFilter provides a default implementation of the MutationFilter interface that uses namespaces for filtering.
@@ -50,10 +48,10 @@ func NewDefaultFilter(enabled bool, enabledNamespaces []string, disabledNamespac
 
 // ShouldMutatePod checks if a pod is mutable per explicit rules and them validates the namespace.
 func (f *DefaultFilter) ShouldMutatePod(pod *corev1.Pod) bool {
-	switch getPodMutationLabelFlag(pod) {
-	case podMutationDisabled:
+	switch GetPodMutationLabelFlag(pod) {
+	case PodMutationDisabled:
 		return false
-	case podMutationEnabled:
+	case PodMutationEnabled:
 		return true
 	}
 
@@ -80,11 +78,6 @@ func (f *DefaultFilter) IsNamespaceEligible(ns string) bool {
 	}
 
 	return !f.filter.IsExcluded(nil, "", "", ns)
-}
-
-// InitError returns an error if the MutationFilter failed to initialize.
-func (f *DefaultFilter) InitError() error {
-	return f.err
 }
 
 // makeNamespaceFilter returns a filter with the provided enabled/disabled namespaces.
@@ -136,23 +129,23 @@ func makeNamespaceFilter(enabledNamespaces, disabledNamespaces []string) (*conta
 	return containers.NewFilter(containers.GlobalFilter, enabledNamespacesWithPrefix, filterExcludeList)
 }
 
-type podMutationLabelFlag int
+type PodMutationLabelFlag int
 
 const (
-	podMutationUnspecified podMutationLabelFlag = iota
-	podMutationEnabled
-	podMutationDisabled
+	PodMutationUnspecified PodMutationLabelFlag = iota
+	PodMutationEnabled
+	PodMutationDisabled
 )
 
-// getPodMutationLabelFlag returns podMutationUnspecified if the label is not
+// GetPodMutationLabelFlag returns podMutationUnspecified if the label is not
 // set or if the label is set to an invalid value.
-func getPodMutationLabelFlag(pod *corev1.Pod) podMutationLabelFlag {
+func GetPodMutationLabelFlag(pod *corev1.Pod) PodMutationLabelFlag {
 	if val, found := pod.GetLabels()[common.EnabledLabelKey]; found {
 		switch val {
 		case "true":
-			return podMutationEnabled
+			return PodMutationEnabled
 		case "false":
-			return podMutationDisabled
+			return PodMutationDisabled
 		default:
 			log.Warnf(
 				"Invalid label value '%s=%s' on pod %s should be either 'true' or 'false', ignoring it",
@@ -163,5 +156,5 @@ func getPodMutationLabelFlag(pod *corev1.Pod) podMutationLabelFlag {
 		}
 	}
 
-	return podMutationUnspecified
+	return PodMutationUnspecified
 }

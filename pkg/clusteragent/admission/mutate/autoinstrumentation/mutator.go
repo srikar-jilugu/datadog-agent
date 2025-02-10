@@ -255,7 +255,7 @@ func (m *Mutator) isPodEligible(pod *corev1.Pod) bool {
 func (m *Mutator) extractLibInfo(pod *corev1.Pod) extractedPodLibInfo {
 	extracted := m.initExtractedLibInfo(pod)
 
-	libs := m.extractLibrariesFromAnnotations(pod)
+	libs := extractLibrariesFromAnnotations(pod, m.config.containerRegistry)
 	if len(libs) > 0 {
 		return extracted.withLibs(libs)
 	}
@@ -295,7 +295,7 @@ func (m *Mutator) extractLibInfo(pod *corev1.Pod) extractedPodLibInfo {
 	return extractedPodLibInfo{}
 }
 
-func (m *Mutator) extractLibrariesFromAnnotations(pod *corev1.Pod) []libInfo {
+func extractLibrariesFromAnnotations(pod *corev1.Pod, containerRegistry string) []libInfo {
 	var (
 		libList        []libInfo
 		extractLibInfo = func(e annotationExtractor[libInfo]) {
@@ -312,10 +312,10 @@ func (m *Mutator) extractLibrariesFromAnnotations(pod *corev1.Pod) []libInfo {
 
 	for _, l := range supportedLanguages {
 		extractLibInfo(l.customLibAnnotationExtractor())
-		extractLibInfo(l.libVersionAnnotationExtractor(m.config.containerRegistry))
+		extractLibInfo(l.libVersionAnnotationExtractor(containerRegistry))
 		for _, ctr := range pod.Spec.Containers {
 			extractLibInfo(l.ctrCustomLibAnnotationExtractor(ctr.Name))
-			extractLibInfo(l.ctrLibVersionAnnotationExtractor(ctr.Name, m.config.containerRegistry))
+			extractLibInfo(l.ctrLibVersionAnnotationExtractor(ctr.Name, containerRegistry))
 		}
 	}
 

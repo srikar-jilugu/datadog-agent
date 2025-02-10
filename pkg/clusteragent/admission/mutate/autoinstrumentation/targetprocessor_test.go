@@ -26,7 +26,181 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 )
 
-func TestTargetFilter(t *testing.T) {
+func TestShouldMutatePod(t *testing.T) {
+	tests := map[string]struct {
+		configPath string
+		in         *corev1.Pod
+		namespaces []workloadmeta.KubernetesMetadata
+		expected   bool
+	}{
+		"a rule without selectors applies as a default": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "frontend",
+					},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("default", nil),
+			},
+			expected: true,
+		},
+		"a pod that matches no targets is not mutated": {
+			configPath: "testdata/filter_no_default.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "frontend",
+					},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("default", nil),
+			},
+			expected: false,
+		},
+		"a single service example matches rule": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "billing-service",
+					Labels: map[string]string{
+						"app": "billing-service",
+					},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("billing-service", nil),
+			},
+			expected: true,
+		},
+		"a java microservice service matches rule": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "application",
+					Labels: map[string]string{
+						"language": "java",
+					},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("application", nil),
+			},
+			expected: true,
+		},
+		"a disabled namespace is not mutated": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "infra",
+					Labels: map[string]string{
+						"language": "java",
+					},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("infra", nil),
+			},
+			expected: false,
+		},
+		"namespace labels are used to match namespaces": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "foo",
+					Labels:    map[string]string{},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("foo", map[string]string{
+					"tracing": "yes",
+					"env":     "prod",
+				}),
+			},
+			expected: true,
+		},
+		"misconfigured namespace labels is not mutated": {
+			configPath: "testdata/filter_no_default.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "bar",
+					Labels:    map[string]string{},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("foo", map[string]string{
+					"tracing": "yes",
+					"env":     "prod",
+				}),
+			},
+			expected: false,
+		},
+		"missing namespace in store is not mutated": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "foo",
+					Labels:    map[string]string{},
+				},
+			},
+			expected: false,
+		},
+		"unset tracer versions applies all tracers": {
+			configPath: "testdata/filter.yaml",
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "application",
+					Labels: map[string]string{
+						"language": "unknown",
+					},
+				},
+			},
+			namespaces: []workloadmeta.KubernetesMetadata{
+				newTestNamespace("application", nil),
+			},
+			expected: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Load the config.
+			mockConfig := configmock.NewFromFile(t, test.configPath)
+			cfg, err := NewInstrumentationConfig(mockConfig)
+			require.NoError(t, err)
+
+			// Create a mock meta.
+			wmeta := fxutil.Test[workloadmetamock.Mock](t, fx.Options(
+				fx.Supply(coreconfig.Params{}),
+				fx.Provide(func() log.Component { return logmock.New(t) }),
+				coreconfig.MockModule(),
+				workloadmetafxmock.MockModule(workloadmeta.NewParams()),
+			))
+
+			// Add the namespaces.
+			for _, ns := range test.namespaces {
+				wmeta.Set(&ns)
+			}
+
+			// Create the processor.
+			f, err := NewTargetProcessor(cfg.Targets, wmeta, cfg.DisabledNamespaces, "registry")
+			require.NoError(t, err)
+
+			// Determine if the pod should be mutated.
+			actual := f.ShouldMutatePod(test.in)
+
+			// Validate the output.
+			require.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestGetTargetLibraries(t *testing.T) {
 	tests := map[string]struct {
 		configPath string
 		in         *corev1.Pod
@@ -241,7 +415,7 @@ func TestTargetFilter(t *testing.T) {
 			f, err := NewTargetProcessor(cfg.Targets, wmeta, cfg.DisabledNamespaces, "registry")
 			require.NoError(t, err)
 
-			// Filter the pod.
+			// Get the target libraries.
 			actual := f.getTargetLibraries(test.in)
 
 			// Validate the output.

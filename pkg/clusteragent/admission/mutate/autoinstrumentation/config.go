@@ -20,6 +20,27 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
+type Config struct {
+	// Webhook is the configuration for the autoinstrumentation webhook
+	Webhook WebhookConfig
+	// Instrumentation is the configuration for the autoinstrumentation logic
+	Instrumentation InstrumentationConfig
+
+	// precomputed mutators for the security and profiling products
+	securityClientLibraryPodMutators  []podMutator
+	profilingClientLibraryPodMutators []podMutator
+}
+
+type LanguageDetectionConfig struct {
+	// Enabled is a flag to enable the language detection. If false, the language detection is disabled. Full config
+	// key: language_detection.enabled
+	Enabled bool
+	// ReportingEnabled is a flag to enable the language detection reporting. If false, the language detection reporting
+	// is disabled. Full config key: language_detection.reporting_enabled
+	ReportingEnabled bool
+	InjectDected     bool
+}
+
 // InstrumentationConfig is a struct to store the configuration for the autoinstrumentation logic. It can be populated
 // using the datadog config through NewInstrumentationConfig.
 type InstrumentationConfig struct {
@@ -146,6 +167,21 @@ func (n NamespaceSelector) AsLabelSelector() (labels.Selector, error) {
 	return metav1.LabelSelectorAsSelector(labelSelector)
 }
 
+// WebhookConfig use to store options from the config.Component for the autoinstrumentation webhook
+type WebhookConfig struct {
+	// IsEnabled is the flag to enable the autoinstrumentation webhook
+	IsEnabled bool
+	Endpoint  string
+}
+
+// NewWebhookConfig retrieves the configuration for the autoinstrumentation webhook from the datadog config
+func NewWebhookConfig(datadogConfig config.Component) WebhookConfig {
+	return WebhookConfig{
+		IsEnabled: datadogConfig.GetBool("admission_controller.auto_instrumentation.enabled"),
+		Endpoint:  datadogConfig.GetString("admission_controller.auto_instrumentation.endpoint"),
+	}
+}
+
 // NewInstrumentationConfig creates a new InstrumentationConfig from the datadog config. It returns an error if the
 // configuration is invalid.
 func NewInstrumentationConfig(datadogConfig config.Component) (*InstrumentationConfig, error) {
@@ -185,22 +221,7 @@ var (
 	minimumMemoryLimit resource.Quantity = resource.MustParse("100Mi") // 100 MB (recommended minimum by Alpine)
 )
 
-// webhookConfig use to store options from the config.Component for the autoinstrumentation webhook
-type webhookConfig struct {
-	// isEnabled is the flag to enable the autoinstrumentation webhook
-	isEnabled bool
-	endpoint  string
-}
-
 type initResourceRequirementConfiguration map[corev1.ResourceName]resource.Quantity
-
-// retrieveConfig retrieves the configuration for the autoinstrumentation webhook from the datadog config
-func retrieveConfig(datadogConfig config.Component) webhookConfig {
-	return webhookConfig{
-		isEnabled: datadogConfig.GetBool("admission_controller.auto_instrumentation.enabled"),
-		endpoint:  datadogConfig.GetString("admission_controller.auto_instrumentation.endpoint"),
-	}
-}
 
 // getOptionalBoolValue returns a pointer to a bool corresponding to the config value if the key is set in the config
 func getOptionalBoolValue(datadogConfig config.Component, key string) *bool {

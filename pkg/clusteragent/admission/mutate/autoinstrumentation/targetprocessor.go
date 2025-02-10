@@ -8,6 +8,7 @@
 package autoinstrumentation
 
 import (
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/DataDog/datadog-agent/comp/core/workloadmeta/collectors/util"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
+	"github.com/DataDog/datadog-agent/pkg/clusteragent/admission/metrics"
+	mutatecommon "github.com/DataDog/datadog-agent/pkg/clusteragent/admission/mutate/common"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -102,10 +105,106 @@ func NewTargetProcessor(targets []Target, wmeta workloadmeta.Component, disabled
 	}, nil
 }
 
+// MutatePod implements the Mutator interface.
+func (tp *TargetProcessor) MutatePod(pod *corev1.Pod, _ string, _ interface{}) (bool, error) {
+	// Sanitize input.
+	if pod == nil {
+		return false, errors.New(metrics.InvalidInput)
+	}
+
+	// If the namespace is disabled, we should not mutate the pod.
+	if _, ok := tp.disabledNamespaces[pod.Namespace]; ok {
+		return false, nil
+	}
+
+	// The admission can be re-run for the same pod. Fast return if we injected the library already.
+	for _, lang := range supportedLanguages {
+		if containsInitContainer(pod, initContainerName(lang)) {
+			log.Debugf("Init container %q already exists in pod %q", initContainerName(lang), mutatecommon.PodString(pod))
+			return false, nil
+		}
+	}
+
+	// Get the libraries to inject. If there are no libraries to inject, we should not mutate the pod.
+	libraries := tp.getLibraries(pod)
+	if len(libraries) == 0 {
+		return false, nil
+	}
+
+	for _, mutator := range tp.securityClientLibraryPodMutators {
+		if err := mutator.mutatePod(pod); err != nil {
+			return false, fmt.Errorf("error mutating pod for security client: %w", err)
+		}
+	}
+
+	for _, mutator := range tp.profilingClientLibraryPodMutators {
+		if err := mutator.mutatePod(pod); err != nil {
+			return false, fmt.Errorf("error mutating pod for profiling client: %w", err)
+		}
+	}
+
+	// TODO: actually mutate the pod.
+
+	return false, nil
+}
+
+// ShouldMutatePod implements the MutationFilter#ShouldMutatePod interface. This is used primarily in other mutators
+// SSI relies on like the config or tags to labels mutators.
+func (tp *TargetProcessor) ShouldMutatePod(pod *corev1.Pod) bool {
+	// If the namespace is disabled, we should not mutate the pod.
+	if _, ok := tp.disabledNamespaces[pod.Namespace]; ok {
+		return false
+	}
+	// If there are no tracer libraries to inject, we should not mutate the pod.
+	return len(tp.getTargetLibraries(pod)) > 0
+}
+
+// IsNamespaceEligible implements the MutationFilter#IsNamespaceEligible interface. Its currently only used by the
+// enableNamespaces based flow and will likely not be used by SSI. We should look to refactor IsNamespaceEligible out of
+// the interface.
+func (tp *TargetProcessor) IsNamespaceEligible(namespace string) bool {
+	// If the namespace is disabled, we should not mutate the pod.
+	if _, ok := tp.disabledNamespaces[namespace]; ok {
+		return false
+	}
+
+	for _, target := range tp.targets {
+		// Check the pod namespace against the namespace selector.
+		matches, err := target.matchesNamespaceSelector(namespace)
+		if err != nil {
+			log.Errorf("error encountered matching targets, aborting all together to avoid inaccurate match: %v", err)
+			return false
+
+		}
+		if matches {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (tp *TargetProcessor) getLibraries(pod *corev1.Pod) []libInfo {
+	// If the pod has explict tracer libraries defined as annotations, they take precedence.
+	libraries := tp.getAnnotationLibraries(pod)
+	if len(libraries) > 0 {
+		return libraries
+	}
+
+	// If there are no annotations, check if the pod matches any of the targets.
+	return tp.getTargetLibraries(pod)
+}
+
+// getAnnotationLibraries determines which tracing libraries to use given a pod's annotations. It returns the list of
+// tracing libraries to inject.
+func (tp *TargetProcessor) getAnnotationLibraries(pod *corev1.Pod) []libInfo {
+	return extractLibrariesFromAnnotations(pod, tp.config.containerRegistry)
+}
+
 // getTargetLibraries determines which tracing libraries to use given a target list. It returns the list of tracing
 // libraries to inject.
 func (tp *TargetProcessor) getTargetLibraries(pod *corev1.Pod) []libInfo {
-	// If the namespace is disabled, we don't need to check the targets.
+	// If the namespace is disabled, we should not mutate the pod.
 	if _, ok := tp.disabledNamespaces[pod.Namespace]; ok {
 		return nil
 	}
