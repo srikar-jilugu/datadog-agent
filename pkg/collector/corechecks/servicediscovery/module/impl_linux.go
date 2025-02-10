@@ -213,7 +213,11 @@ func newDiscoveryWithNetwork(containerProvider proccontainers.ContainerProvider,
 }
 
 // NewDiscoveryModule creates a new discovery system probe module.
-func NewDiscoveryModule(_ *sysconfigtypes.Config, deps module.FactoryDependencies) (module.Module, error) {
+func NewDiscoveryModule(cfg *sysconfigtypes.Config, deps module.FactoryDependencies) (module.Module, error) {
+	if isNPMAvailable(cfg) {
+		registerNPMCallback()
+	}
+
 	sharedContainerProvider := proccontainers.InitSharedContainerProvider(deps.WMeta, deps.Tagger)
 	d := newDiscoveryWithNetwork(sharedContainerProvider, realTime{}, newNetworkCollector)
 

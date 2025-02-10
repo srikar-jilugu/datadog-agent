@@ -47,6 +47,8 @@ import (
 const defaultUDPConnTimeoutNanoSeconds = uint64(time.Duration(120) * time.Second)
 const tracerModuleName = "network_tracer"
 
+var GetActiveConnectionCallback func(*network.Delta)
+
 // Telemetry
 // Will track the count of expired TCP connections
 // We are manually expiring TCP connections because it seems that we are losing some TCP close events
@@ -433,6 +435,10 @@ func (t *Tracer) GetActiveConnections(clientID string) (*network.Connections, er
 	}
 
 	delta := t.state.GetDelta(clientID, latestTime, active, t.reverseDNS.GetDNSStats(), t.usmMonitor.GetProtocolStats())
+
+	if GetActiveConnectionCallback != nil {
+		GetActiveConnectionCallback(&delta)
+	}
 
 	ips := make(map[util.Address]struct{}, len(delta.Conns)/2)
 	var udpConns, tcpConns int
