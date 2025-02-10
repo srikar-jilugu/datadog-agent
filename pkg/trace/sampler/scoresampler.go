@@ -71,9 +71,7 @@ func (s *ScoreSampler) Sample(now time.Time, trace pb.Trace, root *pb.Span, env 
 
 	rate := s.getSignatureSampleRate(signature)
 
-	sampled := s.applySampleRate(root, rate)
-	s.metrics.record(sampled, newMetricsKey(root.Service, env, nil))
-	return sampled
+	return s.applySampleRate(root, rate)
 }
 
 // UpdateTargetTPS updates the target tps
@@ -92,6 +90,7 @@ func (s *ScoreSampler) applySampleRate(root *pb.Span, rate float64) bool {
 	traceID := root.TraceID
 	sampled := SampleByRate(traceID, newRate)
 	if sampled {
+		s.countSample()
 		setMetric(root, s.samplingRateKey, rate)
 	}
 	return sampled

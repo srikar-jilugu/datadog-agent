@@ -52,7 +52,9 @@ type Sampler struct {
 	// extraRate is an extra raw sampling rate to apply on top of the sampler rate
 	extraRate float64
 
-	metrics metrics
+	totalSeen float32
+	totalKept *atomic.Int64
+
 	tags    []string
 	exit    chan struct{}
 	stopped chan struct{}
@@ -62,15 +64,14 @@ type Sampler struct {
 // newSampler returns an initialized Sampler
 func newSampler(extraRate float64, targetTPS float64, tags []string, statsd statsd.ClientInterface) *Sampler {
 	s := &Sampler{
-		seen:      make(map[Signature][numBuckets]float32),
+		seen: make(map[Signature][numBuckets]float32),
+
 		extraRate: extraRate,
 		targetTPS: atomic.NewFloat64(targetTPS),
 		tags:      tags,
-		metrics: metrics{
-			tags:   tags,
-			statsd: statsd,
-			value:  make(map[metricsKey]metricsValue),
-		},
+
+		totalKept: atomic.NewInt64(0),
+
 		exit:    make(chan struct{}),
 		stopped: make(chan struct{}),
 		statsd:  statsd,
@@ -139,6 +140,7 @@ func (s *Sampler) countWeightedSig(now time.Time, signature Signature, n float32
 	buckets[bucketID%numBuckets] += n
 	s.seen[signature] = buckets
 
+	s.totalSeen += n
 	s.muSeen.Unlock()
 	return updateRates
 }
@@ -246,6 +248,11 @@ func zeroAndGetMax(buckets [numBuckets]float32, previousBucket, newBucket int64)
 	return maxBucket, buckets
 }
 
+// countSample counts a trace sampled by the sampler.
+func (s *Sampler) countSample() {
+	s.totalKept.Inc()
+}
+
 // getSignatureSampleRate returns the sampling rate to apply to a signature
 func (s *Sampler) getSignatureSampleRate(sig Signature) float64 {
 	s.muRates.RLock()
@@ -304,8 +311,14 @@ func (s *Sampler) size() int64 {
 }
 
 func (s *Sampler) report() {
-	s.metrics.report()
-	_ = s.statsd.Gauge(metricSamplerSize, float64(s.size()), s.tags, 1)
+	s.muSeen.Lock()
+	seen := int64(s.totalSeen)
+	s.totalSeen = 0
+	s.muSeen.Unlock()
+	kept := s.totalKept.Swap(0)
+	_ = s.statsd.Count("datadog.trace_agent.sampler.kept", kept, s.tags, 1)
+	_ = s.statsd.Count("datadog.trace_agent.sampler.seen", seen, s.tags, 1)
+	_ = s.statsd.Gauge("datadog.trace_agent.sampler.size", float64(s.size()), s.tags, 1)
 }
 
 // Stop stops the main Run loop

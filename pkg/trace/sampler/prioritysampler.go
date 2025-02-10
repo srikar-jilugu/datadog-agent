@@ -107,10 +107,7 @@ func (s *PrioritySampler) Sample(now time.Time, trace *pb.TraceChunk, root *pb.S
 	// Regardless of rates, sampling here is based on the metadata set
 	// by the client library. Which, is turn, is based on agent hints,
 	// but the rule of thumb is: respect client choice.
-	sampled := samplingPriority.IsKeep()
-
-	serviceSignature := ServiceSignature{Name: root.Service, Env: toSamplerEnv(tracerEnv, s.agentEnv)}
-	s.sampler.metrics.record(sampled, newMetricsKey(serviceSignature.Name, serviceSignature.Env, &samplingPriority))
+	sampled := samplingPriority > 0
 
 	// Short-circuit and return without counting the trace in the sampling rate logic
 	// if its value has not been set automatically by the client lib.
@@ -122,13 +119,14 @@ func (s *PrioritySampler) Sample(now time.Time, trace *pb.TraceChunk, root *pb.S
 		return sampled
 	}
 
-	signature := s.catalog.register(serviceSignature)
+	signature := s.catalog.register(ServiceSignature{Name: root.Service, Env: toSamplerEnv(tracerEnv, s.agentEnv)})
 
 	// Update sampler state by counting this trace
 	s.countSignature(now, root, signature, clientDroppedP0sWeight)
 
 	if sampled {
 		s.applyRate(root, signature)
+		s.sampler.countSample()
 	}
 	return sampled
 }
