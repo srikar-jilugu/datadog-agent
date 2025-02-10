@@ -18,8 +18,8 @@ func TestNewCollectorErrors(t *testing.T) {
 }
 func TestSetLoaderError(t *testing.T) {
 	ce := newCollectorErrors()
-	ce.setLoaderError("aCheck", "aLoader", "anError")
-	ce.setLoaderError("anotherCheck", "aLoader", "anError")
+	ce.setLoaderError("aCheck", "aLoader", "anError", false)
+	ce.setLoaderError("anotherCheck", "aLoader", "anError", false)
 
 	assert.Len(t, ce.loader, 2) // 2 checks for this loader
 	assert.Len(t, ce.loader["aCheck"], 1)
@@ -28,7 +28,7 @@ func TestSetLoaderError(t *testing.T) {
 
 func TestRemoveLoaderErrors(t *testing.T) {
 	ce := newCollectorErrors()
-	ce.setLoaderError("aCheck", "aLoader", "anError")
+	ce.setLoaderError("aCheck", "aLoader", "anError", false)
 	ce.removeLoaderErrors("aCheck")
 
 	assert.Len(t, ce.loader, 0)
@@ -36,7 +36,7 @@ func TestRemoveLoaderErrors(t *testing.T) {
 
 func TestGetLoaderErrors(t *testing.T) {
 	ce := newCollectorErrors()
-	ce.setLoaderError("aCheck", "aLoader", "anError")
+	ce.setLoaderError("aCheck", "aLoader", "anError", false)
 	errs := ce.getLoaderErrors()
 	assert.Len(t, errs, 1)
 }

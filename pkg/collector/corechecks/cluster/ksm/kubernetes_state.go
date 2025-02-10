@@ -11,6 +11,7 @@ package ksm
 import (
 	"context"
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/errors"
 	"maps"
 	"regexp"
 	"strings"
@@ -269,8 +270,16 @@ func init() {
 	labelRegexp = regexp.MustCompile(`[\/]|[\.]|[\-]`)
 }
 
+var errorCount int
+
 // Configure prepares the configuration of the KSM check instance
 func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConfigDigest uint64, config, initConfig integration.Data, source string) error {
+	if errorCount <= 10 {
+		errorCount++
+		err := fmt.Errorf("justin error %d", errorCount)
+		return errors.NewRetriable(err.Error(), err)
+	}
+
 	k.BuildID(integrationConfigDigest, config, initConfig)
 	k.agentConfig = pkgconfigsetup.Datadog()
 
@@ -336,7 +345,7 @@ func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConf
 		// Discover resources that are currently available
 		resources, err = discoverResources(apiServerClient.Cl.Discovery())
 		if err != nil {
-			return err
+			return errors.NewRetriable("resource discovery", err)
 		}
 
 		// Prepare the collectors for the resources specified in the configuration file.

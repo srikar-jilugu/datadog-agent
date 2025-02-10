@@ -11,29 +11,41 @@ import (
 	checkid "github.com/DataDog/datadog-agent/pkg/collector/check/id"
 )
 
+type Error struct {
+	err       string
+	retryable bool
+}
+
+func (e Error) String() string {
+	return e.err
+}
+
+type _loaderErrors = map[string]map[string]Error // check Name -> loader -> error
+type LoaderErrors = map[string]map[string]string
+
 // collectorErrors holds the error objects
 type collectorErrors struct {
-	loader map[string]map[string]string // check Name -> loader -> error
-	run    map[checkid.ID]string        // check ID -> error
+	loader _loaderErrors
+	run    map[checkid.ID]string // check ID -> error
 	m      sync.RWMutex
 }
 
 // newCollectorErrors returns an instance holding autoconfig errors stats
 func newCollectorErrors() *collectorErrors {
 	return &collectorErrors{
-		loader: make(map[string]map[string]string),
+		loader: make(_loaderErrors),
 		run:    make(map[checkid.ID]string),
 	}
 }
 
 // setLoaderError will safely set the error for that check and loader to the LoaderErrorStats
-func (ce *collectorErrors) setLoaderError(checkName string, loaderName string, err string) {
+func (ce *collectorErrors) setLoaderError(checkName string, loaderName string, err string, retryable bool) {
 	_, found := ce.loader[checkName]
 	if !found {
-		ce.loader[checkName] = make(map[string]string)
+		ce.loader[checkName] = make(map[string]Error)
 	}
 
-	ce.loader[checkName][loaderName] = err
+	ce.loader[checkName][loaderName] = Error{err, retryable}
 }
 
 // removeLoaderErrors removes the errors for a check (usually when successfully loaded)
@@ -42,16 +54,35 @@ func (ce *collectorErrors) removeLoaderErrors(checkName string) {
 }
 
 // GetLoaderErrors will safely get the errors regarding loaders
-func (ce *collectorErrors) getLoaderErrors() map[string]map[string]string {
+func (ce *collectorErrors) getLoaderErrors() LoaderErrors {
 	ce.m.RLock()
 	defer ce.m.RUnlock()
 
-	errorsCopy := make(map[string]map[string]string)
+	errorsCopy := make(LoaderErrors)
 
 	for check, loaderErrors := range ce.loader {
 		errorsCopy[check] = make(map[string]string)
 		for loader, loaderError := range loaderErrors {
-			errorsCopy[check][loader] = loaderError
+			errorsCopy[check][loader] = loaderError.err
+		}
+	}
+
+	return errorsCopy
+}
+
+// GetLoaderErrors will safely get the retryable errors regarding loaders
+func (ce *collectorErrors) getRetryableLoaderErrors() LoaderErrors {
+	ce.m.RLock()
+	defer ce.m.RUnlock()
+
+	errorsCopy := make(LoaderErrors)
+
+	for check, loaderErrors := range ce.loader {
+		errorsCopy[check] = make(map[string]string)
+		for loader, loaderError := range loaderErrors {
+			if loaderError.retryable {
+				errorsCopy[check][loader] = loaderError.err
+			}
 		}
 	}
 

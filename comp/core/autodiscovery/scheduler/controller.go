@@ -6,6 +6,7 @@
 package scheduler
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/collector"
 	"sync"
 	"time"
 
@@ -171,6 +172,16 @@ func (ms *Controller) processNextWorkItem() bool {
 		if desiredState == Scheduled {
 			//to be scheduled
 			scheduler.Schedule(([]integration.Config{*desiredConfigState.config})) // TODO: check status of action
+			retryable := collector.GetRetryableLoaderErrors()
+			if len(retryable) > 0 {
+				for check := range retryable {
+					log.Debugf("Encountered retryable error scheduling check: %s", check)
+				}
+				log.Debugf("Rescheduling config...")
+				reschedule := integration.ConfigChanges{}
+				reschedule.ScheduleConfig(*desiredConfigState.config)
+				ms.ApplyChanges(reschedule)
+			}
 		} else {
 			//to be unscheduled
 			scheduler.Unschedule(([]integration.Config{*desiredConfigState.config})) // TODO: check status of action

@@ -9,6 +9,7 @@ package collector
 import (
 	"expvar"
 	"fmt"
+	agenterrors "github.com/DataDog/datadog-agent/pkg/errors"
 	"strings"
 	"sync"
 
@@ -205,7 +206,8 @@ func (s *CheckScheduler) getChecks(config integration.Config) ([]check.Check, er
 				checks = append(checks, c)
 				break
 			}
-			errorStats.setLoaderError(config.Name, fmt.Sprintf("%v", loader), err.Error())
+
+			errorStats.setLoaderError(config.Name, fmt.Sprintf("%v", loader), err.Error(), agenterrors.IsRetriable(err))
 			errors = append(errors, fmt.Sprintf("%v: %s", loader, err))
 		}
 
@@ -270,6 +272,10 @@ func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, popu
 }
 
 // GetLoaderErrors returns the check loader errors
-func GetLoaderErrors() map[string]map[string]string {
+func GetLoaderErrors() LoaderErrors {
 	return errorStats.getLoaderErrors()
+}
+
+func GetRetryableLoaderErrors() LoaderErrors {
+	return errorStats.getRetryableLoaderErrors()
 }
