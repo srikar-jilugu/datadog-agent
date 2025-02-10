@@ -18,8 +18,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
-// TargetFilter filters pods based on a set of targeting rules.
-type TargetFilter struct {
+// TargetProcessor filters and mutates pods based on a set of targeting rules. It implments both the Mutator and
+// the MutationFilter interfaces so that it can be used for both use cases.
+type TargetProcessor struct {
 	targets            []targetInternal
 	disabledNamespaces map[string]bool
 }
@@ -36,9 +37,9 @@ type targetInternal struct {
 	wmeta                workloadmeta.Component
 }
 
-// NewTargetFilter creates a new TargetFilter from a list of targets and disabled namespaces. We convert the targets
-// to a more efficient internal format for quick lookups.
-func NewTargetFilter(targets []Target, wmeta workloadmeta.Component, disabledNamespaces []string, containerRegistry string) (*TargetFilter, error) {
+// NewTargetProcessor creates a new TargetProcessor from a list of targets and disabled namespaces. We convert the
+// targets into a more efficient internal format for quick lookups.
+func NewTargetProcessor(targets []Target, wmeta workloadmeta.Component, disabledNamespaces []string, containerRegistry string) (*TargetProcessor, error) {
 	// Create a map of disabled namespaces for quick lookups.
 	disabledNamespacesMap := make(map[string]bool, len(disabledNamespaces))
 	for _, ns := range disabledNamespaces {
@@ -95,21 +96,22 @@ func NewTargetFilter(targets []Target, wmeta workloadmeta.Component, disabledNam
 		}
 	}
 
-	return &TargetFilter{
+	return &TargetProcessor{
 		targets:            internalTargets,
 		disabledNamespaces: disabledNamespacesMap,
 	}, nil
 }
 
-// filter filters a pod based on the targets. It returns the list of libraries to inject.
-func (f *TargetFilter) filter(pod *corev1.Pod) []libInfo {
+// getTargetLibraries determines which tracing libraries to use given a target list. It returns the list of tracing
+// libraries to inject.
+func (tp *TargetProcessor) getTargetLibraries(pod *corev1.Pod) []libInfo {
 	// If the namespace is disabled, we don't need to check the targets.
-	if _, ok := f.disabledNamespaces[pod.Namespace]; ok {
+	if _, ok := tp.disabledNamespaces[pod.Namespace]; ok {
 		return nil
 	}
 
 	// Check if the pod matches any of the targets. The first match wins.
-	for _, target := range f.targets {
+	for _, target := range tp.targets {
 		// Check the pod namespace against the namespace selector.
 		matches, err := target.matchesNamespaceSelector(pod.Namespace)
 		if err != nil {
@@ -134,30 +136,30 @@ func (f *TargetFilter) filter(pod *corev1.Pod) []libInfo {
 	return nil
 }
 
-func (t targetInternal) matchesNamespaceSelector(namespace string) (bool, error) {
+func (ti targetInternal) matchesNamespaceSelector(namespace string) (bool, error) {
 	// If we are using the namespace selector, check if the namespace matches the selector.
-	if t.useNamespaceSelector {
+	if ti.useNamespaceSelector {
 		// Get the namespace metadata.
 		id := util.GenerateKubeMetadataEntityID("", "namespaces", "", namespace)
-		ns, err := t.wmeta.GetKubernetesMetadata(id)
+		ns, err := ti.wmeta.GetKubernetesMetadata(id)
 		if err != nil {
 			return false, fmt.Errorf("could not get kubernetes namespace to match against for %s: %w", namespace, err)
 		}
 
 		// Check if the namespace labels match the selector.
-		return t.nameSpaceSelector.Matches(labels.Set(ns.EntityMeta.Labels)), nil
+		return ti.nameSpaceSelector.Matches(labels.Set(ns.EntityMeta.Labels)), nil
 	}
 
 	// If there are no match names, we match all namespaces.
-	if len(t.enabledNamespaces) == 0 {
+	if len(ti.enabledNamespaces) == 0 {
 		return true, nil
 	}
 
 	// Check if the pod namespace is in the match names.
-	_, ok := t.enabledNamespaces[namespace]
+	_, ok := ti.enabledNamespaces[namespace]
 	return ok, nil
 }
 
-func (t targetInternal) matchesPodSelector(podLabels map[string]string) bool {
-	return t.podSelector.Matches(labels.Set(podLabels))
+func (ti targetInternal) matchesPodSelector(podLabels map[string]string) bool {
+	return ti.podSelector.Matches(labels.Set(podLabels))
 }

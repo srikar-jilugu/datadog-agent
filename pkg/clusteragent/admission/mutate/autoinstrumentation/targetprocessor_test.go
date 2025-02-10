@@ -237,12 +237,12 @@ func TestTargetFilter(t *testing.T) {
 				wmeta.Set(&ns)
 			}
 
-			// Create the filter.
-			f, err := NewTargetFilter(cfg.Targets, wmeta, cfg.DisabledNamespaces, "registry")
+			// Create the processor.
+			f, err := NewTargetProcessor(cfg.Targets, wmeta, cfg.DisabledNamespaces, "registry")
 			require.NoError(t, err)
 
 			// Filter the pod.
-			actual := f.filter(test.in)
+			actual := f.getTargetLibraries(test.in)
 
 			// Validate the output.
 			require.Equal(t, test.expected, actual)
