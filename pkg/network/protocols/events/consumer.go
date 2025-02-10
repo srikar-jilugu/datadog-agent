@@ -10,6 +10,7 @@ package events
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"sync"
 	"unsafe"
 
@@ -212,9 +213,10 @@ func (c *Consumer[V]) Stop() {
 func (c *Consumer[V]) process(b *batch, syncing bool) {
 	cpu := int(b.Cpu)
 
+	id := uuid.New()
 	// Determine the subset of data we're interested in as we might have read
 	// part of this batch before during a Sync() call
-	begin, end := c.offsets.Get(cpu, b, syncing)
+	begin, end := c.offsets.Get(cpu, b, syncing, id.String())
 	length := end - begin
 
 	// This can happen in the context of a low-traffic host
@@ -229,6 +231,7 @@ func (c *Consumer[V]) process(b *batch, syncing bool) {
 	// invalid events
 	// TODO: investigate why we're sometimes getting invalid offsets
 	if length < 0 {
+		log.Infof("[USM] Get returned: begin=%d, end=%d, length=%d for id=%s", begin, end, length, id.String())
 		c.negativeLengthEventCount.Add(1)
 		return
 	}
