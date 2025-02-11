@@ -23,6 +23,8 @@ func PrepareK8SUserSessionContext(userInfo *authenticationv1.UserInfo, cwsUserSe
 		return userSessionCtx, nil
 	}
 
+	fmt.Println(userInfo.Extra)
+
 	// try to remove the extra field
 	info := *userInfo
 	info.Extra = nil
