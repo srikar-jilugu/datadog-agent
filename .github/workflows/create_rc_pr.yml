@@ -126,9 +126,6 @@ jobs:
                 fi
 
             - name: Rebuild agent 6 RC pipeline if no changes and in qualification phase
-              # if: ${{ env.IS_AGENT6_RELEASE == 'true' && steps.check_for_changes.outputs.CHANGES == 'false' && env.IS_QUALIFICATION == 'true' }}
+              if: ${{ env.IS_AGENT6_RELEASE == 'true' && steps.check_for_changes.outputs.CHANGES == 'false' && env.IS_QUALIFICATION == 'true' }}
               run: |
-                echo IS_AGENT6_RELEASE: $IS_AGENT6_RELEASE
-                echo IS_QUALIFICATION: $IS_QUALIFICATION
-                echo HAS_CHANGES: ${{ steps.check_for_changes.outputs.CHANGES }}
-  #              inv -e release.run-rc-pipeline -r 6.53.x
+                inv -e release.run-rc-pipeline -r 6.53.x
