@@ -48,6 +48,7 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool, id string) (beg
 	batchID := int(batch.Idx)
 
 	// Log state and batch info
+	// Happens
 	log.Infof("[USM] Get called: cpu=%d, batchID=%d, batchLen=%d, syncing=%v, id=%s", cpu, batchID, batch.Len, syncing, id)
 	log.Infof("[USM] State for cpu %d: nextBatchID=%d, partialBatchID=%d, partialOffset=%d, id=%s", cpu, state.nextBatchID, state.partialBatchID, state.partialOffset, id)
 
@@ -66,7 +67,14 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool, id string) (beg
 	// usually this is 0, but if we've done a partial read of this batch
 	// we need to take that into account
 	if int(batch.Idx) == state.partialBatchID {
+		if state.partialOffset > int(batch.Len) { // Avoid stale offsets
+			log.Infof("[USM] Resetting partialOffset: was %d but batch.Len is %d, id=%s",
+				state.partialOffset, batch.Len, id)
+			state.partialOffset = int(batch.Len)
+		}
+
 		begin = state.partialOffset
+		// Happens
 		log.Infof("[USM] Partial batch detected: setting begin offset to %d, for id=%s", begin, id)
 	}
 
@@ -74,6 +82,7 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool, id string) (beg
 	// usually this is the full batch size but it can be less
 	// in the context of a forced (partial) read
 	end = int(batch.Len)
+	// Happens
 	log.Infof("[USM] End offset set to: %d for id=%s", end, id)
 
 	// if this is part of a forced read (that is, we're reading a batch before
