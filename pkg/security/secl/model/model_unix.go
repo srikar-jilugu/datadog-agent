@@ -102,7 +102,6 @@ type Event struct {
 
 	// network events
 	DNS                DNSEvent                `field:"dns" event:"dns"`                                   // [7.36] [Network] A DNS request was sent
-	DNSResponse        DNSResponseEvent        `field:"dns_response" event:"dns_response"`                 // [7.36] [Network] A DNS response was received
 	IMDS               IMDSEvent               `field:"imds" event:"imds"`                                 // [7.55] [Network] An IMDS event was captured
 	RawPacket          RawPacketEvent          `field:"packet" event:"packet"`                             // [7.60] [Network] A raw network packet was captured
 	NetworkFlowMonitor NetworkFlowMonitorEvent `field:"network_flow_monitor" event:"network_flow_monitor"` // [7.63] [Network] A network monitor event was sent
@@ -712,26 +711,29 @@ type NetworkDeviceContext struct {
 type BindEvent struct {
 	SyscallEvent
 
-	Addr       IPPortContext `field:"addr"`        // Bound address
-	AddrFamily uint16        `field:"addr.family"` // SECLDoc[addr.family] Definition:`Address family`
-	Protocol   uint16        `field:"protocol"`    // SECLDoc[protocol] Definition:`Socket Protocol`
+	Addr       IPPortContext `field:"addr"`          // Bound address
+	Hostname   string        `field:"addr.hostname"` // SECLDoc[addr.hostname] Definition:`Address hostname (if available)`
+	AddrFamily uint16        `field:"addr.family"`   // SECLDoc[addr.family] Definition:`Address family`
+	Protocol   uint16        `field:"protocol"`      // SECLDoc[protocol] Definition:`Socket Protocol`
 }
 
 // ConnectEvent represents a connect event
 type ConnectEvent struct {
 	SyscallEvent
 
-	Addr       IPPortContext `field:"addr"`        // Connection address
-	AddrFamily uint16        `field:"addr.family"` // SECLDoc[addr.family] Definition:`Address family`
-	Protocol   uint16        `field:"protocol"`    // SECLDoc[protocol] Definition:`Socket Protocol`
+	Addr       IPPortContext `field:"addr"`          // Connection address
+	Hostnames  []string      `field:"addr.hostname"` // SECLDoc[addr.hostname] Definition:`Address hostname (if available)`
+	AddrFamily uint16        `field:"addr.family"`   // SECLDoc[addr.family] Definition:`Address family`
+	Protocol   uint16        `field:"protocol"`      // SECLDoc[protocol] Definition:`Socket Protocol`
 }
 
 // AcceptEvent represents an accept event
 type AcceptEvent struct {
 	SyscallEvent
 
-	Addr       IPPortContext `field:"addr"`        // Connection address
-	AddrFamily uint16        `field:"addr.family"` // SECLDoc[addr.family] Definition:`Address family`
+	Addr       IPPortContext `field:"addr"`          // Connection address
+	Hostnames  []string      `field:"addr.hostname"` // SECLDoc[addr.hostname] Definition:`Address hostname (if available)`
+	AddrFamily uint16        `field:"addr.family"`   // SECLDoc[addr.family] Definition:`Address family`
 }
 
 // NetDevice represents a network device

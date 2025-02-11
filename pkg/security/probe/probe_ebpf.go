@@ -918,7 +918,6 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 			seclog.Debugf("failed to handle new mount from unshare mnt ns event: %s", err)
 		}
 		return
-
 	case model.DNSResponseEventType:
 		packet := gopacket.NewPacket(data[offset:], layers.LayerTypeDNS, gopacket.Default)
 
@@ -1303,6 +1302,12 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 			seclog.Errorf("failed to decode accept event: %s (offset %d, len %d)", err, offset, len(data))
 			return
 		}
+		ip, ok := netip.AddrFromSlice(event.Accept.Addr.IPNet.IP)
+		if ok {
+			event.Accept.Hostnames = p.Resolvers.DnsResolver.HostListFromIp(ip)
+			fmt.Printf("DNS added context to accept: %v\n", event.Accept.Hostnames)
+		}
+
 	case model.BindEventType:
 		if _, err = event.Bind.UnmarshalBinary(data[offset:]); err != nil {
 			seclog.Errorf("failed to decode bind event: %s (offset %d, len %d)", err, offset, len(data))
@@ -1313,6 +1318,15 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 			seclog.Errorf("failed to decode connect event: %s (offset %d, len %d)", err, offset, len(data))
 			return
 		}
+		fmt.Printf("DNS Connection created\n")
+		ip, ok := netip.AddrFromSlice(event.Connect.Addr.IPNet.IP)
+		if ok {
+			event.Connect.Hostnames = p.Resolvers.DnsResolver.HostListFromIp(ip)
+			fmt.Printf("DNS added context to connect: %v\n", event.Connect.Hostnames)
+		} else {
+			fmt.Printf("DNS Failed to transform IP from slice to netip %v\n", event.Connect.Addr.IPNet.IP)
+		}
+
 	case model.SyscallsEventType:
 		if _, err = event.Syscalls.UnmarshalBinary(data[offset:]); err != nil {
 			seclog.Errorf("failed to decode syscalls event: %s (offset %d, len %d)", err, offset, len(data))
