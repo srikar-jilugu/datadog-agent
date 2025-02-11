@@ -214,12 +214,12 @@ func newDiscoveryWithNetwork(containerProvider proccontainers.ContainerProvider,
 
 // NewDiscoveryModule creates a new discovery system probe module.
 func NewDiscoveryModule(cfg *sysconfigtypes.Config, deps module.FactoryDependencies) (module.Module, error) {
-	if isNPMAvailable(cfg) {
-		registerNPMCallback()
-	}
-
 	sharedContainerProvider := proccontainers.InitSharedContainerProvider(deps.WMeta, deps.Tagger)
 	d := newDiscoveryWithNetwork(sharedContainerProvider, realTime{}, newNetworkCollector)
+
+	if isNPMAvailable(cfg) {
+		registerNPMCallback(d)
+	}
 
 	return d, nil
 }
@@ -248,6 +248,8 @@ func (s *discovery) Close() {
 	}
 	clear(s.cache)
 	clear(s.ignorePids)
+
+	unregisterNPMCallback()
 }
 
 // handleStatusEndpoint is the handler for the /status endpoint.
