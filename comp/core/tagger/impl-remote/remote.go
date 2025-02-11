@@ -289,9 +289,9 @@ func (t *remoteTagger) GenerateContainerIDFromOriginInfo(originInfo origindetect
 // queryContainerIDFromOriginInfo calls the local tagger to get the container ID from the Origin Info.
 func (t *remoteTagger) queryContainerIDFromOriginInfo(originInfo origindetection.OriginInfo) (containerID string, err error) {
 	expBackoff := backoff.NewExponentialBackOff()
-	expBackoff.InitialInterval = 50 * time.Millisecond
-	expBackoff.MaxInterval = 200 * time.Millisecond
-	expBackoff.MaxElapsedTime = 500 * time.Millisecond
+	expBackoff.InitialInterval = 10 * time.Millisecond
+	expBackoff.MaxInterval = 50 * time.Millisecond
+	expBackoff.MaxElapsedTime = 100 * time.Millisecond
 
 	err = backoff.Retry(func() error {
 		select {
