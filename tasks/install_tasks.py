@@ -50,6 +50,10 @@ def download_tools(ctx):
 @task
 def install_tools(ctx: Context, max_retry: int = 3):
     """Install all Go tools for testing."""
+    if any(go_env in os.environ for go_env in ["GOOS", "GOARCH"]):
+        print(
+            f"[{color_message('WARNING', Color.ORANGE)}]: GOOS or GOARCH is set. If this is not expected please unset them and restart the task."
+        )
     with gitlab_section("Installing Go tools", collapsed=True):
         with environ({'GO111MODULE': 'on'}):
             for path, tools in TOOLS.items():
