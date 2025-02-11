@@ -925,11 +925,15 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 			switch layer := layer.(type) {
 			case *layers.DNS:
 				for _, answer := range layer.Answers {
-					ip, ok := netip.AddrFromSlice(answer.IP)
-					if ok {
-						p.Resolvers.DnsResolver.AddNew(string(answer.Name), ip)
+					if answer.Type == layers.DNSTypeCNAME {
+						p.Resolvers.DnsResolver.AddNewCname(string(answer.CNAME), string(answer.Name))
 					} else {
-						seclog.Errorf("DNS response with an invalid IP received: %v", ip)
+						ip, ok := netip.AddrFromSlice(answer.IP)
+						if ok {
+							p.Resolvers.DnsResolver.AddNew(string(answer.Name), ip)
+						} else {
+							seclog.Errorf("DNS response with an invalid IP received: %v", ip)
+						}
 					}
 				}
 			}
@@ -1305,7 +1309,6 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 		ip, ok := netip.AddrFromSlice(event.Accept.Addr.IPNet.IP)
 		if ok {
 			event.Accept.Hostnames = p.Resolvers.DnsResolver.HostListFromIp(ip)
-			fmt.Printf("DNS added context to accept: %v\n", event.Accept.Hostnames)
 		}
 
 	case model.BindEventType:
@@ -1318,13 +1321,9 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 			seclog.Errorf("failed to decode connect event: %s (offset %d, len %d)", err, offset, len(data))
 			return
 		}
-		fmt.Printf("DNS Connection created\n")
 		ip, ok := netip.AddrFromSlice(event.Connect.Addr.IPNet.IP)
 		if ok {
 			event.Connect.Hostnames = p.Resolvers.DnsResolver.HostListFromIp(ip)
-			fmt.Printf("DNS added context to connect: %v\n", event.Connect.Hostnames)
-		} else {
-			fmt.Printf("DNS Failed to transform IP from slice to netip %v\n", event.Connect.Addr.IPNet.IP)
 		}
 
 	case model.SyscallsEventType:
