@@ -17,6 +17,7 @@ import (
 	"github.com/DataDog/test-infra-definitions/components/datadog/agentparams"
 	"github.com/DataDog/test-infra-definitions/components/os"
 	"github.com/DataDog/test-infra-definitions/scenarios/aws/ec2"
+	"github.com/DataDog/test-infra-definitions/scenarios/aws/fakeintake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,10 +27,15 @@ type linuxAPIKeyRefreshSuite struct {
 	descriptor os.Descriptor
 }
 
+var fakeIntakeURL string = "public.ecr.aws/datadog/fakeintake:v5e9c5c53"
+
 func TestLinuxAPIKeyFreshSuite(t *testing.T) {
 	suite := &linuxAPIKeyRefreshSuite{descriptor: os.UbuntuDefault}
 	e2e.Run(t, suite, e2e.WithProvisioner(awshost.Provisioner(
 		awshost.WithEC2InstanceOptions(ec2.WithOS(suite.descriptor)),
+		awshost.WithFakeIntakeOptions(
+			fakeintake.WithImageURL(fakeIntakeURL),
+		),
 	)))
 }
 
@@ -53,6 +59,9 @@ api_key: ENC[api_key]
 				secrets.WithUnixSetupScript("/tmp/secret.py", false),
 				agentparams.WithSkipAPIKeyInConfig(),
 				agentparams.WithAgentConfig(config),
+			),
+			awshost.WithFakeIntakeOptions(
+				fakeintake.WithImageURL(fakeIntakeURL),
 			),
 		),
 	)
