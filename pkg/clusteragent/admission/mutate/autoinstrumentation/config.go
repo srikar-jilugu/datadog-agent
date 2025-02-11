@@ -151,11 +151,13 @@ func (n NamespaceSelector) AsLabelSelector() (labels.Selector, error) {
 // configuration is invalid.
 func NewInstrumentationConfig(datadogConfig config.Component) (*InstrumentationConfig, error) {
 	cfg := &InstrumentationConfig{}
-	log.Errorf("NewInstrumentationConfig Targets: %s\n", spew.Sdump(cfg.Targets))
+	log.Errorf("TARGETS SET: %v\n", datadogConfig.IsSet("apm_config.instrumentation.targets"))
+	log.Errorf("TARGETS GET: %v\n", datadogConfig.Get("apm_config.instrumentation.targets"))
 	err := datadogConfig.UnmarshalKey("apm_config.instrumentation", cfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse apm_config.instrumentation: %w", err)
 	}
+	log.Errorf("NewInstrumentationConfig Targets: %s\n", spew.Sdump(cfg.Targets))
 
 	// Ensure both enabled and disabled namespaces are not set together.
 	if len(cfg.EnabledNamespaces) > 0 && len(cfg.DisabledNamespaces) > 0 {
