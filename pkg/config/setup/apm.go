@@ -87,6 +87,7 @@ func setupAPM(config pkgconfigmodel.Setup) {
 	config.BindEnvAndSetDefault("apm_config.instrumentation.enabled_namespaces", []string{}, "DD_APM_INSTRUMENTATION_ENABLED_NAMESPACES")
 	config.BindEnvAndSetDefault("apm_config.instrumentation.disabled_namespaces", []string{}, "DD_APM_INSTRUMENTATION_DISABLED_NAMESPACES")
 	config.BindEnvAndSetDefault("apm_config.instrumentation.lib_versions", map[string]string{}, "DD_APM_INSTRUMENTATION_LIB_VERSIONS")
+	config.BindEnvAndSetDefault("apm_config.instrumentation.targets", []interface{}{}, "DD_APM_INSTRUMENTATION_TARGETS")
 	// Note(stanistan): The flag "DD_APM_INSTRUMENTATION_VERSION"
 	//                  will remain undocumented for the duration of the beta.
 	//                  We intend to only switch back to v1 if beta customers have issues

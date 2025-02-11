@@ -8,6 +8,8 @@
 package autoinstrumentation
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -170,4 +172,40 @@ func TestNewInstrumentationConfig(t *testing.T) {
 			require.Equal(t, tt.expected, actual)
 		})
 	}
+}
+
+func TestEnvVar(t *testing.T) {
+	targets := []Target{
+		{
+			Name: "Billing Service",
+			PodSelector: PodSelector{
+				MatchLabels: map[string]string{
+					"app": "billing-service",
+				},
+				MatchExpressions: []SelectorMatchExpression{
+					{
+						Key:      "env",
+						Operator: "In",
+						Values:   []string{"prod"},
+					},
+				},
+			},
+			NamespaceSelector: NamespaceSelector{
+				MatchNames: []string{"billing"},
+			},
+			TracerVersions: map[string]string{
+				"java": "default",
+			},
+		},
+	}
+
+	jsonTargets, err := json.Marshal(targets)
+	require.NoError(t, err)
+
+	os.Setenv("DD_APM_INSTRUMENTATION_TARGETS", string(jsonTargets))
+
+	mockConfig := configmock.New(t)
+	actual, err := NewInstrumentationConfig(mockConfig)
+	require.NoError(t, err)
+	require.Equal(t, targets, actual.Targets)
 }
