@@ -224,12 +224,7 @@ func (c *Consumer[V]) process(b *Batch, syncing bool) {
 		return
 	}
 
-	// Sanity check. Ideally none of these conditions should evaluate to
-	// true. In case they do we bail out and increment the counter tracking
-	// invalid events
-	// TODO: investigate why we're sometimes getting invalid offsets
 	if length < 0 {
-		//log.Infof("[USM] Get returned: begin=%d, end=%d, length=%d for id=%s", begin, end, length, id.String())
 		c.negativeLengthEventCount.Add(1)
 		return
 	}
