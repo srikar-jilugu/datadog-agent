@@ -9,6 +9,7 @@
 package events
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"sync"
 )
 
@@ -40,15 +41,15 @@ func newOffsetManager(numCPUS int) *offsetManager {
 }
 
 // Get returns the data offset that hasn't been consumed yet for a given batch
-func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool) (begin, end int) {
+func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool, id string) (begin, end int) {
 	o.mux.Lock()
 	defer o.mux.Unlock()
 	state := o.stateByCPU[cpu]
 	batchID := int(batch.Idx)
 
 	// Log state and batch info
-	//log.Infof("[USM] Get called: cpu=%d, batchID=%d, batchLen=%d, syncing=%v, id=%s", cpu, batchID, batch.Len, syncing, id)
-	//log.Infof("[USM] State for cpu %d: nextBatchID=%d, partialBatchID=%d, partialOffset=%d, id=%s", cpu, state.nextBatchID, state.partialBatchID, state.partialOffset, id)
+	log.Infof("[USM] Get called: cpu=%d, batchID=%d, batchLen=%d, syncing=%v, id=%s", cpu, batchID, batch.Len, syncing, id)
+	log.Infof("[USM] State for cpu %d: nextBatchID=%d, partialBatchID=%d, partialOffset=%d, id=%s", cpu, state.nextBatchID, state.partialBatchID, state.partialOffset, id)
 
 	if batchID < state.nextBatchID {
 		// we have already consumed this data
@@ -58,7 +59,7 @@ func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool) (begin, end int
 	}
 
 	if batchComplete(batch) {
-		//log.Infof("[USM] Batch complete: updating nextBatchID to %d, id %s", state.nextBatchID, id)
+		log.Infof("[USM] Batch complete: updating nextBatchID to %d, id %s", state.nextBatchID, id)
 		state.nextBatchID = batchID + 1
 	}
 
@@ -67,19 +68,19 @@ func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool) (begin, end int
 	// we need to take that into account
 	if int(batch.Idx) == state.partialBatchID {
 		if state.partialOffset > int(batch.Len) { // Avoid stale offsets
-			//log.Infof("[USM] Resetting partialOffset: was %d but batch.Len is %d, id=%s",
+			log.Infof("[USM] Resetting partialOffset: was %d but batch.Len is %d, id=%s", batch.Len, state.partialOffset, id)
 			state.partialOffset = int(batch.Len)
 		}
 
 		begin = state.partialOffset
-		//log.Infof("[USM] Partial batch detected: setting begin offset to %d, for id=%s", begin, id)
+		log.Infof("[USM] Partial batch detected: setting begin offset to %d, for id=%s", begin, id)
 	}
 
 	// determining the end offset
 	// usually this is the full batch size but it can be less
 	// in the context of a forced (partial) read
 	end = int(batch.Len)
-	//log.Infof("[USM] End offset set to: %d for id=%s", end, id)
+	log.Infof("[USM] End offset set to: %d for id=%s", end, id)
 
 	// if this is part of a forced read (that is, we're reading a batch before
 	// it's complete) we need to keep track of which entries we're reading
@@ -87,7 +88,7 @@ func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool) (begin, end int
 	if syncing {
 		state.partialBatchID = int(batch.Idx)
 		state.partialOffset = end
-		//log.Infof("[USM] Syncing: updating partialBatchID to %d and partialOffset to %d, for id=%s", state.partialBatchID, state.partialOffset, id)
+		log.Infof("[USM] Syncing: updating partialBatchID to %d and partialOffset to %d, for id=%s", state.partialBatchID, state.partialOffset, id)
 	}
 
 	return
