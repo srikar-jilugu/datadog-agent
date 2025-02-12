@@ -9,19 +9,10 @@
 package mock
 
 import (
-	"testing"
-
-	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 )
 
-// Module is a module containing the mock, useful for testing
-func Module() fxutil.Module {
-	return fxutil.Component(
-		fxutil.ProvideComponentConstructor(New),
-	)
-}
-
-// SetupFakeTagger calls fxutil.Test to create a mock tagger for testing
-func SetupFakeTagger(t testing.TB) Mock {
-	return fxutil.Test[Mock](t, Module())
+// Mock implements mock-specific methods.
+type Mock interface {
+	tagger.Component
 }

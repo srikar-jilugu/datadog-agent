@@ -8,6 +8,8 @@ package taggerimpl
 import (
 	"context"
 	"fmt"
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	compdef "github.com/DataDog/datadog-agent/comp/def"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +22,7 @@ import (
 	taggerTelemetry "github.com/DataDog/datadog-agent/comp/core/tagger/telemetry"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
 	"github.com/DataDog/datadog-agent/comp/core/telemetry"
+	coretelemetry "github.com/DataDog/datadog-agent/comp/core/telemetry"
 	"github.com/DataDog/datadog-agent/comp/core/telemetry/telemetryimpl"
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	workloadmetafxmock "github.com/DataDog/datadog-agent/comp/core/workloadmeta/fx-mock"
@@ -28,6 +31,37 @@ import (
 	collectormock "github.com/DataDog/datadog-agent/pkg/util/containers/metrics/mock"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 )
+
+func TestMockTagger(t *testing.T) {
+	workloadMeta := fxutil.Test[workloadmeta.Component](t, fx.Options(
+		fx.Supply(config.Params{}),
+		fx.Supply(log.Params{}),
+		fx.Provide(func() log.Component { return logmock.New(t) }),
+		config.MockModule(),
+		workloadmetafxmock.MockModule(workloadmeta.NewParams()),
+	))
+
+	taggerMock := fxutil.Test[tagger.Component](t, fx.Options(
+		fx.Supply(config.Params{}),
+		fx.Supply(log.Params{}),
+		fx.Provide(func() log.Component { return logmock.New(t) }),
+		config.MockModule(),
+		Module(tagger.Params{}),
+	))
+
+	req := Requires{
+		In:        compdef.In{},
+		Lc:        nil,
+		Config:    nil,
+		Log:       nil,
+		Wmeta:     workloadMeta,
+		Telemetry: coretelemetry.Component,
+		Params:    tagger.Params{},
+	}
+
+	mockTagger := NewTaggerMock(req)
+
+}
 
 func TestAccumulateTagsFor(t *testing.T) {
 	entityID := types.NewEntityID("", "entity_name")
