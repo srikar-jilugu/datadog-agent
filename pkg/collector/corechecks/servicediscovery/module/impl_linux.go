@@ -185,7 +185,7 @@ func newDiscoveryWithNetwork(containerProvider proccontainers.ContainerProvider,
 	cfg := newConfig()
 
 	var network networkCollector
-	if cfg.networkStatsEnabled {
+	if cfg.networkStatsEnabled && getNetworkCollector != nil {
 		var err error
 		network, err = getNetworkCollector(cfg)
 		if err != nil {
@@ -215,7 +215,13 @@ func newDiscoveryWithNetwork(containerProvider proccontainers.ContainerProvider,
 // NewDiscoveryModule creates a new discovery system probe module.
 func NewDiscoveryModule(cfg *sysconfigtypes.Config, deps module.FactoryDependencies) (module.Module, error) {
 	sharedContainerProvider := proccontainers.InitSharedContainerProvider(deps.WMeta, deps.Tagger)
-	d := newDiscoveryWithNetwork(sharedContainerProvider, realTime{}, newNetworkCollector)
+
+	networkCollector := newNetworkCollector
+	if isNPMAvailable(cfg) {
+		networkCollector = nil
+	}
+
+	d := newDiscoveryWithNetwork(sharedContainerProvider, realTime{}, networkCollector)
 
 	if isNPMAvailable(cfg) {
 		registerNPMCallback(d)
@@ -1048,7 +1054,9 @@ func (s *discovery) getServices(params params) (*model.ServicesResponse, error) 
 		log.Warnf("updating services CPU stats: %s", err)
 	}
 
-	s.maybeUpdateNetworkStats(response)
+	if !isNPMCallbackSetup() {
+		s.maybeUpdateNetworkStats(response)
+	}
 
 	response.RunningServicesCount = len(s.runningServices)
 

@@ -22,6 +22,10 @@ func isNPMAvailable(cfg *sysconfigtypes.Config) bool {
 	return ok
 }
 
+func isNPMCallbackSetup() bool {
+	return npm.GetActiveConnectionCallback != nil
+}
+
 func registerNPMCallback(module *discovery) {
 	log.Debug("registering NPM callback")
 	npm.GetActiveConnectionCallback = module.getNPMConnStats
