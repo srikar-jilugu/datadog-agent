@@ -70,7 +70,7 @@ func (o *offsetManager) Get(cpu int, batch *batch, syncing bool, id string) (beg
 		if state.partialOffset > int(batch.Len) { // Avoid stale offsets
 			log.Infof("[USM] Resetting partialOffset: was %d but batch.Len is %d, id=%s",
 				state.partialOffset, batch.Len, id)
-			state.partialOffset = int(batch.Len)
+			//state.partialOffset = int(batch.Len)
 		}
 
 		begin = state.partialOffset
