@@ -231,7 +231,7 @@ func (c *Consumer[V]) process(b *Batch, syncing bool) {
 	// invalid events
 	// TODO: investigate why we're sometimes getting invalid offsets
 	if length < 0 {
-		log.Infof("[USM] Get returned: begin=%d, end=%d, length=%d for id=%s", begin, end, length, id.String())
+		log.Infof("[USM] Get returned: begin=%d, end=%d, length=%d , idx=%s,for id=%s", begin, end, length, b.Idx, id.String())
 		c.negativeLengthEventCount.Add(1)
 		return
 	}
