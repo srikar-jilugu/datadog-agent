@@ -192,9 +192,8 @@ func (p *Processor) processContainer(sender sender.Sender, tags []string, contai
 		p.sendMetric(sender.Gauge, "container.pid.thread_limit", containerStats.PID.ThreadLimit, tags)
 	}
 
-	if container.RestartCount > 0 {
-		p.sendMetric(sender.Gauge, "container.restarts", pointer.Ptr(float64(container.RestartCount)), tags)
-	}
+	log.Debugf("Dump a container: %#v", container)
+	p.sendMetric(sender.Gauge, "container.restarts", pointer.Ptr(float64(container.RestartCount)), tags)
 
 	return nil
 }

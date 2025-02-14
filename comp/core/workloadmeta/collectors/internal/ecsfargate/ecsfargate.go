@@ -109,6 +109,10 @@ func (c *collector) Pull(ctx context.Context) error {
 		return err
 	}
 
+	for _, t := range task {
+		log.Debugf("Dump a task before notifying: %#v", t)
+	}
+
 	c.store.Notify(task)
 
 	return nil

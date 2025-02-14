@@ -210,6 +210,7 @@ func (w *workloadmeta) ListContainersWithFilter(filter wmdef.EntityFilterFunc[*w
 	for _, entity := range entities {
 		container := entity.(*wmdef.Container)
 
+		log.Debugf("Dump a wmdef.Container: %#v", container)
 		if filter == nil || filter(container) {
 			containers = append(containers, container)
 		}
