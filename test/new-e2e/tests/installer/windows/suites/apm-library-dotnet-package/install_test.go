@@ -10,6 +10,7 @@ import (
 	winawshost "github.com/DataDog/datadog-agent/test/new-e2e/pkg/provisioners/aws/host/windows"
 	installer "github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/unix"
 	installerwindows "github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/windows"
+	"github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/windows/consts"
 
 	"testing"
 )
@@ -39,7 +40,7 @@ func (s *testDotnetLibraryInstallSuite) installDotnetLibrary() {
 	// Arrange
 
 	// Act
-	output, err := s.Installer().InstallPackage("apm-library-dotnet-package",
+	output, err := s.Installer().InstallPackage("datadog-apm-library-dotnet",
 		installer.WithVersion("40171f0416f4827adf9cb8399ecfad2b38bc2e8d"))
 
 	// Assert
@@ -50,11 +51,11 @@ func (s *testDotnetLibraryInstallSuite) removeDotnetLibrary() {
 	// Arrange
 
 	// Act
-	output, err := s.Installer().RemovePackage("apm-library-dotnet-package")
+	output, err := s.Installer().RemovePackage("datadog-apm-library-dotnet")
 
 	// Assert
 	s.Require().NoErrorf(err, "failed to remove the Datadog Agent package: %s", output)
 	s.Require().Host(s.Env().RemoteHost).
-		NoDirExists(installerwindows.GetStableDirFor("apm-library-dotnet-package"),
+		NoDirExists(consts.GetStableDirFor("datadog-apm-library-dotnet"),
 			"the package directory should be removed")
 }
