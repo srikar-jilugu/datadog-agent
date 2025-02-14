@@ -98,6 +98,7 @@ func ParseV4TaskContainers(
 	events := make([]workloadmeta.CollectorEvent, 0, len(task.Containers))
 
 	for _, container := range task.Containers {
+		log.Debugf("Dump container: %#v", container)
 		containerID := container.DockerID
 		taskContainers = append(taskContainers, workloadmeta.OrchestratorContainer{
 			ID:   containerID,

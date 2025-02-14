@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -135,7 +136,14 @@ func (c *client) get(ctx context.Context, path string, v interface{}) error {
 			return fmt.Errorf("Unexpected HTTP status code in metadata %s reply: %d", c.apiVersion, resp.StatusCode)
 		}
 
-		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+		raw, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("Failed to read metadata %s response: %s", c.apiVersion, err)
+		}
+
+		log.Debugf("Dump raw JSON from %q: %s", url, string(raw))
+
+		if err := json.Unmarshal(raw, v); err != nil {
 			return fmt.Errorf("Failed to decode metadata %s JSON payload to type %s: %s", c.apiVersion, reflect.TypeOf(v), err)
 		}
 
@@ -159,6 +167,7 @@ func (c *client) getTaskMetadataAtPath(ctx context.Context, path string) (*Task,
 	if err := c.get(ctx, path, &t); err != nil {
 		return nil, err
 	}
+	log.Debugf("Dump a task from %q: %#v", path, t)
 	return &t, nil
 }
 
