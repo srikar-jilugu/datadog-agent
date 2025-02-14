@@ -73,7 +73,7 @@ var PackagesConfig = []TestPackageConfig{
 	{Name: "datadog-apm-library-java", Version: "latest"},
 	{Name: "datadog-apm-library-ruby", Version: "latest"},
 	{Name: "datadog-apm-library-js", Version: "latest"},
-	{Name: "datadog-apm-library-dotnet", Version: "latest"},
+	{Name: "datadog-apm-library-dotnet", Version: "f74c4009ecda0ca4a1b17ff4f30d1d7ea202afe5", Registry: "installtesting.datad0g.com"},
 	{Name: "datadog-apm-library-python", Version: "latest"},
 }
 
