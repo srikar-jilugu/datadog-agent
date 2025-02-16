@@ -29,9 +29,8 @@ type percpuState struct {
 }
 
 type batchState struct {
-	offset         uint16
-	lastGeneration uint64
-	updated        time.Time
+	offset  uint16
+	updated time.Time
 }
 
 func newBatchExtractor(numCPUs int) *batchExtractor {
