@@ -267,6 +267,7 @@ func (r *RequestStats) HalfAllCounts() {
 	}
 }
 
+// Close close resources
 func (r *RequestStats) Close() {
 	for _, stats := range r.Data {
 		if stats != nil {
