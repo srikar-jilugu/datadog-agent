@@ -29,6 +29,7 @@ type cpuReadState struct {
 	// information associated to partial batch reads
 	partialBatchID int
 	partialOffset  int
+	lastGeneration uint64
 }
 
 func newOffsetManager(numCPUS int) *offsetManager {
@@ -47,14 +48,13 @@ func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool, id string) (beg
 	state := o.stateByCPU[cpu]
 	batchID := int(batch.Idx)
 
-	// Log state and batch info
-	log.Infof("[USM] Get called: cpu=%d, batchID=%d, batchLen=%d, syncing=%v, id=%s", cpu, batchID, batch.Len, syncing, id)
-	log.Infof("[USM] State for cpu %d: nextBatchID=%d, partialBatchID=%d, partialOffset=%d, id=%s", cpu, state.nextBatchID, state.partialBatchID, state.partialOffset, id)
+	log.Infof("[USM] Get called: cpu=%d, batchID=%d, batchLen=%d, generation=%d, syncing=%v, id=%s | State for cpu %d: nextBatchID=%d, partialBatchID=%d, partialOffset=%d, lastGeneration=%d",
+		cpu, batchID, batch.Len, batch.Generation, syncing, id, cpu, state.nextBatchID, state.partialBatchID,
+		state.partialOffset, state.lastGeneration)
 
 	if batchID < state.nextBatchID {
 		// we have already consumed this data
-		//log.Infof("[USM] Skipping batch: batchID %d is less than nextBatchID %d, id=%s", batchID, state.nextBatchID, id)
-		// we have already consumed this data
+		log.Infof("[USM] Skipping batch: batchID %d is less than nextBatchID %d, id=%s", batchID, state.nextBatchID, id)
 		return 0, 0
 	}
 
@@ -63,31 +63,36 @@ func (o *offsetManager) Get(cpu int, batch *Batch, syncing bool, id string) (beg
 		state.nextBatchID = batchID + 1
 	}
 
-	// determining the begin offset
-	// usually this is 0, but if we've done a partial read of this batch
-	// we need to take that into account
-	if int(batch.Idx) == state.partialBatchID {
-		if state.partialOffset > int(batch.Len) { // Avoid stale offsets
-			log.Infof("[USM] Resetting partialOffset: was %d but batch.Len is %d, id=%s", state.partialOffset, batch.Len, id)
-		}
+	// Reset partial offset if generation has changed
+	if int(batch.Idx) == state.partialBatchID && batch.Generation != state.lastGeneration {
+		log.Infof("[USM] Generation changed from %d to %d, resetting partial offset for id=%s",
+			state.lastGeneration, batch.Generation, id)
+		state.partialOffset = 0
+	}
 
+	// determining the begin offset
+	begin = 0
+	if int(batch.Idx) == state.partialBatchID {
+		if state.partialOffset > int(batch.Len) {
+			log.Infof("[USM] Resetting stale offset: was %d but batch.Len is %d, id=%s",
+				state.partialOffset, batch.Len, id)
+			state.partialOffset = 0
+		}
 		begin = state.partialOffset
 		log.Infof("[USM] Partial batch detected: setting begin offset to %d, for id=%s", begin, id)
 	}
 
 	// determining the end offset
-	// usually this is the full batch size but it can be less
-	// in the context of a forced (partial) read
 	end = int(batch.Len)
 	log.Infof("[USM] End offset set to: %d for id=%s", end, id)
 
-	// if this is part of a forced read (that is, we're reading a batch before
-	// it's complete) we need to keep track of which entries we're reading
-	// so we avoid reading the same entries again
+	// Update state for syncing operations
 	if syncing {
 		state.partialBatchID = int(batch.Idx)
 		state.partialOffset = end
-		log.Infof("[USM] Syncing: updating partialBatchID to %d and partialOffset to %d, for id=%s", state.partialBatchID, state.partialOffset, id)
+		state.lastGeneration = batch.Generation
+		log.Infof("[USM] Syncing: updating partialBatchID to %d, partialOffset to %d, and generation to %d for id=%s",
+			state.partialBatchID, state.partialOffset, state.lastGeneration, id)
 	}
 
 	return

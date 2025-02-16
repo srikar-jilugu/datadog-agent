@@ -86,6 +86,7 @@
                 batch->dropped_events = 0;                                                              \
                 batch->failed_flushes = 0;                                                              \
                 batch->len = 0;                                                                         \
+                batch->generation++;  /* Increment generation on flush */                               \
                 batch_state->idx_to_flush++;                                                            \
             }                                                                                           \
     }                                                                                                   \

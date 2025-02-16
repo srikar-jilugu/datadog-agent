@@ -11,6 +11,7 @@ type Batch struct {
 	Event_size     uint16
 	Dropped_events uint32
 	Failed_flushes uint32
+	Generation     uint64
 	Data           [4096]int8
 }
 type batchKey struct {

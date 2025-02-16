@@ -36,6 +36,7 @@ typedef struct {
     __u16 event_size;
     __u32 dropped_events;
     __u32 failed_flushes;
+    __u64 generation;  // New field to track batch resets
     char data[BATCH_BUFFER_SIZE];
 } batch_data_t;
 
