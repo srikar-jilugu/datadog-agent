@@ -61,7 +61,7 @@ type Protocol interface {
 
 	// GetStats returns the latest monitoring stats from a protocol
 	// implementation.
-	GetStats() *ProtocolStats
+	GetStats() (*ProtocolStats, func())
 
 	// IsBuildModeSupported return true is the given build mode is supported by this protocol.
 	IsBuildModeSupported(buildmode.Type) bool
