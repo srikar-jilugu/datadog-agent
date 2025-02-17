@@ -191,7 +191,7 @@ func (m *Monitor) GetUSMStats() map[string]interface{} {
 // GetProtocolStats returns the current stats for all protocols
 func (m *Monitor) GetProtocolStats() (map[protocols.ProtocolType]interface{}, func()) {
 	if m == nil {
-		return nil, nil
+		return nil, func() {}
 	}
 
 	defer func() {
