@@ -16,6 +16,8 @@ import (
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	log "github.com/DataDog/datadog-agent/comp/core/log/def"
 	logmock "github.com/DataDog/datadog-agent/comp/core/log/mock"
+	taggerfxmock "github.com/DataDog/datadog-agent/comp/core/tagger/fx-mock"
+	taggermock "github.com/DataDog/datadog-agent/comp/core/tagger/mock"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/origindetection"
 	taggerTelemetry "github.com/DataDog/datadog-agent/comp/core/tagger/telemetry"
 	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
@@ -73,23 +75,14 @@ func TestAccumulateTagsFor(t *testing.T) {
 func TestTag(t *testing.T) {
 	entityID := types.NewEntityID(types.ContainerID, "123")
 
-	store := fxutil.Test[workloadmeta.Component](t, fx.Options(
-		fx.Supply(config.Params{}),
-		fx.Supply(log.Params{}),
-		fx.Provide(func() log.Component { return logmock.New(t) }),
-		config.MockModule(),
-		workloadmetafxmock.MockModule(workloadmeta.NewParams()),
+	// Create Mock Tagger
+	mockTagger := fxutil.Test[taggermock.Mock](t, fx.Options(
+		taggerfxmock.MockModule(),
 	))
 
-	tel := fxutil.Test[telemetry.Component](t, telemetryimpl.MockModule())
-	logComponent := logmock.New(t)
-	telemetryStore := taggerTelemetry.NewStore(tel)
-	cfg := configmock.New(t)
-	tagger, err := newLocalTagger(cfg, store, logComponent, telemetryStore)
-	assert.NoError(t, err)
-	localTagger := tagger.(*localTagger)
-
-	localTagger.tagStore.ProcessTagInfo([]*types.TagInfo{
+	// Process Tag Info
+	tagStore := mockTagger.GetTagStore()
+	tagStore.ProcessTagInfo([]*types.TagInfo{
 		{
 			EntityID:             entityID,
 			Source:               "stream",
@@ -106,15 +99,16 @@ func TestTag(t *testing.T) {
 		},
 	})
 
-	lowCardTags, err := localTagger.Tag(entityID, types.LowCardinality)
+	lowCardTags, err := mockTagger.Tag(entityID, types.LowCardinality)
+	print("tagStore", tagStore)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []string{"low1", "low2"}, lowCardTags)
 
-	orchestratorCardTags, err := localTagger.Tag(entityID, types.OrchestratorCardinality)
+	orchestratorCardTags, err := mockTagger.Tag(entityID, types.OrchestratorCardinality)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []string{"low1", "low2", "orchestrator1", "orchestrator2"}, orchestratorCardTags)
 
-	highCardTags, err := localTagger.Tag(entityID, types.HighCardinality)
+	highCardTags, err := mockTagger.Tag(entityID, types.HighCardinality)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []string{"low1", "low2", "orchestrator1", "orchestrator2", "high1", "high2"}, highCardTags)
 }

@@ -17,25 +17,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/tagset"
 )
 
-// Mock implements mock-specific methods for the tagger component.
-type Mock interface {
-	tagger.Component
-
-	// SetTags allows to set tags in the mock fake tagger
-	SetTags(entityID types.EntityID, source string, low, orch, high, std []string)
-
-	// SetGlobalTags allows to set tags in store for the global entity
-	SetGlobalTags(low, orch, high, std []string)
-}
-
 // FakeTagger is a fake implementation of the tagger interface
 type FakeTagger struct {
 	store *tagstore.TagStore
-}
-
-// Provides is a struct containing the mock and the endpoint
-type Provides struct {
-	Comp Mock
 }
 
 // New instantiates a new fake tagger
@@ -45,6 +29,10 @@ func New() Provides {
 			store: tagstore.NewTagStore(nil),
 		},
 	}
+}
+
+func (f *FakeTagger) GetTagStore() *tagstore.TagStore {
+	return f.store
 }
 
 // SetTags allows to set tags in store for a given source, entity

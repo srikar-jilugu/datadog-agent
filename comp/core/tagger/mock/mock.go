@@ -9,10 +9,34 @@
 package mock
 
 import (
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/tagstore"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
 	"testing"
 
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 )
+
+// Provides is a struct containing the mock and the endpoint
+type Provides struct {
+	Comp Mock
+}
+
+// Mock implements mock-specific methods for the tagger component.
+type Mock interface {
+	tagger.Component
+
+	// GetTagStore returns the tag store
+	GetTagStore() *tagstore.TagStore
+
+	// SetTags allows to set tags in the mock fake tagger
+	SetTags(entityID types.EntityID, source string, low, orch, high, std []string)
+
+	// SetGlobalTags allows to set tags in store for the global entity
+	SetGlobalTags(low, orch, high, std []string)
+}
+
+// TODO (wassim): Remove old mock
 
 // Module is a module containing the mock, useful for testing
 func Module() fxutil.Module {
