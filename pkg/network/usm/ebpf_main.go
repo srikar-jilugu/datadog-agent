@@ -34,6 +34,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/network/protocols/redis"
 	"github.com/DataDog/datadog-agent/pkg/network/tracer/offsetguess"
 	"github.com/DataDog/datadog-agent/pkg/network/usm/buildmode"
+	"github.com/DataDog/datadog-agent/pkg/network/usm/trace"
 	"github.com/DataDog/datadog-agent/pkg/network/usm/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -259,6 +260,8 @@ func (e *ebpfProgram) Start() error {
 		log.Infof("enabled USM protocol: %s", protocolName.Instance.Name())
 	}
 
+	trace.Init()
+
 	return nil
 }
 
@@ -274,6 +277,9 @@ func (e *ebpfProgram) Close() error {
 	for _, rb := range e.RingBuffers {
 		err = errors.Join(err, rb.Stop(manager.CleanAll))
 	}
+
+	trace.Stop()
+
 	stopProtocolWrapper := func(protocol protocols.Protocol, m *manager.Manager) error {
 		protocol.Stop(m)
 		return nil

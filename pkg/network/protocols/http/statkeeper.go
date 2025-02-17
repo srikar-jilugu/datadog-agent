@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/network/config"
+	"github.com/DataDog/datadog-agent/pkg/network/usm/trace"
 	"github.com/DataDog/datadog-agent/pkg/network/usm/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -144,6 +145,10 @@ func (h *StatKeeper) add(tx Transaction) {
 		return
 	}
 
+	// This should obviously not be here, but right now this is the best "single point of touch" not requiring a major refactoring
+	s := txToSpan(tx, string(path))
+	trace.Record(s)
+
 	key := NewKeyWithConnection(tx.ConnTuple(), path, fullPath, tx.Method())
 	if h.connectionAggregator != nil {
 		key.ConnectionKey = h.connectionAggregator.RollupKey(key.ConnectionKey)
@@ -161,6 +166,18 @@ func (h *StatKeeper) add(tx Transaction) {
 	}
 
 	stats.AddRequest(tx.StatusCode(), latency, tx.StaticTags(), tx.DynamicTags())
+}
+
+func txToSpan(tx Transaction, normalizedPath string) trace.Span {
+	return trace.Span{
+		TraceId_l:     123,
+		SpanId:        456,
+		ParentId:      0,
+		Service:       "my-service",
+		Name:          "http.server.request",
+		Resource_name: tx.Method().String() + " " + normalizedPath,
+		SpanType:      "web",
+	}
 }
 
 func pathIsMalformed(fullPath []byte) bool {
