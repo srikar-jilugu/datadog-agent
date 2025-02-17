@@ -45,6 +45,8 @@ import (
 // computed for the resource spans.
 const keyStatsComputed = "_dd.stats_computed"
 
+const otlpRateKey = "_dd.otlp_sr"
+
 var _ (ptraceotlp.GRPCServer) = (*OTLPReceiver)(nil)
 
 // OTLPReceiver implements an OpenTelemetry Collector receiver which accepts incoming
@@ -500,9 +502,8 @@ func (o *OTLPReceiver) createChunks(tracesByID map[uint64]pb.Trace, prioritiesBy
 		if len(spans) == 0 {
 			continue
 		}
-		rate := strconv.FormatFloat(o.samplingRate(), 'f', 2, 64)
 		chunk := &pb.TraceChunk{
-			Tags:  map[string]string{"_dd.otlp_sr": rate},
+			Tags:  make(map[string]string),
 			Spans: spans,
 		}
 		if o.conf.ProbabilisticSamplerEnabled {
@@ -528,6 +529,9 @@ func (o *OTLPReceiver) createChunks(tracesByID map[uint64]pb.Trace, prioritiesBy
 		// Traces with a drop decision by the OTLPReceiver’s probabilistic sampler are re-evaluated by ErrorsSampler later.
 		if samplingPriorty.IsKeep() {
 			traceutil.SetMeta(spans[0], "_dd.p.dm", decisionMaker)
+			rate := o.samplingRate()
+			traceutil.SetMetric(spans[0], otlpRateKey, rate)
+			chunk.Tags[otlpRateKey] = strconv.FormatFloat(rate, 'f', 2, 64)
 		}
 		chunk.Priority = int32(samplingPriorty)
 		traceChunks = append(traceChunks, chunk)

@@ -30,6 +30,7 @@ const (
 	deprecatedRateKey = "_sampling_priority_rate_v1"
 	agentRateKey      = "_dd.agent_psr"
 	ruleRateKey       = "_dd.rule_psr"
+	otlpRateKey       = "_dd.otlp_sr"
 )
 
 // PrioritySampler computes priority rates per tracerEnv, service to apply in a feedback loop with trace-agent clients.
@@ -144,6 +145,10 @@ func (s *PrioritySampler) applyRate(root *pb.Span, signature Signature) float64 
 	}
 	// ruleRateKey is set when a tracer rule rate is applied
 	if rate, ok := getMetric(root, ruleRateKey); ok {
+		return rate
+	}
+	// otlpRateKey is set when the the probabilistic sampler of OTLPReceiver runs.
+	if rate, ok := getMetric(root, otlpRateKey); ok {
 		return rate
 	}
 	// slow path used by older tracer versions
