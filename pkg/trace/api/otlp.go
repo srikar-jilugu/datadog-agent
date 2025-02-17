@@ -535,6 +535,7 @@ func (o *OTLPReceiver) createChunks(tracesByID map[uint64]pb.Trace, prioritiesBy
 		}
 		chunk.Priority = int32(samplingPriorty)
 		traceChunks = append(traceChunks, chunk)
+		log.Debugf("chunk.Tags: %#v, root span metrics: %#v", chunk.Tags, spans[0].Metrics)
 	}
 	return traceChunks
 }

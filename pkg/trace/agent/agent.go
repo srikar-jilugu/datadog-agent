@@ -638,6 +638,9 @@ func (a *Agent) getAnalyzedEvents(pt *traceutil.ProcessedTrace, ts *info.TagStat
 // set, the NoPrioritySampler is run. Finally, if the trace has not been sampled by the other
 // samplers, the error sampler is run.
 func (a *Agent) runSamplers(now time.Time, ts *info.TagStats, pt traceutil.ProcessedTrace) (keep bool, checkAnalyticsEvents bool) {
+	defer func() {
+		log.Debugf("Chunk tags: %#v, Root span metrics: %#v", pt.TraceChunk.Tags, pt.Root.Metrics)
+	}()
 	// ETS: chunks that don't contain errors (or spans with exception span events) are all dropped.
 	if a.conf.ErrorTrackingStandalone {
 		if traceContainsError(pt.TraceChunk.Spans, true) {
