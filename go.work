@@ -1,6 +1,4 @@
-go 1.23.5
-
-toolchain go1.23.6
+go 1.23.6
 
 use (
 	.
@@ -33,6 +31,8 @@ use (
 	comp/forwarder/defaultforwarder
 	comp/forwarder/orchestrator/orchestratorinterface
 	comp/logs/agent/config
+	comp/logs/auditor/def
+	comp/logs/auditor/impl-none
 	comp/netflow/payload
 	comp/otelcol/collector-contrib/def
 	comp/otelcol/collector-contrib/impl
