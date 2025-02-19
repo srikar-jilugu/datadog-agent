@@ -13,8 +13,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/multierr"
-
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	pb "github.com/DataDog/datadog-agent/pkg/proto/pbgo/trace"
 	"github.com/DataDog/datadog-agent/pkg/serializer"
@@ -76,8 +74,8 @@ var _ otlpmetrics.Consumer = (*serializerConsumer)(nil)
 type serializerConsumer struct {
 	enricher        tagenricher
 	extraTags       []string
-	series          metrics.Series
-	sketches        metrics.SketchSeriesList
+	seriesSink      metrics.SerieSink
+	sketchesSink    metrics.SketchesSink
 	apmstats        []io.Reader
 	apmReceiverAddr string
 }
@@ -98,7 +96,7 @@ func (c *serializerConsumer) ConsumeSketch(ctx context.Context, dimensions *otlp
 	if !ok {
 		msrc = metrics.MetricSourceOpenTelemetryCollectorUnknown
 	}
-	c.sketches = append(c.sketches, &metrics.SketchSeries{
+	c.sketchesSink.Append(&metrics.SketchSeries{
 		Name:     dimensions.Name(),
 		Tags:     tagset.CompositeTagsFromSlice(c.enricher.Enrich(ctx, c.extraTags, dimensions)),
 		Host:     dimensions.Host(),
@@ -126,8 +124,7 @@ func (c *serializerConsumer) ConsumeTimeSeries(ctx context.Context, dimensions *
 	if !ok {
 		msrc = metrics.MetricSourceOpenTelemetryCollectorUnknown
 	}
-	c.series = append(c.series,
-		&metrics.Serie{
+	c.seriesSink.Append(&metrics.Serie{
 			Name:     dimensions.Name(),
 			Points:   []metrics.Point{{Ts: float64(ts / 1e9), Value: value}},
 			Tags:     tagset.CompositeTagsFromSlice(c.enricher.Enrich(ctx, c.extraTags, dimensions)),
@@ -141,7 +138,7 @@ func (c *serializerConsumer) ConsumeTimeSeries(ctx context.Context, dimensions *
 
 // addTelemetryMetric to know if an Agent is using OTLP metrics.
 func (c *serializerConsumer) addTelemetryMetric(hostname string) {
-	c.series = append(c.series, &metrics.Serie{
+	c.seriesSink.Append(&metrics.Serie{
 		Name:           "datadog.agent.otlp.metrics",
 		Points:         []metrics.Point{{Value: 1, Ts: float64(time.Now().Unix())}},
 		Tags:           tagset.CompositeTagsFromSlice([]string{}),
@@ -154,7 +151,7 @@ func (c *serializerConsumer) addTelemetryMetric(hostname string) {
 // addRuntimeTelemetryMetric to know if an Agent is using OTLP runtime metrics.
 func (c *serializerConsumer) addRuntimeTelemetryMetric(hostname string, languageTags []string) {
 	for _, lang := range languageTags {
-		c.series = append(c.series, &metrics.Serie{
+		c.seriesSink.Append(&metrics.Serie{
 			Name:           "datadog.agent.otlp.runtime_metrics",
 			Points:         []metrics.Point{{Value: 1, Ts: float64(time.Now().Unix())}},
 			Tags:           tagset.CompositeTagsFromSlice([]string{fmt.Sprintf("language:%v", lang)}),
@@ -167,25 +164,7 @@ func (c *serializerConsumer) addRuntimeTelemetryMetric(hostname string, language
 
 // Send exports all data recorded by the consumer. It does not reset the consumer.
 func (c *serializerConsumer) Send(s serializer.MetricSerializer) error {
-	var serieErr, sketchesErr error
-	metrics.Serialize(
-		metrics.NewIterableSeries(func(_ *metrics.Serie) {}, 200, 4000),
-		metrics.NewIterableSketches(func(_ *metrics.SketchSeries) {}, 200, 4000),
-		func(seriesSink metrics.SerieSink, sketchesSink metrics.SketchesSink) {
-			for _, serie := range c.series {
-				seriesSink.Append(serie)
-			}
-			for _, sketch := range c.sketches {
-				sketchesSink.Append(sketch)
-			}
-		}, func(serieSource metrics.SerieSource) {
-			serieErr = s.SendIterableSeries(serieSource)
-		}, func(sketchesSource metrics.SketchesSource) {
-			sketchesErr = s.SendSketch(sketchesSource)
-		},
-	)
-	apmErr := c.sendAPMStats()
-	return multierr.Combine(serieErr, sketchesErr, apmErr)
+	return c.sendAPMStats()
 }
 
 func (c *serializerConsumer) sendAPMStats() error {

@@ -16,6 +16,7 @@ import (
 	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes"
 	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes/source"
 	"github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics"
+	pkgmetrics "github.com/DataDog/datadog-agent/pkg/metrics"
 	pkgdatadog "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog"
 	datadogconfig "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog/config"
 	"go.opentelemetry.io/collector/component"
@@ -160,20 +161,49 @@ func NewExporter(
 
 // ConsumeMetrics translates OTLP metrics into the Datadog format and sends
 func (e *Exporter) ConsumeMetrics(ctx context.Context, ld pmetric.Metrics) error {
-	consumer := &serializerConsumer{enricher: e.enricher, extraTags: e.extraTags, apmReceiverAddr: e.apmReceiverAddr}
-	rmt, err := e.tr.MapMetrics(ctx, ld, consumer, nil)
-	if err != nil {
-		return err
+	var mapErr, serieErr, sketchesErr error
+	var rmt metrics.Metadata
+	var consumer *serializerConsumer
+	pkgmetrics.Serialize(
+		pkgmetrics.NewIterableSeries(func(_ *pkgmetrics.Serie) {}, 200, 4000),
+		pkgmetrics.NewIterableSketches(func(_ *pkgmetrics.SketchSeries) {}, 200, 4000),
+		func(seriesSink pkgmetrics.SerieSink, sketchesSink pkgmetrics.SketchesSink) {
+			consumer = &serializerConsumer{
+				enricher: e.enricher,
+				extraTags: e.extraTags,
+				apmReceiverAddr: e.apmReceiverAddr,
+				seriesSink: seriesSink,
+				sketchesSink: sketchesSink,
+			}
+			rmt, mapErr = e.tr.MapMetrics(ctx, ld, consumer, nil)
+
+
+			hostname, err := e.hostGetter(ctx)
+			if err != nil {
+				mapErr = err
+				return
+			}
+
+			consumer.addTelemetryMetric(hostname)
+			consumer.addRuntimeTelemetryMetric(hostname, rmt.Languages)
+			if err := consumer.Send(e.s); err != nil {
+				mapErr = fmt.Errorf("failed to flush metrics: %w", err)
+			}
+		}, func(serieSource pkgmetrics.SerieSource) {
+			serieErr = e.s.SendIterableSeries(serieSource)
+		}, func(sketchesSource pkgmetrics.SketchesSource) {
+			sketchesErr = e.s.SendSketch(sketchesSource)
+		},
+	)
+	if mapErr != nil {
+		return mapErr
 	}
-	hostname, err := e.hostGetter(ctx)
-	if err != nil {
-		return err
+	if serieErr != nil {
+		return serieErr
+	}
+	if sketchesErr != nil {
+		return sketchesErr
 	}
 
-	consumer.addTelemetryMetric(hostname)
-	consumer.addRuntimeTelemetryMetric(hostname, rmt.Languages)
-	if err := consumer.Send(e.s); err != nil {
-		return fmt.Errorf("failed to flush metrics: %w", err)
-	}
 	return nil
 }
