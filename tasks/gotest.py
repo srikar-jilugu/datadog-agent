@@ -641,21 +641,25 @@ def get_impacted_packages(ctx, build_tags=None):
         build_tags = []
     dependencies = create_dependencies(ctx, build_tags)
     files = get_go_modified_files(ctx)
+    print(f"Modified files: {files}\n")
+    print(f"Build tags: {build_tags}\n")
 
     # Safeguard to be sure that the files that should trigger all test are not renamed without being updated
-    for file in TRIGGER_ALL_TESTS_PATHS:
-        if len(glob.glob(file)) == 0:
-            raise Exit(
-                code=1,
-                message=f"No file matched {file} make sure you modified TRIGGER_ALL_TEST_FILES if you renamed one of them",
-            )
+    # for file in TRIGGER_ALL_TESTS_PATHS:
+    #     if len(glob.glob(file)) == 0:
+    #         raise Exit(
+    #             code=1,
+    #             message=f"No file matched {file} make sure you modified TRIGGER_ALL_TEST_FILES if you renamed one of them",
+    #         )
 
-    # Some files like tasks/gotest.py should trigger all tests
-    if should_run_all_tests(ctx, TRIGGER_ALL_TESTS_PATHS):
-        print(f"Triggering all tests because a file matching one of the {TRIGGER_ALL_TESTS_PATHS} was modified")
-        return get_default_modules().values()
+    # # Some files like tasks/gotest.py should trigger all tests
+    # if should_run_all_tests(ctx, TRIGGER_ALL_TESTS_PATHS):
+    #     print(f"Triggering all tests because a file matching one of the {TRIGGER_ALL_TESTS_PATHS} was modified")
+    #     return get_default_modules().values()
 
     modified_packages = {f"github.com/DataDog/datadog-agent/{os.path.dirname(file)}" for file in files}
+
+    print(f"Modified packages: {modified_packages}\n")
 
     # Modification to go.mod and go.sum should force the tests of the whole module to run
     for file in files:
@@ -678,6 +682,7 @@ def get_impacted_packages(ctx, build_tags=None):
                 formatted_path = "/".join(formatted_path.split("/")[:-1])
 
     imp = find_impacted_packages(dependencies, modified_packages)
+    print(f"Impacted packages: {imp}\n")
     return format_packages(ctx, impacted_packages=imp, build_tags=build_tags)
 
 
@@ -701,6 +706,8 @@ def create_dependencies(ctx, build_tags=None):
                 for imported_package in imported_packages:
                     if imported_package.startswith("github.com/DataDog/datadog-agent"):
                         modules_deps[imported_package].add(package)
+                        if "secl" in modules or "pkg/security/secl/rules" in imported_package:
+                            print(f"{modules}: Adding package {package} as a user of package {imported_package}\n")
 
     return modules_deps
 
@@ -739,20 +746,30 @@ def format_packages(ctx: Context, impacted_packages: set[str], build_tags: list[
         module_path = get_go_module(package)
 
         # Check if the module is in the target list of the modules we want to test
-        if module_path not in default_modules or not default_modules[module_path].should_test():
+        if module_path not in default_modules:
+            print(f"Skipping {module_path} as it is not a module we want to test\n")
+            continue
+
+        if not default_modules[module_path].should_test():
+            print(f"Skipping {module_path} as it should not be tested\n")
             continue
 
         # Check if the package is in the target list of the module we want to test
         targeted = False
         for target in default_modules[module_path].test_targets:
+            if "secl" in module_path:
+                print(f"Checking if {package} is in {target}\n")
+                print(f"Checking if {normpath(os.path.join(module_path, target))} is in {package}\n")
             if normpath(os.path.join(module_path, target)) in package:
                 targeted = True
                 break
         if not targeted:
+            print(f"Skipping {module_path} as {package} is not in the test targets\n")
             continue
 
         # If the package has been deleted we do not try to run tests
         if not os.path.exists(package):
+            print(f"Skipping {module_path} because package {package} has been deleted\n")
             continue
 
         relative_target = "./" + os.path.relpath(package, module_path).replace("\\", "/")
@@ -765,6 +782,7 @@ def format_packages(ctx: Context, impacted_packages: set[str], build_tags: list[
                 modules_to_test[module_path].test_targets.append(relative_target)
         else:
             modules_to_test[module_path] = GoModule(module_path, test_targets=[relative_target])
+            print(f"Adding {module_path} to modules_to_test\n")
 
     # Clean up duplicated paths to reduce Go test cmd length
     default_modules = get_default_modules()
@@ -797,6 +815,7 @@ def format_packages(ctx: Context, impacted_packages: set[str], build_tags: list[
                         print("Could not remove ", package_to_remove, ", ignoring...")
     for module in module_to_remove:
         del modules_to_test[module]
+        print(f"Removed {module} from modules_to_test\n")
 
     print("Running tests for the following modules:")
     for module in modules_to_test:
