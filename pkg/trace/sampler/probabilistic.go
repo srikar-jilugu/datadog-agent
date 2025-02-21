@@ -173,6 +173,7 @@ func (ps *ProbabilisticSampler) percentage(root *trace.Span) (uint32, float64) {
 			}
 		}
 		if match && evaluated {
+			log.Debugf("probabilistic sampler rule matched with a root span: service=%q, operation_name=%q, resource_name=%q, attributes=%v", root.Service, root.Name, root.Resource, root.Meta)
 			return rule.scaledPercentage, rule.percentage
 		}
 	}
