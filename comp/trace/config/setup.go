@@ -308,7 +308,7 @@ func applyDatadogConfig(c *config.AgentConfig, core corecompcfg.Component) error
 	if core.IsSet("apm_config.probabilistic_sampler.sampling_percentage") {
 		c.ProbabilisticSamplerSamplingPercentage = float32(core.GetFloat64("apm_config.probabilistic_sampler.sampling_percentage"))
 	}
-	if k := "apm_config.probabilistic_sampler.rules"; core.IsSet(k) {
+	if k := "apm_config.probabilistic_sampler.rules"; core.IsConfigured(k) {
 		rules, ok := core.Get(k).([]interface{})
 		if ok {
 			c.ProbabilisticSamplerRules = make([]config.ProbabilisticSamplerRule, len(rules))

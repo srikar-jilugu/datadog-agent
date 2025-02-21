@@ -101,6 +101,9 @@ func NewProbabilisticSampler(conf *config.AgentConfig) *ProbabilisticSampler {
 	if err != nil {
 		log.Errorf("Compiling probabilistic sampler rules: %v", err)
 	}
+	if len(rules) > 0 {
+		log.Debugf("%d probabilistic sampler rules are compiled: %v", len(rules))
+	}
 	return &ProbabilisticSampler{
 		enabled:                  conf.ProbabilisticSamplerEnabled,
 		hashSeed:                 hashSeedBytes,
@@ -175,6 +178,8 @@ func (ps *ProbabilisticSampler) percentage(root *trace.Span) (uint32, float64) {
 		if match && evaluated {
 			log.Debugf("probabilistic sampler rule matched with a root span: service=%q, operation_name=%q, resource_name=%q, attributes=%v", root.Service, root.Name, root.Resource, root.Meta)
 			return rule.scaledPercentage, rule.percentage
+		} else {
+			log.Debugf("probabilistic sampler rule did not match with a root span: service=%q, operation_name=%q, resource_name=%q, attributes=%v", root.Service, root.Name, root.Resource, root.Meta)
 		}
 	}
 	return ps.scaledSamplingPercentage, ps.samplingPercentage

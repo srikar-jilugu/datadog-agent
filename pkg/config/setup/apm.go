@@ -112,8 +112,8 @@ func setupAPM(config pkgconfigmodel.Setup) {
 	config.BindEnv("apm_config.enable_rare_sampler", "DD_APM_ENABLE_RARE_SAMPLER")
 	config.BindEnv("apm_config.disable_rare_sampler", "DD_APM_DISABLE_RARE_SAMPLER") // Deprecated
 	config.BindEnv("apm_config.max_remote_traces_per_second", "DD_APM_MAX_REMOTE_TPS")
-	config.BindEnv("apm_config.probabilistic_sampler.enabled", "DD_APM_PROBABILISTIC_SAMPLER_ENABLED")
-	config.BindEnv("apm_config.probabilistic_sampler.sampling_percentage", "DD_APM_PROBABILISTIC_SAMPLER_SAMPLING_PERCENTAGE")
+	config.BindEnvAndSetDefault("apm_config.probabilistic_sampler.enabled", false, "DD_APM_PROBABILISTIC_SAMPLER_ENABLED")
+	config.BindEnvAndSetDefault("apm_config.probabilistic_sampler.sampling_percentage", 100.0, "DD_APM_PROBABILISTIC_SAMPLER_SAMPLING_PERCENTAGE")
 	config.BindEnv("apm_config.probabilistic_sampler.rules", "DD_APM_PROBABILISTIC_SAMPLER_RULES")
 	config.ParseEnvAsSlice("apm_config.probabilistic_sampler.rules", func(in string) []interface{} {
 		var out []interface{}
