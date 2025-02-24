@@ -163,7 +163,7 @@ func packageToLanguage(packageName string) env.ApmLibLanguage {
 }
 
 func agentVersion(_ Package, e *env.Env) string {
-	minorVersion := e.AgentMinorVersion
+	minorVersion := strings.ReplaceAll(e.AgentMinorVersion, "~", "-")
 	if strings.Contains(minorVersion, ".") && !strings.HasSuffix(minorVersion, "-1") {
 		minorVersion = minorVersion + "-1"
 	}

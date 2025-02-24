@@ -79,8 +79,11 @@ func TestDefaultPackagesAgentMinorVersion(t *testing.T) {
 		},
 	}
 	packages := DefaultPackages(env)
-
 	assert.Equal(t, []string{"oci://install.datadoghq.com/agent-package:7.42.0-1"}, packages)
+
+	env.AgentMinorVersion = "42.0~rc.1"
+	packages = DefaultPackages(env)
+	assert.Equal(t, []string{"oci://install.datadoghq.com/agent-package:7.42.0-rc.1-1"}, packages)
 }
 
 func TestDefaultPackages(t *testing.T) {

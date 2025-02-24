@@ -232,7 +232,7 @@ func telemetrySupportedEnvVars(s *common.Setup, envVars ...string) {
 }
 
 func agentVersion(e *env.Env) string {
-	minorVersion := e.AgentMinorVersion
+	minorVersion := strings.ReplaceAll(e.AgentMinorVersion, "~", "-")
 	if strings.Contains(minorVersion, ".") && !strings.HasSuffix(minorVersion, "-1") {
 		minorVersion = minorVersion + "-1"
 	}
