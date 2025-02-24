@@ -15,6 +15,7 @@ ExecStart=<%= install_dir %>/bin/agent/agent run -p <%= install_dir %>/run/agent
 # it is also supported to have it here.
 StartLimitInterval=10
 StartLimitBurst=5
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 [Install]
 WantedBy=multi-user.target
