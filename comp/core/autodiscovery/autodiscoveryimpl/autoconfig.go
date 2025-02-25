@@ -97,12 +97,12 @@ type AutoConfig struct {
 }
 
 const (
-	// maxWmetaWaitTime is the maximum time to wait for wmeta being ready
-	maxWmetaWaitTime = 10 * time.Second
-	// WmetawmetaCheckMinIntervalCheckMinInterval is the initial interval to check if wmeta is ready
-	wmetaCheckMinInterval = 20 * time.Millisecond
+	// wmetaCheckInitialInterval is the initial interval to check if wmeta is ready
+	wmetaCheckInitialInterval = 20 * time.Millisecond
 	// wmetaCheckMaxInterval is the maximum interval to check if wmeta is ready
 	wmetaCheckMaxInterval = 1 * time.Second
+	// wmetaMaxElapsedTime is the maximum time to wait for wmeta being ready
+	wmetaMaxElapsedTime = 10 * time.Second
 )
 
 type provides struct {
@@ -151,9 +151,9 @@ func newAutoConfig(deps dependencies) autodiscovery.Component {
 	go func() {
 		retries := 0
 		expBackoff := backoff.NewExponentialBackOff()
-		expBackoff.InitialInterval = wmetaCheckMinInterval
+		expBackoff.InitialInterval = wmetaCheckInitialInterval
 		expBackoff.MaxInterval = wmetaCheckMaxInterval
-		expBackoff.MaxElapsedTime = maxWmetaWaitTime
+		expBackoff.MaxElapsedTime = wmetaMaxElapsedTime
 		err := backoff.Retry(func() error {
 			instance, found := deps.WMeta.Get()
 			if found {
