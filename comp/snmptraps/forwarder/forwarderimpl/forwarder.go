@@ -114,12 +114,18 @@ func (tf *trapForwarder) run() {
 }
 
 func (tf *trapForwarder) sendTrap(packet *packet.SnmpPacket) {
-	data, err := tf.formatter.FormatPacket(packet)
+	tf.logger.Infof("JMW sendTrap(): %v", packet)
+	data, err := tf.formatter.FormatPacket(packet) // JMW
 	if err != nil {
 		tf.logger.Errorf("failed to format packet: %s", err)
 		return
 	}
+
+	tf.logger.Infof("JMW sendTrap() FormatPacket() returned %v", string(data))
+
 	tf.logger.Tracef("send trap payload: %s", string(data))
 	tf.sender.Count("datadog.snmp_traps.forwarded", 1, "", packet.GetTags())
-	tf.sender.EventPlatformEvent(data, eventplatform.EventTypeSnmpTraps)
+	// JMWQ do we need an eventplatform.EventTypeCisciACIFaults?, or is it different when sending logs?
+	tf.logger.Infof("JMW sendTrap() calling tf.sender.EventPlatformEvent()")
+	tf.sender.EventPlatformEvent(data, eventplatform.EventTypeSnmpTraps) // JMW
 }

@@ -88,6 +88,7 @@ func NewLauncher(fs afero.Fs, sources *sources.LogSources, integrationsLogsComp 
 		}
 	}
 
+	ddLog.Infof("JMW returning &Launcher with integrationsLogsComp.Subscribe()")
 	return &Launcher{
 		sources:              sources,
 		runPath:              runPath,
@@ -95,7 +96,7 @@ func NewLauncher(fs afero.Fs, sources *sources.LogSources, integrationsLogsComp 
 		combinedUsageMax:     maxDiskUsage,
 		combinedUsageSize:    0,
 		stop:                 make(chan struct{}),
-		integrationsLogsChan: integrationsLogsComp.Subscribe(),
+		integrationsLogsChan: integrationsLogsComp.Subscribe(), // JMW
 		addedConfigs:         integrationsLogsComp.SubscribeIntegration(),
 		integrationToFile:    make(map[string]*fileInfo),
 		// Set the initial least recently modified time to the largest possible
@@ -181,6 +182,7 @@ func (s *Launcher) receiveLogs(log integrations.IntegrationLog) {
 
 	if !exists {
 		ddLog.Warn("Failed to write log to file, file is nil for integration ID:", log.IntegrationID)
+		ddLog.Warn("JMW Failed to write log to file, log:", log)
 		return
 	}
 

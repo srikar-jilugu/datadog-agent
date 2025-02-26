@@ -10,13 +10,13 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 )
 
-// team: agent-log-pipelines
+// team: agent-log-pipelines // JMWQ ask them?
 
 const (
 	// EventTypeNetworkDevicesMetadata is the event type for network devices metadata
 	EventTypeNetworkDevicesMetadata = "network-devices-metadata"
 
-	// EventTypeSnmpTraps is the event type for snmp traps
+	// EventTypeSnmpTraps is the event type for snmp traps // JMW
 	EventTypeSnmpTraps = "network-devices-snmp-traps"
 
 	// EventTypeNetworkDevicesNetFlow is the event type for network devices NetFlow data

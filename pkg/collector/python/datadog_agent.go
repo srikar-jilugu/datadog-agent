@@ -129,7 +129,7 @@ func GetConfig(key *C.char, yamlPayload **C.char) {
 	*yamlPayload = TrackedCString(string(data))
 }
 
-// LogMessage logs a message from python through the agent logger (see
+// LogMessage logs a message from python through the agent logger (see // JMW
 // https://docs.python.org/2.7/library/logging.html#logging-levels)
 //
 //export LogMessage
@@ -221,17 +221,21 @@ func ReadPersistentCache(key *C.char) *C.char {
 // Indirectly used by the C function `send_log` that's mapped to `datadog_agent.send_log`.
 //
 //export SendLog
-func SendLog(logLine, checkID *C.char) {
+func SendLog(logLine, checkID *C.char) { // JMWSENDLOG
 	line := C.GoString(logLine)
 	cid := C.GoString(checkID)
 
+	log.Infof("JMW pkg/collector/python/datadog_agent.go SendLog() line: %s cid: %s", line, cid)
+
 	cc, err := getCheckContext()
 	if err != nil {
+		log.Errorf("JMW Log submission failed: %s", err)
 		log.Errorf("Log submission failed: %s", err)
 	}
 
 	lr, ok := cc.logReceiver.Get()
 	if !ok {
+		log.Error("JMW Log submission failed: no receiver") // JMWWED
 		log.Error("Log submission failed: no receiver")
 		return
 	}

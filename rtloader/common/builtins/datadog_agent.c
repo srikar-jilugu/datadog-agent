@@ -466,7 +466,7 @@ static PyObject *log_message(PyObject *self, PyObject *args)
     uses the `cb_send_log()` callback to retrieve the value from the agent
     with CGO. If the callback has not been set `None` will be returned.
 */
-static PyObject *send_log(PyObject *self, PyObject *args)
+static PyObject *send_log(PyObject *self, PyObject *args) // JMWSENDLOG
 {
     // callback must be set
     if (cb_send_log == NULL) {

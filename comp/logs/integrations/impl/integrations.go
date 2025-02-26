@@ -9,6 +9,7 @@ package integrationsimpl
 import (
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
 	integrations "github.com/DataDog/datadog-agent/comp/logs/integrations/def"
+	logger "github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 // Logsintegration is the integrations component implementation
@@ -46,13 +47,16 @@ func (li *Logsintegration) SendLog(log, integrationID string) {
 		IntegrationID: integrationID,
 	}
 
+	logger.Infof("JMW integrations SendLog() writing integrationLog to channel: %s", integrationLog)
+
 	li.logChan <- integrationLog
 }
 
 // Subscribe returns the channel that receives logs from integrations. Currently
 // the integrations component only supports one subscriber, but can be extended
 // later by making a new channel for any number of subscribers.
-func (li *Logsintegration) Subscribe() chan integrations.IntegrationLog {
+func (li *Logsintegration) Subscribe() chan integrations.IntegrationLog { // JMW
+	logger.Infof("JMW integrations Subscribe() returning logChan")
 	return li.logChan
 }
 

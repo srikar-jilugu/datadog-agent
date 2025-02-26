@@ -31,7 +31,7 @@ func Module() fxutil.Module {
 }
 
 const (
-	ddsource       = "snmp-traps"
+	ddsource       = "snmp-traps" // JMWDDSOURCE
 	genericTrapOid = "1.3.6.1.6.3.1.1.5"
 )
 
@@ -70,8 +70,8 @@ func newJSONFormatter(oidResolver oidresolver.Component, demux demultiplexer.Com
 //
 //	{
 //	  "trap": {
-//	    "ddsource": "snmp-traps",
-//	    "ddtags": "namespace:default,snmp_device:10.0.0.2,...",
+//	    "ddsource": "snmp-traps", // JMWDDSOURCE
+//	    "ddtags": "namespace:default,snmp_device:10.0.0.2,...", // JMWDDTAGS
 //	    "timestamp": 123456789,
 //	    "snmpTrapName": "...",
 //	    "snmpTrapOID": "1.3.6.1.5.3.....",
@@ -89,28 +89,33 @@ func newJSONFormatter(oidResolver oidresolver.Component, demux demultiplexer.Com
 //	    ],
 //	  }
 //	}
-func (f JSONFormatter) FormatPacket(packet *packet.SnmpPacket) ([]byte, error) {
+func (f JSONFormatter) FormatPacket(packet *packet.SnmpPacket) ([]byte, error) { // JMWF
 	payload := make(map[string]interface{})
 	var formattedTrap map[string]interface{}
 	var err error
 	if packet.Content.Version == gosnmp.Version1 {
+		f.logger.Infof("JMW FormatPacket() calling formatV1Trap()")
 		formattedTrap = f.formatV1Trap(packet)
 	} else {
-		formattedTrap, err = f.formatTrap(packet)
+		f.logger.Infof("JMW FormatPacket() calling formatTrap()")
+		formattedTrap, err = f.formatTrap(packet) // JMWF
 		if err != nil {
 			return nil, err
 		}
 	}
-	formattedTrap["ddsource"] = ddsource
-	formattedTrap["ddtags"] = strings.Join(packet.GetTags(), ",")
+	formattedTrap["ddsource"] = ddsource                          // JMWDDSOURCE
+	formattedTrap["ddtags"] = strings.Join(packet.GetTags(), ",") // JMWDDTAGS
 	formattedTrap["timestamp"] = packet.Timestamp
 	payload["trap"] = formattedTrap
 	return json.Marshal(payload)
 }
 
 func (f JSONFormatter) formatV1Trap(packet *packet.SnmpPacket) map[string]interface{} {
+	f.logger.Infof("JMW formatV1Trap() packet: %v", packet)
 	content := packet.Content
+	f.logger.Infof("JMW formatV1Trap() content: %v", content)
 	tags := packet.GetTags()
+	f.logger.Infof("JMW formatV1Trap() tags: %v", tags)
 
 	data := make(map[string]interface{})
 	data["uptime"] = uint32(content.Timestamp)
@@ -149,19 +154,22 @@ func (f JSONFormatter) formatV1Trap(packet *packet.SnmpPacket) map[string]interf
 	return data
 }
 
-func (f JSONFormatter) formatTrap(packet *packet.SnmpPacket) (map[string]interface{}, error) {
+func (f JSONFormatter) formatTrap(packet *packet.SnmpPacket) (map[string]interface{}, error) { // JMWF
+	f.logger.Infof("JMW formatTrap() packet: %v", packet)
 	/*
 		An SNMP v2 or v3 trap packet consists in the following variables (PDUs):
 		{sysUpTime.0, snmpTrapOID.0, additionalDataVariables...}
 		See: https://tools.ietf.org/html/rfc3416#section-4.2.6
 	*/
 	tags := packet.GetTags()
+	f.logger.Infof("JMW formatTrap() tags: %v", tags)
 
 	variables := packet.Content.Variables
 	if len(variables) < 2 {
 		f.sender.Count(telemetryIncorrectFormat, 1, "", append(tags, "error:invalid_variables"))
 		return nil, fmt.Errorf("expected at least 2 variables, got %d", len(variables))
 	}
+	f.logger.Infof("JMW formatTrap() variables: %v", variables)
 
 	data := make(map[string]interface{})
 
@@ -197,6 +205,7 @@ func (f JSONFormatter) formatTrap(packet *packet.SnmpPacket) (map[string]interfa
 	for key, value := range enrichedValues {
 		data[key] = value
 	}
+	f.logger.Infof("JMW formatTrap() returning data: %v", data)
 	return data, nil
 }
 
