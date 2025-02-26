@@ -7,10 +7,8 @@
 
 package packages
 
-import "context"
-
-// InstrumentAPMInjector noop
-func InstrumentAPMInjector(_ context.Context, _ string) error { return nil }
-
-// UninstrumentAPMInjector noop
-func UninstrumentAPMInjector(_ context.Context, _ string) error { return nil }
+// Packages contains the list of supported packages on windows
+var Packages = map[string]Package{
+	"datadog-installer": datadogInstallerPackage,
+	"datadog-agent":     datadogAgentPackage,
+}

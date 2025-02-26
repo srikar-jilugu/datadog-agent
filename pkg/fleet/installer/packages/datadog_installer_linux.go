@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-//go:build !windows
+//go:build linux
 
 // Package packages contains the install/upgrades/uninstall logic for packages
 package packages
@@ -20,6 +20,11 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/packages/systemd"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
+
+var datadogInstallerPackage = Package{
+	postInstallHook: SetupInstaller,
+	preRemoveHook:   RemoveInstaller,
+}
 
 const (
 	installerUnit    = "datadog-installer.service"
@@ -54,7 +59,7 @@ func PrepareInstaller(ctx context.Context) error {
 }
 
 // SetupInstaller installs and starts the installer systemd units
-func SetupInstaller(ctx context.Context) (err error) {
+func SetupInstaller(ctx InstallationContext) (err error) {
 	defer func() {
 		if err != nil {
 			log.Errorf("Failed to setup installer, reverting: %s", err)
@@ -191,7 +196,7 @@ func startInstallerStable(ctx context.Context) (err error) {
 }
 
 // RemoveInstaller removes the installer systemd units
-func RemoveInstaller(ctx context.Context) error {
+func RemoveInstaller(ctx InstallationContext) error {
 	for _, unit := range installerUnits {
 		if err := systemd.StopUnit(ctx, unit); err != nil {
 			exitErr, ok := err.(*exec.ExitError)

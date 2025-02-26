@@ -18,6 +18,11 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/paths"
 )
 
+var datadogInstallerPackage = Package{
+	postInstallHook: SetupInstaller,
+	preRemoveHook:   RemoveInstaller,
+}
+
 const (
 	datadogInstaller = "datadog-installer"
 )
@@ -28,7 +33,7 @@ func PrepareInstaller(_ context.Context) error {
 }
 
 // SetupInstaller installs and starts the installer
-func SetupInstaller(_ context.Context) error {
+func SetupInstaller(_ InstallationContext) error {
 	rootPath := ""
 	_, err := os.Stat(paths.RootTmpDir)
 	// If bootstrap has not been called before, `paths.RootTmpDir` might not exist
@@ -61,7 +66,7 @@ func SetupInstaller(_ context.Context) error {
 }
 
 // RemoveInstaller removes the installer
-func RemoveInstaller(_ context.Context) error {
+func RemoveInstaller(_ InstallationContext) error {
 	return msi.RemoveProduct("Datadog Installer")
 }
 

@@ -20,6 +20,11 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
+var datadogAgentPackage = Package{
+	postInstallHook: SetupAgent,
+	preRemoveHook:   RemoveAgent,
+}
+
 const (
 	datadogAgent = "datadog-agent"
 )
@@ -30,7 +35,7 @@ func PrepareAgent(_ context.Context) error {
 }
 
 // SetupAgent installs and starts the agent
-func SetupAgent(ctx context.Context, args []string) (err error) {
+func SetupAgent(ctx InstallationContext) (err error) {
 	span, _ := telemetry.StartSpanFromContext(ctx, "setup_agent")
 	defer func() {
 		// Don't log error here, or it will appear twice in the output
@@ -39,7 +44,7 @@ func SetupAgent(ctx context.Context, args []string) (err error) {
 	}()
 	// Make sure there are no Agent already installed
 	_ = removeAgentIfInstalled(ctx)
-	err = installAgentPackage("stable", args)
+	err = installAgentPackage("stable", ctx.Args)
 	return err
 }
 
@@ -97,7 +102,7 @@ func PromoteAgentExperiment(_ context.Context) error {
 }
 
 // RemoveAgent stops and removes the agent
-func RemoveAgent(ctx context.Context) (err error) {
+func RemoveAgent(ctx InstallationContext) (err error) {
 	// Don't return an error if the Agent is already not installed.
 	// returning an error here will prevent the package from being removed
 	// from the local repository.

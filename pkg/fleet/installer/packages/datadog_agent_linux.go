@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-//go:build !windows
+//go:build linux
 
 package packages
 
@@ -23,6 +23,11 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
+
+var datadogAgentPackage = Package{
+	postInstallHook: SetupAgent,
+	preRemoveHook:   RemoveAgent,
+}
 
 const (
 	agentPackage      = "datadog-agent"
@@ -90,8 +95,8 @@ func PrepareAgent(ctx context.Context) (err error) {
 }
 
 // SetupAgent installs and starts the agent
-func SetupAgent(ctx context.Context, _ []string) (err error) {
-	span, ctx := telemetry.StartSpanFromContext(ctx, "setup_agent")
+func SetupAgent(ctx InstallationContext) (err error) {
+	span, ctx := ctx.StartSpan("setup_agent")
 	defer func() {
 		if err != nil {
 			log.Errorf("Failed to setup agent, reverting: %s", err)
@@ -167,8 +172,8 @@ func SetupAgent(ctx context.Context, _ []string) (err error) {
 }
 
 // RemoveAgent stops and removes the agent
-func RemoveAgent(ctx context.Context) error {
-	span, ctx := telemetry.StartSpanFromContext(ctx, "remove_agent_units")
+func RemoveAgent(ctx InstallationContext) error {
+	span, ctx := ctx.StartSpan("remove_agent_units")
 	var spanErr error
 	defer func() { span.Finish(spanErr) }()
 	// stop experiments, they can restart stable agent
