@@ -6,10 +6,6 @@ include:
   extends: .docker_publish_job_definition
   stage: dev_container_deploy
   needs:
-    - docker_build_agent7_windows1809
-    - docker_build_agent7_windows1809_jmx
-    - docker_build_agent7_windows1809_core
-    - docker_build_agent7_windows1809_core_jmx
     - docker_build_agent7_windows2022
     - docker_build_agent7_windows2022_jmx
     - docker_build_agent7_windows2022_core
@@ -20,30 +16,17 @@ include:
     matrix:
       # Multi-arch
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-amd64,%BASE%-winltsc2022-amd64"
+        IMG_SOURCES: "%BASE%-winltsc2022-amd64"
         IMG_DESTINATIONS: agent-dev:${IMG_DESTINATION_SLUG}-py3-win
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-win1809-amd64,%BASE%-winltsc2022-amd64"
+        IMG_SOURCES: "%BASE%-winltsc2022-amd64"
         IMG_DESTINATIONS: agent-dev:${IMG_DESTINATION_SLUG}-py3-jmx-win
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64,%BASE%-winltsc2022-servercore-amd64"
+        IMG_SOURCES: "%BASE%-winltsc2022-servercore-amd64"
         IMG_DESTINATIONS: agent-dev:${IMG_DESTINATION_SLUG}-py3-win-servercore
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64,%BASE%-winltsc2022-servercore-amd64"
+        IMG_SOURCES: "%BASE%-winltsc2022-servercore-amd64"
         IMG_DESTINATIONS: agent-dev:${IMG_DESTINATION_SLUG}-py3-jmx-win-servercore
-      # ltsc2019
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-amd64"
-        IMG_DESTINATIONS: agent-dev:${CI_COMMIT_REF_SLUG}-py3-win-ltsc2019
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-win1809-amd64"
-        IMG_DESTINATIONS: agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win-ltsc2019
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64"
-        IMG_DESTINATIONS: agent-dev:${CI_COMMIT_REF_SLUG}-py3-win-servercore-ltsc2019
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64"
-        IMG_DESTINATIONS: agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win-servercore-ltsc2019
       # ltsc2022
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
         IMG_SOURCES: "%BASE%-winltsc2022-amd64"

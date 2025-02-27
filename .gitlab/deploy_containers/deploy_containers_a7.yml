@@ -28,7 +28,7 @@ include:
     - if [[ "$VERSION" == "" ]]; then VERSION="$(inv agent.version --url-safe --pipeline-id $PARENT_PIPELINE_ID)" || exit $?; fi
     - export IMG_BASE_SRC="${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
     - export IMG_LINUX_SOURCES="${IMG_BASE_SRC}-7${JMX}-amd64,${IMG_BASE_SRC}-7${JMX}-arm64"
-    - export IMG_WINDOWS_SOURCES="${IMG_BASE_SRC}-7${JMX}-win1809${FLAVOR}-amd64,${IMG_BASE_SRC}-7${JMX}-winltsc2022${FLAVOR}-amd64"
+    - export IMG_WINDOWS_SOURCES="${IMG_BASE_SRC}-7${JMX}-winltsc2022${FLAVOR}-amd64"
     - if [[ "$FLAVOR" == "-linux" ]]; then export IMG_SOURCES="${IMG_LINUX_SOURCES}"; elif [[ "$FLAVOR" == "-servercore" ]]; then export IMG_SOURCES="${IMG_WINDOWS_SOURCES}"; else export IMG_SOURCES="${IMG_LINUX_SOURCES},${IMG_WINDOWS_SOURCES}"; fi
     - export IMG_DESTINATIONS="${AGENT_REPOSITORY}:${VERSION}${FLAVOR}${JMX}"
 
@@ -65,7 +65,6 @@ include:
           - "-jmx"
         OS_LTSC_MAPPING:
           - "ltsc2022:2022"
-          - "1809:2019"
         FLAVOR:
           - ""
           - "-servercore"
@@ -234,36 +233,27 @@ deploy_containers_latest-a7:
   parallel:
     matrix:
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-amd64,%BASE%-arm64,%BASE%-win1809-amd64,%BASE%-winltsc2022-amd64"
+        IMG_SOURCES: "%BASE%-amd64,%BASE%-arm64,%BASE%-winltsc2022-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7,${AGENT_REPOSITORY}:latest
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-amd64,%BASE%-arm64,%BASE%-win1809-amd64,%BASE%-winltsc2022-amd64"
+        IMG_SOURCES: "%BASE%-amd64,%BASE%-arm64,%BASE%-winltsc2022-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-jmx,${AGENT_REPOSITORY}:latest-jmx
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64,%BASE%-winltsc2022-servercore-amd64"
+        IMG_SOURCES: "%BASE%-winltsc2022-servercore-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-servercore,${AGENT_REPOSITORY}:latest-servercore
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64,%BASE%-winltsc2022-servercore-amd64"
+        IMG_SOURCES: "%BASE%-winltsc2022-servercore-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-servercore-jmx,${AGENT_REPOSITORY}:latest-servercore-jmx
       # Windows only images
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-amd64"
-        IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-ltsc2019,${AGENT_REPOSITORY}:latest-ltsc2019
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
         IMG_SOURCES: "%BASE%-winltsc2022-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-ltsc2022,${AGENT_REPOSITORY}:latest-ltsc2022
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64"
-        IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-servercore-ltsc2019,${AGENT_REPOSITORY}:latest-servercore-ltsc2019
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7"
         IMG_SOURCES: "%BASE%-winltsc2022-servercore-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-servercore-ltsc2022,${AGENT_REPOSITORY}:latest-servercore-ltsc2022
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
         IMG_SOURCES: "%BASE%-winltsc2022-servercore-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-servercore-ltsc2022-jmx,${AGENT_REPOSITORY}:latest-servercore-ltsc2022-jmx
-      - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-win1809-servercore-amd64"
-        IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-servercore-ltsc2019-jmx,${AGENT_REPOSITORY}:latest-servercore-ltsc2019-jmx
 
 deploy_containers_latest-a7_internal:
   extends: .docker_publish_job_definition
@@ -274,7 +264,7 @@ deploy_containers_latest-a7_internal:
   parallel:
     matrix:
       - IMG_VARIABLES: "BASE=${SRC_AGENT}:v${PARENT_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7-jmx"
-        IMG_SOURCES: "%BASE%-amd64,%BASE%-arm64,%BASE%-win1809-amd64,%BASE%-winltsc2022-amd64"
+        IMG_SOURCES: "%BASE%-amd64,%BASE%-arm64,%BASE%-winltsc2022-amd64"
         IMG_DESTINATIONS: ${AGENT_REPOSITORY}:7-jmx
 
 deploy_containers_latest-dogstatsd:

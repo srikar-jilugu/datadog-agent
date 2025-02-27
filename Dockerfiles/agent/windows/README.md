@@ -6,7 +6,7 @@ How to build the Agent docker image
 From the root of the repository, run the following command:
 
 ```
-docker run --rm -it -v "${pwd}:c:\mnt" -e OMNIBUS_TARGET=main -e MAJOR_VERSION=7 -e RELEASE_VERSION=nightly-a7 -e PY_RUNTIMES=3 datadog/agent-buildimages-windows_x64:1809 powershell -C "c:\mnt\tasks\winbuildscripts\Build-AgentPackages.ps1 -BuildOutOfSource 1 -InstallDeps 1 -CheckGoVersion 1"
+docker run --rm -it -v "${pwd}:c:\mnt" -e OMNIBUS_TARGET=main -e MAJOR_VERSION=7 -e RELEASE_VERSION=nightly-a7 -e PY_RUNTIMES=3 datadog/agent-buildimages-windows_x64:ltsc2022 powershell -C "c:\mnt\tasks\winbuildscripts\Build-AgentPackages.ps1 -BuildOutOfSource 1 -InstallDeps 1 -CheckGoVersion 1"
 ```
 
 The build artifacts will be in `omnibus\pkg`.
@@ -16,7 +16,7 @@ The build artifacts will be in `omnibus\pkg`.
 From the root of the repository, run the following command:
 
 ```
-docker run --rm -it -v "${pwd}:c:\mnt" datadog/agent-buildimages-windows_x64:1809 c:\mnt\Dockerfiles\agent\windows\entrypoint\build.bat
+docker run --rm -it -v "${pwd}:c:\mnt" datadog/agent-buildimages-windows_x64:ltsc2022 c:\mnt\Dockerfiles\agent\windows\entrypoint\build.bat
 ```
 
 The build artifact will be in `build-out`.
@@ -35,13 +35,13 @@ From the `Dockerfiles\agent\` folder, run either of the following commands:
 a. To build the containerized Agent from a Nano Windows base image:
 ```
 # Build nano image
-docker build -t mycustomagent --build-arg BASE_IMAGE=mcr.microsoft.com/powershell:lts-nanoserver-1809 --build-arg WITH_JMX=false --build-arg VARIANT=1809 -f .\windows\amd64\Dockerfile .
+docker build -t mycustomagent --build-arg BASE_IMAGE=mcr.microsoft.com/powershell:lts-nanoserver-ltsc2022 --build-arg WITH_JMX=false --build-arg VARIANT=ltsc2022 -f .\windows\amd64\Dockerfile .
 ```
 
 a. To build the containerized Agent from a Core Windows base image:
 ```
 # Build core image
-docker build -t mycustomagent --build-arg BASE_IMAGE=mcr.microsoft.com/powershell:windowsservercore-1809 --build-arg WITH_JMX=false --build-arg VARIANT=1809 -f .\windows\amd64\Dockerfile .
+docker build -t mycustomagent --build-arg BASE_IMAGE=mcr.microsoft.com/powershell:windowsservercore-ltsc2022 --build-arg WITH_JMX=false --build-arg VARIANT=ltsc2022 -f .\windows\amd64\Dockerfile .
 ```
 
 If you need JMX, change `WITH_JMX` to `true`.
