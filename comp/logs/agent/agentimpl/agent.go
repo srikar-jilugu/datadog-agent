@@ -51,6 +51,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/goroutinesdump"
 	"github.com/DataDog/datadog-agent/pkg/util/option"
 	"github.com/DataDog/datadog-agent/pkg/util/startstop"
+	logger "github.com/DataDog/datadog-agent/pkg/util/log" // JMW
 )
 
 const (
@@ -177,6 +178,7 @@ func newLogsAgent(deps dependencies) provides {
 		}
 	}
 
+	deps.Log.Info("JMW logs-agent disabled") // JMWWED
 	deps.Log.Info("logs-agent disabled")
 	return provides{
 		Comp:           option.None[agent.Component](),
@@ -240,6 +242,7 @@ func (a *logAgent) setupAgent() error {
 		a.log.Error(fmt.Errorf("error while reading configuration, will block until the Agents receive an SDS configuration: %v", err))
 	}
 
+	logger.Info("JMW setupAgent() calling SetupPipeline() with integrationLogs %+v", a.integrationsLogs) //JMWWED
 	a.SetupPipeline(processingRules, a.wmeta, a.integrationsLogs)
 	return nil
 }

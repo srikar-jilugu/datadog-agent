@@ -213,6 +213,7 @@ func (s *Launcher) scan() {
 	log.Debugf("After stopping tailers, there are %d tailers running.\n", tailersLen)
 
 	for _, file := range files {
+		log.Infof("JMW file launcher scan() file: %+v\n", file)
 		scanKey := file.GetScanKey()
 		isTailed := s.tailers.Contains(scanKey)
 		if !isTailed && tailersLen < s.tailingLimit {
@@ -306,6 +307,7 @@ func (s *Launcher) launchTailers(source *sources.LogSource) {
 // startNewTailer creates a new tailer, making it tail from the last committed offset, the beginning or the end of the file,
 // returns true if the operation succeeded, false otherwise.
 func (s *Launcher) startNewTailer(file *tailer.File, m config.TailingMode) bool {
+	log.Infof("JMW file launcher startNewTailer() file: %+v\n", file)
 	if file == nil {
 		log.Debug("startNewTailer called with a nil file")
 		return false
@@ -322,6 +324,7 @@ func (s *Launcher) startNewTailer(file *tailer.File, m config.TailingMode) bool 
 		log.Warnf("Could not recover offset for file with path %v: %v", file.Path, err)
 	}
 
+	log.Infof("JMW Starting a new tailer for: %s (offset: %d, whence: %d) for tailer key %s", file.Path, offset, whence, file.GetScanKey())
 	log.Infof("Starting a new tailer for: %s (offset: %d, whence: %d) for tailer key %s", file.Path, offset, whence, file.GetScanKey())
 	err = tailer.Start(offset, whence)
 	if err != nil {

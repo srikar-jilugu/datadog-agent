@@ -142,6 +142,9 @@ func (p *Processor) run() {
 				return
 			}
 
+			log.Infof("JMW processor.run() got msg from inputChan: %+v", msg)
+			log.Infof("JMW processor.run() got msg.GetContent() from inputChan: %s", string(msg.GetContent()))
+
 			// if we have to wait for an SDS configuration to start processing & forwarding
 			// the logs, that's here that we buffer the message
 			if p.sds.buffering {
@@ -251,6 +254,8 @@ func (p *Processor) processMessage(msg *message.Message) {
 		}
 
 		p.utilization.Stop() // Explicitly call stop here to avoid counting writing on the output channel as processing time
+		log.Infof("JMW processor.processMessage() writing msg to outputChan: %+v", msg)
+		log.Infof("JMW processor.processMessage() writing msg.GetContent() to outputChan: %s", string(msg.GetContent()))
 		p.outputChan <- msg
 		p.pipelineMonitor.ReportComponentIngress(msg, "strategy")
 	}

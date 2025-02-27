@@ -9,7 +9,7 @@ package integrationsimpl
 import (
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
 	integrations "github.com/DataDog/datadog-agent/comp/logs/integrations/def"
-	logger "github.com/DataDog/datadog-agent/pkg/util/log"
+	logger "github.com/DataDog/datadog-agent/pkg/util/log" // JMW
 )
 
 // Logsintegration is the integrations component implementation
@@ -28,7 +28,9 @@ func NewLogsIntegration() *Logsintegration {
 
 // RegisterIntegration registers an integration with the integrations component
 func (li *Logsintegration) RegisterIntegration(id string, config integration.Config) {
+	logger.Infof("JMW integrations RegisterIntegration() received id: %s, config: %+v", id, config)
 	if len(config.LogsConfig) == 0 {
+		logger.Infof("JMW integrations RegisterIntegration() len(config.LogsConfig) == 0 - returning")
 		return
 	}
 
@@ -37,6 +39,7 @@ func (li *Logsintegration) RegisterIntegration(id string, config integration.Con
 		Config:        config,
 	}
 
+	logger.Infof("JMW integrations RegisterIntegration() writing integrationConfig to channel: %+v", integrationConfig)
 	li.integrationChan <- integrationConfig
 }
 
@@ -48,7 +51,6 @@ func (li *Logsintegration) SendLog(log, integrationID string) {
 	}
 
 	logger.Infof("JMW integrations SendLog() writing integrationLog to channel: %s", integrationLog)
-
 	li.logChan <- integrationLog
 }
 
@@ -62,5 +64,6 @@ func (li *Logsintegration) Subscribe() chan integrations.IntegrationLog { // JMW
 
 // SubscribeIntegration returns the channel that receives integration configurations
 func (li *Logsintegration) SubscribeIntegration() chan integrations.IntegrationConfig {
+	logger.Infof("JMW integrations SubscribeIntegration() returning integrationChan")
 	return li.integrationChan
 }

@@ -71,6 +71,7 @@ func NewLauncher(fs afero.Fs, sources *sources.LogSources, integrationsLogsComp 
 
 	logsTotalUsageSetting := datadogConfig.GetInt64("logs_config.integrations_logs_total_usage") * 1024 * 1024
 	logsUsageRatio := datadogConfig.GetFloat64("logs_config.integrations_logs_disk_ratio")
+	ddLog.Infof("JMW NewLauncher() logsTotalUsageSetting: %d, logsUsageRatio: %f", logsTotalUsageSetting, logsUsageRatio)
 
 	var maxDiskUsage int64
 	if logsUsageRatio > 1 || logsUsageRatio < 0 {
@@ -82,13 +83,15 @@ func NewLauncher(fs afero.Fs, sources *sources.LogSources, integrationsLogsComp 
 			ddLog.Warn("Unable to compute integrations logs max disk usage, falling back to integrations_logs_total_usage setting:", err)
 			maxDiskUsage = logsTotalUsageSetting
 		}
+		ddLog.Infof("JMW NewLauncher() computeMaxDiskUsage() returned maxDiskUsage: %d", maxDiskUsage)
 
 		if maxDiskUsage == 0 {
+			ddLog.Warn("JMWWED No space available to store logs. Logs from integrations will be dropped. Please allocate space for logs to be stored.")
 			ddLog.Warn("No space available to store logs. Logs from integrations will be dropped. Please allocate space for logs to be stored.")
 		}
 	}
 
-	ddLog.Infof("JMW returning &Launcher with integrationsLogsComp.Subscribe()")
+	ddLog.Infof("JMW NewLauncher() returning &Launcher with integrationsLogsComp.Subscribe()")
 	return &Launcher{
 		sources:              sources,
 		runPath:              runPath,
@@ -132,10 +135,12 @@ func (s *Launcher) run() {
 
 			s.receiveSources(cfg)
 		case log := <-s.integrationsLogsChan:
+			ddLog.Infof("JMW pkg/logs/launchers/integration received log from s.integrationsLogsChan")
 			if s.combinedUsageMax == 0 {
 				continue
 			}
 
+			ddLog.Infof("JMW pkg/logs/launchers/integration calling s.receiveLogs(log)")
 			s.receiveLogs(log)
 		case <-s.stop:
 			return
@@ -152,24 +157,30 @@ func (s *Launcher) receiveSources(cfg integrations.IntegrationConfig) {
 	}
 
 	for _, source := range sources {
+		ddLog.Infof("JMWWED pkg/logs/launchers/integration receiveSources() source: %+v", source)
+		ddLog.Infof("JMWWED pkg/logs/launchers/integration receiveSources() source.Config %+v", source.Config)
+		ddLog.Infof("JMWWED pkg/logs/launchers/integration receiveSources() source.Config.Type %v", source.Config.Type)
 		// TODO: integrations should only be allowed to have one IntegrationType config.
 		if source.Config.Type == config.IntegrationType {
 			// This check avoids duplicating files that have already been created
 			// by scanInitialFiles
-			logFile, exists := s.integrationToFile[cfg.IntegrationID]
+			logFile, exists := s.integrationToFile[cfg.IntegrationID] // JMWWED2 how to trigger file being created for cisco_aci integration?
 
 			if !exists {
 				logFile, err = s.createFile(cfg.IntegrationID)
 				if err != nil {
+					ddLog.Errorf("JMW Failed to create integration log file for %q: %v", source.Config.IntegrationName, err)
 					ddLog.Errorf("Failed to create integration log file for %q: %v", source.Config.IntegrationName, err)
 					continue
 				}
 
 				// file to write the incoming logs to
+				ddLog.Infof("JMW Created file for integration log: %s", logFile.fileWithPath)
 				s.integrationToFile[cfg.IntegrationID] = logFile
 			}
 
 			filetypeSource := s.makeFileSource(source, logFile.fileWithPath)
+			ddLog.Infof("JMWWED pkg/logs/launchers/integration receiveSources() adding source: %+v", filetypeSource)
 			s.sources.AddSource(filetypeSource)
 		}
 	}
@@ -178,11 +189,12 @@ func (s *Launcher) receiveSources(cfg integrations.IntegrationConfig) {
 // receiveLogs handles writing incoming logs to their respective file as well as
 // enforcing size limitations
 func (s *Launcher) receiveLogs(log integrations.IntegrationLog) {
+	ddLog.Infof("JMW pkg/logs/launchers/integration receiveLogs()")
 	fileToUpdate, exists := s.integrationToFile[log.IntegrationID]
 
 	if !exists {
+		ddLog.Warn("JMW Failed to write log to file, file is nil for integration ID:", log.IntegrationID)
 		ddLog.Warn("Failed to write log to file, file is nil for integration ID:", log.IntegrationID)
-		ddLog.Warn("JMW Failed to write log to file, log:", log)
 		return
 	}
 
@@ -363,11 +375,13 @@ func computeMaxDiskUsage(runPath string, logsTotalUsageSetting int64, usageRatio
 	if err != nil {
 		return 0, err
 	}
+	ddLog.Infof("JMWWED computeMaxDiskUsage() filesystem.NewDisk().GetUsage() returned usage: %v for runPath: %s", usage, runPath)
 
 	diskReserved := float64(usage.Total) * (1 - usageRatio)
 	diskAvailable := int64(usage.Available) - int64(math.Ceil(diskReserved))
 
 	if diskAvailable <= 0 {
+		ddLog.Warnf("JMWWED Available disk calculated as %d bytes, disk reserved is %f bytes. Check %s and make sure there is enough free space on disk", diskAvailable, diskReserved, "integrations_logs_disk_ratio")
 		ddLog.Warnf("Available disk calculated as %d bytes, disk reserved is %f bytes. Check %s and make sure there is enough free space on disk", diskAvailable, diskReserved, "integrations_logs_disk_ratio")
 		diskAvailable = 0
 	}

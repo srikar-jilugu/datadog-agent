@@ -365,6 +365,7 @@ func (t *Tailer) forwardMessages() {
 		}
 
 		msg := message.NewMessage(output.GetContent(), origin, output.Status, output.IngestionTimestamp)
+		log.Infof("JMW tailer.forwardMessages: sending msg to outputChan: %+v", msg)
 		// Make the write to the output chan cancellable to be able to stop the tailer
 		// after a file rotation when it is stuck on it.
 		// We don't return directly to keep the same shutdown sequence that in the
