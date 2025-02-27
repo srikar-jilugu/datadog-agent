@@ -57,6 +57,7 @@ func (r replicaCalculator) calculateHorizontalRecommendations(dpai model.PodAuto
 	// Get current pods for the target
 	targetRef := dpai.Spec().TargetRef
 	targets := dpai.Spec().Targets
+	log.Debugf("Processing spec: %+v", dpai.Spec())
 	targetGVK, targetErr := dpai.TargetGVK()
 	if targetErr != nil {
 		return nil, fmt.Errorf("Failed to get GVK for target: %s, %s", dpai.ID(), targetErr)
@@ -77,6 +78,10 @@ func (r replicaCalculator) calculateHorizontalRecommendations(dpai model.PodAuto
 	}
 
 	recommendedReplicas := model.HorizontalScalingValues{}
+
+	if len(targets) == 0 {
+		return nil, fmt.Errorf("No targets found for autoscaler: %s", dpai.ID())
+	}
 
 	for _, target := range targets {
 		recSettings, err := newResourceRecommenderSettings(target)
@@ -100,6 +105,8 @@ func (r replicaCalculator) calculateHorizontalRecommendations(dpai model.PodAuto
 			string(recommendedReplicas.Source),
 			le.JoinLeaderValue,
 		)
+
+		log.Debugf("Calculated recommendation for autoscaler %s: %d replicas, utilization: %f", dpai.ID(), rec, utilizationRes.averageUtilization)
 
 		// Always choose the highest recommendation given
 		if rec > recommendedReplicas.Replicas {
