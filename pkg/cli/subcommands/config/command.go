@@ -124,7 +124,8 @@ func showRuntimeConfiguration(_ log.Component, config config.Component, cliParam
 	if config.GetBool("otelcollector.enabled") && config.GetBool("otelcollector.converter.enabled") {
 		runtimeConfig, err = insertOTelCollectorConfig(config.GetString("otelcollector.extension_url"), runtimeConfig, c.HTTPClient())
 		if err != nil {
-			return err
+			fmt.Println(runtimeConfig)
+			return fmt.Errorf("failed to get otel-agent config: %v", err)
 		}
 	}
 
