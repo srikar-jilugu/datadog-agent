@@ -9,7 +9,6 @@
 package packages
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path"
@@ -21,16 +20,14 @@ import (
 var datadogInstallerPackage = Package{
 	postInstallHook: SetupInstaller,
 	preRemoveHook:   RemoveInstaller,
+
+	startExperimentHook: StartInstallerExperiment,
+	stopExperimentHook:  StopInstallerExperiment,
 }
 
 const (
 	datadogInstaller = "datadog-installer"
 )
-
-// PrepareInstaller prepares the installer
-func PrepareInstaller(_ context.Context) error {
-	return nil
-}
 
 // SetupInstaller installs and starts the installer
 func SetupInstaller(_ InstallationContext) error {
@@ -71,7 +68,7 @@ func RemoveInstaller(_ InstallationContext) error {
 }
 
 // StartInstallerExperiment starts the installer experiment
-func StartInstallerExperiment(_ context.Context) error {
+func StartInstallerExperiment(_ InstallationContext) error {
 	tempDir, err := os.MkdirTemp(paths.RootTmpDir, "datadog-installer")
 	if err != nil {
 		return err
@@ -86,7 +83,7 @@ func StartInstallerExperiment(_ context.Context) error {
 }
 
 // StopInstallerExperiment stops the installer experiment
-func StopInstallerExperiment(_ context.Context) error {
+func StopInstallerExperiment(_ InstallationContext) error {
 	tempDir, err := os.MkdirTemp(paths.RootTmpDir, "datadog-installer")
 	if err != nil {
 		return err
@@ -98,9 +95,4 @@ func StopInstallerExperiment(_ context.Context) error {
 	}
 	// Launch the msiexec process asynchronously.
 	return cmd.FireAndForget()
-}
-
-// PromoteInstallerExperiment promotes the installer experiment
-func PromoteInstallerExperiment(_ context.Context) error {
-	return nil
 }

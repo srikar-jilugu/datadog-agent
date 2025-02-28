@@ -8,7 +8,6 @@
 package packages
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -20,13 +19,17 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/installinfo"
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/packages/packagemanager"
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/packages/systemd"
-	"github.com/DataDog/datadog-agent/pkg/fleet/installer/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 var datadogAgentPackage = Package{
+	preInstallHook:  PrepareAgent,
 	postInstallHook: SetupAgent,
 	preRemoveHook:   RemoveAgent,
+
+	startExperimentHook:   StartAgentExperiment,
+	stopExperimentHook:    StopAgentExperiment,
+	promoteExperimentHook: PromoteAgentExperiment,
 }
 
 const (
@@ -79,8 +82,8 @@ var (
 )
 
 // PrepareAgent prepares the machine to install the agent
-func PrepareAgent(ctx context.Context) (err error) {
-	span, ctx := telemetry.StartSpanFromContext(ctx, "prepare_agent")
+func PrepareAgent(ctx InstallationContext) (err error) {
+	span, ctx := ctx.StartSpan("prepare_agent")
 	defer func() { span.Finish(err) }()
 
 	for _, unit := range stableUnits {
@@ -243,7 +246,7 @@ func chownRecursive(path string, uid int, gid int, ignorePaths []string) error {
 }
 
 // StartAgentExperiment starts the agent experiment
-func StartAgentExperiment(ctx context.Context) error {
+func StartAgentExperiment(ctx InstallationContext) error {
 	ddAgentUID, ddAgentGID, err := getAgentIDs()
 	if err != nil {
 		return fmt.Errorf("error getting dd-agent user and group IDs: %w", err)
@@ -255,11 +258,11 @@ func StartAgentExperiment(ctx context.Context) error {
 }
 
 // StopAgentExperiment stops the agent experiment
-func StopAgentExperiment(ctx context.Context) error {
+func StopAgentExperiment(ctx InstallationContext) error {
 	return systemd.StartUnit(ctx, agentUnit)
 }
 
 // PromoteAgentExperiment promotes the agent experiment
-func PromoteAgentExperiment(ctx context.Context) error {
+func PromoteAgentExperiment(ctx InstallationContext) error {
 	return StopAgentExperiment(ctx)
 }

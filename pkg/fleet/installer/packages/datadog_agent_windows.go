@@ -23,16 +23,14 @@ import (
 var datadogAgentPackage = Package{
 	postInstallHook: SetupAgent,
 	preRemoveHook:   RemoveAgent,
+
+	startExperimentHook: StartAgentExperiment,
+	stopExperimentHook:  StopAgentExperiment,
 }
 
 const (
 	datadogAgent = "datadog-agent"
 )
-
-// PrepareAgent prepares the machine to install the agent
-func PrepareAgent(_ context.Context) error {
-	return nil // No-op on Windows
-}
 
 // SetupAgent installs and starts the agent
 func SetupAgent(ctx InstallationContext) (err error) {
@@ -49,7 +47,7 @@ func SetupAgent(ctx InstallationContext) (err error) {
 }
 
 // StartAgentExperiment starts the agent experiment
-func StartAgentExperiment(ctx context.Context) (err error) {
+func StartAgentExperiment(ctx InstallationContext) (err error) {
 	span, _ := telemetry.StartSpanFromContext(ctx, "start_experiment")
 	defer func() {
 		if err != nil {
@@ -72,7 +70,7 @@ func StartAgentExperiment(ctx context.Context) (err error) {
 }
 
 // StopAgentExperiment stops the agent experiment, i.e. removes/uninstalls it.
-func StopAgentExperiment(ctx context.Context) (err error) {
+func StopAgentExperiment(ctx InstallationContext) (err error) {
 	span, _ := telemetry.StartSpanFromContext(ctx, "stop_experiment")
 	defer func() {
 		if err != nil {
@@ -92,12 +90,6 @@ func StopAgentExperiment(ctx context.Context) (err error) {
 		return err
 	}
 
-	return nil
-}
-
-// PromoteAgentExperiment promotes the agent experiment
-func PromoteAgentExperiment(_ context.Context) error {
-	// noop
 	return nil
 }
 

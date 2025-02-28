@@ -22,8 +22,13 @@ import (
 )
 
 var datadogInstallerPackage = Package{
+	preInstallHook:  PrepareInstaller,
 	postInstallHook: SetupInstaller,
 	preRemoveHook:   RemoveInstaller,
+
+	startExperimentHook:   StartInstallerExperiment,
+	stopExperimentHook:    StopInstallerExperiment,
+	promoteExperimentHook: PromoteInstallerExperiment,
 }
 
 const (
@@ -48,7 +53,7 @@ func addDDAgentGroup(ctx context.Context) error {
 }
 
 // PrepareInstaller prepares the installer
-func PrepareInstaller(ctx context.Context) error {
+func PrepareInstaller(ctx InstallationContext) error {
 	if err := systemd.StopUnit(ctx, installerUnit); err != nil {
 		log.Warnf("Failed to stop unit %s: %s", installerUnit, err)
 	}
@@ -225,16 +230,16 @@ func RemoveInstaller(ctx InstallationContext) error {
 }
 
 // StartInstallerExperiment installs the experimental systemd units for the installer
-func StartInstallerExperiment(ctx context.Context) error {
+func StartInstallerExperiment(ctx InstallationContext) error {
 	return systemd.StartUnit(ctx, installerUnitExp, "--no-block")
 }
 
 // StopInstallerExperiment starts the stable systemd units for the installer
-func StopInstallerExperiment(ctx context.Context) error {
+func StopInstallerExperiment(ctx InstallationContext) error {
 	return systemd.StartUnit(ctx, installerUnit)
 }
 
 // PromoteInstallerExperiment promotes the installer experiment
-func PromoteInstallerExperiment(ctx context.Context) error {
+func PromoteInstallerExperiment(ctx InstallationContext) error {
 	return StopInstallerExperiment(ctx)
 }
