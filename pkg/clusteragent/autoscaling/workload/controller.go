@@ -522,6 +522,7 @@ func getActiveScalingSources(currentTime time.Time, podAutoscalerInternal *model
 	// 1. Main scaling values are stale
 	// 2. No main scaling values have been received, and last scaling values (updated from status in event of leader election change) are stale
 	// 3. No main scaling values have been received, no scaling values have been received from status, and the pod autoscaler was created more than 3 minutes ago
+	log.Debugf("Current time %s, current scaling values %+v, main scaling values %+v, fallback scaling values %+v", currentTime, currentHorizontalScalingValues, mainHorizontalScalingValues, fallbackHorizontalScalingValues)
 	if (mainHorizontalScalingValues != nil && isTimestampStale(currentTime, mainHorizontalScalingValues.Timestamp)) ||
 		(mainHorizontalScalingValues == nil && currentHorizontalScalingValues != nil && isTimestampStale(currentTime, currentHorizontalScalingValues.Timestamp)) ||
 		(mainHorizontalScalingValues == nil && currentHorizontalScalingValues == nil && isTimestampStale(currentTime, podAutoscalerInternal.CreationTimestamp())) {
