@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2023-present Datadog, Inc.
 
-//go:build kubeapiserver
+//go:build kubeapiserver || orchestrator
 
 // Package kubernetesresourceparsers contains utility functions for workload metadata collectors to parse kubernetes resources into workloadmeta entities
 package kubernetesresourceparsers

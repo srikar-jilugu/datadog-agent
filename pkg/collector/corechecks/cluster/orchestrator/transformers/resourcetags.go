@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-//go:build kubeapiserver && orchestrator
+//go:build orchestrator
 
 //nolint:revive // TODO(CAPP) Fix revive linter
 package transformers
 
 import (
 	"fmt"
+
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes"
 )
