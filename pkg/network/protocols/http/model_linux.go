@@ -33,6 +33,18 @@ func (e *EbpfEvent) RequestLatency() float64 {
 	return protocols.NSTimestampToFloat(e.Http.Response_last_seen - e.Http.Request_started)
 }
 
+func (e *EbpfEvent) TraceId() uint64 {
+	return e.Http.Trace_id
+}
+
+func (e *EbpfEvent) SpanId() uint64 {
+	return e.Http.Span_id
+}
+
+func (e *EbpfEvent) ParentId() uint64 {
+	return e.Http.Parent_id
+}
+
 // Incomplete returns true if the transaction contains only the request or response information
 // This happens in the context of localhost with NAT, in which case we join the two parts in userspace
 func (e *EbpfEvent) Incomplete() bool {

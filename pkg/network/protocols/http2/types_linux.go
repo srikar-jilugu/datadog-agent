@@ -61,6 +61,7 @@ type http2Path struct {
 	Length             uint8
 	Finalized          bool
 }
+
 type HTTP2Stream struct {
 	Response_last_seen uint64
 	Request_started    uint64
@@ -70,6 +71,9 @@ type HTTP2Stream struct {
 	Path               http2Path
 	End_of_stream_seen bool
 	Pad_cgo_0          [1]byte
+	Trace_id uint64
+	Span_id uint64
+	Parent_id uint64
 }
 type EbpfTx struct {
 	Tuple  ConnTuple
@@ -84,6 +88,9 @@ type HTTP2Telemetry struct {
 	Exceeding_max_interesting_frames uint64
 	Exceeding_max_frames_to_filter   uint64
 	Path_size_bucket                 [8]uint64
+	Trace_id                         uint64
+	Span_id                          uint64
+	Parent_id                        uint64
 }
 type HTTP2IncompleteFrameEntry struct {
 	Remainder uint32

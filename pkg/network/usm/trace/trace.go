@@ -32,7 +32,11 @@ type writer struct {
 }
 
 func (w *writer) flush(chunk map[uint64][]Span) {
-	log.Infof("Flushing chunk of %v traces", len(chunk))
+	if len(chunk) <= 0 {
+		return
+	}
+
+	log.Infof("Flushing chunk of %+v traces", chunk)
 }
 
 func Init() {

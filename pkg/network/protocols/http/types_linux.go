@@ -35,7 +35,9 @@ type EbpfTx struct {
 	Tcp_seq              uint32
 	Response_status_code uint16
 	Request_method       uint8
-	Pad_cgo_0            [1]byte
+	Trace_id             uint64
+	Span_id              uint64
+	Parent_id            uint64
 	Request_fragment     [208]byte
 }
 

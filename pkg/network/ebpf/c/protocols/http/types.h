@@ -18,15 +18,13 @@
 // the http eBPF program.
 _Static_assert((HTTP_BUFFER_SIZE % 8) == 0, "HTTP_BUFFER_SIZE must be a multiple of 8.");
 
-typedef enum
-{
+typedef enum {
     HTTP_PACKET_UNKNOWN,
     HTTP_REQUEST,
     HTTP_RESPONSE
 } http_packet_t;
 
-typedef enum
-{
+typedef enum {
     HTTP_METHOD_UNKNOWN,
     HTTP_GET,
     HTTP_POST,
@@ -47,8 +45,11 @@ typedef struct {
     // we populate it with the TCP seq number of the request and then the response segments
     __u32 tcp_seq;
     __u16 response_status_code;
-    __u8  request_method;
-    char request_fragment[HTTP_BUFFER_SIZE] __attribute__ ((aligned (8)));
+    __u8 request_method;
+    __u64 trace_id;
+    __u64 span_id;
+    __u64 parent_id;
+    char request_fragment[HTTP_BUFFER_SIZE] __attribute__((aligned(8)));
 } http_transaction_t;
 
 typedef struct {

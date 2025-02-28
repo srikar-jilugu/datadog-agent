@@ -46,7 +46,6 @@
 // anything.
 #define HTTP2_DYNAMIC_TABLE_CLEANUP_ITERATIONS 300
 
-
 // Per request or response we have fewer headers than HTTP2_MAX_HEADERS_COUNT_FOR_FILTERING that are interesting us.
 // For request - those are method, path. For response - status code.
 // Thus differentiating between the limits can allow reducing code size.
@@ -236,7 +235,10 @@ typedef struct {
     __u64 literal_value_exceeds_frame;
     __u64 exceeding_max_interesting_frames;
     __u64 exceeding_max_frames_to_filter;
-    __u64 path_size_bucket[HTTP2_TELEMETRY_PATH_BUCKETS+1];
+    __u64 path_size_bucket[HTTP2_TELEMETRY_PATH_BUCKETS + 1];
+    __u64 trace_id;
+    __u64 span_id;
+    __u64 parent_id;
 } http2_telemetry_t;
 
 typedef struct {

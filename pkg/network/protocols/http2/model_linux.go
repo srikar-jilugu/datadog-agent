@@ -309,6 +309,18 @@ func (tx *EbpfTx) RequestStarted() uint64 {
 	return tx.Stream.Request_started
 }
 
+func (e *EbpfTx) TraceId() uint64 {
+	return e.Stream.Trace_id
+}
+
+func (e *EbpfTx) SpanId() uint64 {
+	return e.Stream.Span_id
+}
+
+func (e *EbpfTx) ParentId() uint64 {
+	return e.Stream.Parent_id
+}
+
 // SetRequestMethod sets the HTTP method of the transaction.
 func (tx *EbpfTx) SetRequestMethod(_ http.Method) {
 	// if we set Static_table_entry to be different from 0, and no indexed value, it will default to 0 which is "UNKNOWN"

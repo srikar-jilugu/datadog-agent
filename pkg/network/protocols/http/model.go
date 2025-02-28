@@ -15,6 +15,9 @@ import (
 
 // Transaction is the interface for a HTTP transaction.
 type Transaction interface {
+	TraceId() uint64
+	SpanId() uint64
+	ParentId() uint64
 	RequestLatency() float64
 	ConnTuple() types.ConnectionKey
 	Method() Method

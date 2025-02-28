@@ -8,6 +8,7 @@
 package http
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -146,10 +147,10 @@ func (h *StatKeeper) add(tx Transaction) {
 	}
 
 	// This should obviously not be here, but right now this is the best "single point of touch" not requiring a major refactoring
-	s := txToSpan(tx, string(path))
-	trace.Record(s)
+	trace.Record(txToSpan(tx, string(path)))
 
 	key := NewKeyWithConnection(tx.ConnTuple(), path, fullPath, tx.Method())
+	fmt.Printf("\n>>>>>>>>>> %+v\n\n", key)
 	if h.connectionAggregator != nil {
 		key.ConnectionKey = h.connectionAggregator.RollupKey(key.ConnectionKey)
 	}
@@ -170,9 +171,9 @@ func (h *StatKeeper) add(tx Transaction) {
 
 func txToSpan(tx Transaction, normalizedPath string) trace.Span {
 	return trace.Span{
-		TraceId_l:     123,
-		SpanId:        456,
-		ParentId:      0,
+		TraceId_l:     tx.TraceId(),
+		SpanId:        tx.SpanId(),
+		ParentId:      tx.ParentId(),
 		Service:       "my-service",
 		Name:          "http.server.request",
 		Resource_name: tx.Method().String() + " " + normalizedPath,
