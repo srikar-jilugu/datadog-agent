@@ -22,11 +22,18 @@ configure_make(
             "libcrypto.so",
             "libcrypto.so.3",
         ],
+        "@platforms//os:windows": [
+            "libssl.dll",
+        ]
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@bzip2//:bz2",
-        "@xz//:lzma",
         "@zlib",
-    ],
+    ] + select({
+        "@platforms//os:linux": [
+            "@bzip2//:bz2",
+            "@xz//:lzma",
+        ],
+        "//conditions:default": [],
+    }),
 )
