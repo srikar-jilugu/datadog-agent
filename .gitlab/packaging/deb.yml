@@ -47,6 +47,29 @@ agent_deb-x64-a7:
   variables:
     DD_PROJECT: "agent"
 
+unsigned_agent_deb-x64_7:
+  stage: packaging
+  extends: [.package_deb_x86, .package_deb_agent_7]
+  script:
+    - echo "About to package for $RELEASE_VERSION"
+    - inv -e omnibus.build --release-version "$RELEASE_VERSION" --base-dir $OMNIBUS_BASE_DIR --skip-deps --target-project ${DD_PROJECT} ${OMNIBUS_EXTRA_ARGS}
+    - !reference [.lint_linux_packages]
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - $OMNIBUS_PACKAGE_DIR
+  variables:
+    OMNIBUS_PACKAGE_ARTIFACT_DIR: $OMNIBUS_PACKAGE_DIR
+    KUBERNETES_CPU_REQUEST: 16
+    KUBERNETES_MEMORY_REQUEST: "32Gi"
+    KUBERNETES_MEMORY_LIMIT: "32Gi"
+    PACKAGE_REQUIRED_FILES_LIST: "test/required_files/agent-deb.txt"
+    DD_PROJECT: "agent"
+    DEB_GPG_KEY_NAME: ""
+  needs: ["datadog-agent-7-x64"]
+
+    
+
 agent_deb-arm64-a7:
   extends: [.package_deb_common, .package_deb_arm64, .package_deb_agent_7]
   rules:
