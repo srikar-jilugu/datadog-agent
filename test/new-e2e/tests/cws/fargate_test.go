@@ -127,6 +127,10 @@ func TestECSFargate(t *testing.T) {
 								Name:  pulumi.StringPtr("DD_RUNTIME_SECURITY_CONFIG_USE_SECRUNTIME_TRACK"),
 								Value: pulumi.StringPtr("false"),
 							},
+							ecsx.TaskDefinitionKeyValuePairArgs{
+								Name:  pulumi.StringPtr("DD_LOGS_CONFIG_USE_COMPRESSION"),
+								Value: pulumi.StringPtr("false"),
+							},
 						},
 						Secrets: ecsx.TaskDefinitionSecretArray{
 							ecsx.TaskDefinitionSecretArgs{
