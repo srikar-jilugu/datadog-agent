@@ -246,7 +246,7 @@ func chownRecursive(path string, uid int, gid int, ignorePaths []string) error {
 }
 
 // StartAgentExperiment starts the agent experiment
-func StartAgentExperiment(ctx InstallationContext) error {
+func StartAgentExperiment(ctx ExperimentContext) error {
 	ddAgentUID, ddAgentGID, err := getAgentIDs()
 	if err != nil {
 		return fmt.Errorf("error getting dd-agent user and group IDs: %w", err)
@@ -258,11 +258,11 @@ func StartAgentExperiment(ctx InstallationContext) error {
 }
 
 // StopAgentExperiment stops the agent experiment
-func StopAgentExperiment(ctx InstallationContext) error {
+func StopAgentExperiment(ctx ExperimentContext) error {
 	return systemd.StartUnit(ctx, agentUnit)
 }
 
 // PromoteAgentExperiment promotes the agent experiment
-func PromoteAgentExperiment(ctx InstallationContext) error {
+func PromoteAgentExperiment(ctx ExperimentContext) error {
 	return StopAgentExperiment(ctx)
 }

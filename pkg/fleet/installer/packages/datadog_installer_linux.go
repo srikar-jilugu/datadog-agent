@@ -230,16 +230,16 @@ func RemoveInstaller(ctx InstallationContext) error {
 }
 
 // StartInstallerExperiment installs the experimental systemd units for the installer
-func StartInstallerExperiment(ctx InstallationContext) error {
+func StartInstallerExperiment(ctx ExperimentContext) error {
 	return systemd.StartUnit(ctx, installerUnitExp, "--no-block")
 }
 
 // StopInstallerExperiment starts the stable systemd units for the installer
-func StopInstallerExperiment(ctx InstallationContext) error {
+func StopInstallerExperiment(ctx ExperimentContext) error {
 	return systemd.StartUnit(ctx, installerUnit)
 }
 
 // PromoteInstallerExperiment promotes the installer experiment
-func PromoteInstallerExperiment(ctx InstallationContext) error {
+func PromoteInstallerExperiment(ctx ExperimentContext) error {
 	return StopInstallerExperiment(ctx)
 }

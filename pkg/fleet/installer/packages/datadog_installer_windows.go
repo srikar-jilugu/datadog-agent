@@ -68,7 +68,7 @@ func RemoveInstaller(_ InstallationContext) error {
 }
 
 // StartInstallerExperiment starts the installer experiment
-func StartInstallerExperiment(_ InstallationContext) error {
+func StartInstallerExperiment(ctx ExperimentContext) error {
 	tempDir, err := os.MkdirTemp(paths.RootTmpDir, "datadog-installer")
 	if err != nil {
 		return err
@@ -83,7 +83,7 @@ func StartInstallerExperiment(_ InstallationContext) error {
 }
 
 // StopInstallerExperiment stops the installer experiment
-func StopInstallerExperiment(_ InstallationContext) error {
+func StopInstallerExperiment(ctx ExperimentContext) error {
 	tempDir, err := os.MkdirTemp(paths.RootTmpDir, "datadog-installer")
 	if err != nil {
 		return err

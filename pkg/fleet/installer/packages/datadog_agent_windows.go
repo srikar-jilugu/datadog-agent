@@ -47,7 +47,7 @@ func SetupAgent(ctx InstallationContext) (err error) {
 }
 
 // StartAgentExperiment starts the agent experiment
-func StartAgentExperiment(ctx InstallationContext) (err error) {
+func StartAgentExperiment(ctx ExperimentContext) (err error) {
 	span, _ := telemetry.StartSpanFromContext(ctx, "start_experiment")
 	defer func() {
 		if err != nil {
@@ -70,7 +70,7 @@ func StartAgentExperiment(ctx InstallationContext) (err error) {
 }
 
 // StopAgentExperiment stops the agent experiment, i.e. removes/uninstalls it.
-func StopAgentExperiment(ctx InstallationContext) (err error) {
+func StopAgentExperiment(ctx ExperimentContext) (err error) {
 	span, _ := telemetry.StartSpanFromContext(ctx, "stop_experiment")
 	defer func() {
 		if err != nil {

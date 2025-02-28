@@ -357,9 +357,10 @@ func (i *installerImpl) PromoteExperiment(ctx context.Context, pkg string) error
 }
 
 // InstallConfigExperiment installs an experiment on top of an existing package.
-func (i *installerImpl) InstallConfigExperiment(ctx context.Context, pkg string, version string, rawConfig []byte) error {
+func (i *installerImpl) InstallConfigExperiment(ctx context.Context, pkgName string, version string, rawConfig []byte) error {
 	i.m.Lock()
 	defer i.m.Unlock()
+	pkg := packages.Packages[pkgName]
 
 	tmpDir, err := i.packages.MkdirTemp()
 	if err != nil {
@@ -378,7 +379,7 @@ func (i *installerImpl) InstallConfigExperiment(ctx context.Context, pkg string,
 		)
 	}
 
-	configRepo := i.configs.Get(pkg)
+	configRepo := i.configs.Get(pkgName)
 	err = configRepo.SetExperiment(version, tmpDir)
 	if err != nil {
 		return installerErrors.Wrap(
@@ -386,25 +387,26 @@ func (i *installerImpl) InstallConfigExperiment(ctx context.Context, pkg string,
 			fmt.Errorf("could not set experiment: %w", err),
 		)
 	}
-
-	switch runtime.GOOS {
-	case "windows":
-		return nil // TODO: start config experiment for Windows
-	default:
-		return i.startExperiment(ctx, pkg)
-	}
+	return pkg.StartExperiment(packages.ExperimentContext{
+		Context: ctx,
+		Type:    packages.ConfigExperiment,
+	})
 }
 
 // RemoveConfigExperiment removes an experiment.
-func (i *installerImpl) RemoveConfigExperiment(ctx context.Context, pkg string) error {
+func (i *installerImpl) RemoveConfigExperiment(ctx context.Context, pkgName string) error {
 	i.m.Lock()
 	defer i.m.Unlock()
+	pkg := packages.Packages[pkgName]
 
-	err := i.stopExperiment(ctx, pkg)
+	err := pkg.StopExperiment(packages.ExperimentContext{
+		Context: ctx,
+		Type:    packages.ConfigExperiment,
+	})
 	if err != nil {
 		return fmt.Errorf("could not stop experiment: %w", err)
 	}
-	repository := i.configs.Get(pkg)
+	repository := i.configs.Get(pkgName)
 	err = repository.DeleteExperiment()
 	if err != nil {
 		return installerErrors.Wrap(
@@ -419,6 +421,7 @@ func (i *installerImpl) RemoveConfigExperiment(ctx context.Context, pkg string) 
 func (i *installerImpl) PromoteConfigExperiment(ctx context.Context, pkg string) error {
 	i.m.Lock()
 	defer i.m.Unlock()
+	
 
 	repository := i.configs.Get(pkg)
 	err := repository.PromoteExperiment()
@@ -589,76 +592,6 @@ func (i *installerImpl) Close() error {
 	i.m.Lock()
 	defer i.m.Unlock()
 	return i.close()
-}
-
-func (i *installerImpl) startExperiment(ctx context.Context, pkg string) error {
-	switch pkg {
-	case packageDatadogAgent:
-		return packages.StartAgentExperiment(ctx)
-	case packageDatadogInstaller:
-		return packages.StartInstallerExperiment(ctx)
-	default:
-		return nil
-	}
-}
-
-func (i *installerImpl) stopExperiment(ctx context.Context, pkg string) error {
-	switch pkg {
-	case packageDatadogAgent:
-		return packages.StopAgentExperiment(ctx)
-	case packageDatadogInstaller:
-		return packages.StopInstallerExperiment(ctx)
-	default:
-		return nil
-	}
-}
-
-func (i *installerImpl) promoteExperiment(ctx context.Context, pkg string) error {
-	switch pkg {
-	case packageDatadogAgent:
-		return packages.PromoteAgentExperiment(ctx)
-	case packageDatadogInstaller:
-		return packages.PromoteInstallerExperiment(ctx)
-	default:
-		return nil
-	}
-}
-
-func (i *installerImpl) preparePackage(ctx context.Context, pkg string, _ []string) error {
-	switch pkg {
-	case packageDatadogInstaller:
-		return packages.PrepareInstaller(ctx)
-	case packageDatadogAgent:
-		return packages.PrepareAgent(ctx)
-	default:
-		return nil
-	}
-}
-
-func (i *installerImpl) setupPackage(ctx context.Context, pkg string, args []string) error {
-	switch pkg {
-	case packageDatadogInstaller:
-		return packages.SetupInstaller(ctx)
-	case packageDatadogAgent:
-		return packages.SetupAgent(ctx, args)
-	case packageAPMInjector:
-		return packages.SetupAPMInjector(ctx)
-	default:
-		return nil
-	}
-}
-
-func (i *installerImpl) removePackage(ctx context.Context, pkg string) error {
-	switch pkg {
-	case packageDatadogAgent:
-		return packages.RemoveAgent(ctx)
-	case packageAPMInjector:
-		return packages.RemoveAPMInjector(ctx)
-	case packageDatadogInstaller:
-		return packages.RemoveInstaller(ctx)
-	default:
-		return nil
-	}
 }
 
 func (i *installerImpl) configurePackage(ctx context.Context, pkg string) (err error) {

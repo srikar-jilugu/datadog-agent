@@ -8,6 +8,7 @@ package packages
 
 import (
 	"context"
+	"runtime"
 
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/telemetry"
 )
@@ -22,13 +23,13 @@ type postInstallHook func(ctx InstallationContext) error
 type preRemoveHook func(ctx InstallationContext) error
 
 // startExperimentHook is a function that is called after an experiment package is installed.
-type startExperimentHook func(ctx InstallationContext) error
+type startExperimentHook func(ctx ExperimentContext) error
 
 // stopExperimentHook is a function that is called before an experiment package is removed or upgraded.
-type stopExperimentHook func(ctx InstallationContext) error
+type stopExperimentHook func(ctx ExperimentContext) error
 
 // promoteExperimentHook is a function that is called after an experiment package is promoted.
-type promoteExperimentHook func(ctx InstallationContext) error
+type promoteExperimentHook func(ctx ExperimentContext) error
 
 // preRemoveHookAsync is a function that is called before a package is removed from the disk
 // It can block the removal of the package files until a condition is met without blocking
@@ -50,7 +51,7 @@ type Package struct {
 }
 
 // PreInstall calls the pre-install hook for the package.
-func (p *Package) PreInstall(ctx InstallationContext) error {
+func (p Package) PreInstall(ctx InstallationContext) error {
 	if p.preInstallHook != nil {
 		return p.preInstallHook(ctx)
 	}
@@ -58,7 +59,7 @@ func (p *Package) PreInstall(ctx InstallationContext) error {
 }
 
 // PreRemove calls the pre-remove hook for the package.
-func (p *Package) PreRemove(ctx InstallationContext) error {
+func (p Package) PreRemove(ctx InstallationContext) error {
 	if p.preRemoveHook != nil {
 		return p.preRemoveHook(ctx)
 	}
@@ -66,7 +67,7 @@ func (p *Package) PreRemove(ctx InstallationContext) error {
 }
 
 // PostInstall calls the post-install hook for the package.
-func (p *Package) PostInstall(ctx InstallationContext) error {
+func (p Package) PostInstall(ctx InstallationContext) error {
 	if p.postInstallHook != nil {
 		return p.postInstallHook(ctx)
 	}
@@ -74,7 +75,11 @@ func (p *Package) PostInstall(ctx InstallationContext) error {
 }
 
 // StartExperiment calls the start-experiment hook for the package.
-func (p *Package) StartExperiment(ctx InstallationContext) error {
+func (p Package) StartExperiment(ctx ExperimentContext) error {
+	if runtime.GOOS == "windows" && ctx.Type == ConfigExperiment {
+		// Config experiments are not supported on Windows
+		return nil
+	}
 	if p.startExperimentHook != nil {
 		return p.startExperimentHook(ctx)
 	}
@@ -82,7 +87,11 @@ func (p *Package) StartExperiment(ctx InstallationContext) error {
 }
 
 // StopExperiment calls the stop-experiment hook for the package.
-func (p *Package) StopExperiment(ctx InstallationContext) error {
+func (p Package) StopExperiment(ctx ExperimentContext) error {
+	if runtime.GOOS == "windows" && ctx.Type == ConfigExperiment {
+		// Config experiments are not supported on Windows
+		return nil
+	}
 	if p.stopExperimentHook != nil {
 		return p.stopExperimentHook(ctx)
 	}
@@ -90,7 +99,11 @@ func (p *Package) StopExperiment(ctx InstallationContext) error {
 }
 
 // PromoteExperiment calls the promote-experiment hook for the package.
-func (p *Package) PromoteExperiment(ctx InstallationContext) error {
+func (p Package) PromoteExperiment(ctx ExperimentContext) error {
+	if runtime.GOOS == "windows" && ctx.Type == ConfigExperiment {
+		// Config experiments are not supported on Windows
+		return nil
+	}
 	if p.promoteExperimentHook != nil {
 		return p.promoteExperimentHook(ctx)
 	}
@@ -98,11 +111,27 @@ func (p *Package) PromoteExperiment(ctx InstallationContext) error {
 }
 
 // PreRemoveAsync calls the pre-remove hook for the package.
-func (p *Package) PreRemoveAsync(path string) error {
+func (p Package) PreRemoveAsync(path string) error {
 	if p.preRemoveHookAsync != nil {
 		return p.preRemoveHookAsync(path)
 	}
 	return nil
+}
+
+// ExperimentType is the type of experiment.
+type ExperimentType int
+
+const (
+	// UpgradeExperiment is an upgrade experiment.
+	UpgradeExperiment ExperimentType = iota
+	// ConfigExperiment is a config experiment.
+	ConfigExperiment
+)
+
+// ExperimentContext is the context passed to hooks during start/stop/promote of an experiment.
+type ExperimentContext struct {
+	context.Context
+	Type ExperimentType
 }
 
 // InstallationContext is the context passed to hooks during install/upgrade/uninstall.
