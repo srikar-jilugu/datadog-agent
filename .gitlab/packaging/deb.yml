@@ -66,6 +66,7 @@ unsigned_agent_deb-x64_7:
     PACKAGE_REQUIRED_FILES_LIST: "test/required_files/agent-deb.txt"
     DD_PROJECT: "agent"
     DEB_GPG_KEY_NAME: ""
+    DEB_SIGNING_PASSPHRASE: ""
   needs: ["datadog-agent-7-x64"]
 
     

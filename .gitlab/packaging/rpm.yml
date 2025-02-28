@@ -91,6 +91,7 @@ unsigned_agent_rpm-x64-a7:
     PACKAGE_REQUIRED_FILES_LIST: "test/required_files/agent-rpm.txt"
     DD_PROJECT: agent
     RPM_GPG_KEY_NAME: ""
+    RPM_SIGNING_PASSPHRASE: ""
 
 agent_rpm-arm64-a7:
   extends: [.package_rpm_common, .package_rpm_agent_7, .package_rpm_arm64]
