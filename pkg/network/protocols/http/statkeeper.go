@@ -171,13 +171,13 @@ func (h *StatKeeper) add(tx Transaction) {
 
 func txToSpan(tx Transaction, normalizedPath string) trace.Span {
 	return trace.Span{
-		TraceId_l:     tx.TraceId(),
-		SpanId:        tx.SpanId(),
-		ParentId:      tx.ParentId(),
-		Service:       "my-service",
-		Name:          "http.server.request",
-		Resource_name: tx.Method().String() + " " + normalizedPath,
-		SpanType:      "web",
+		TraceId_l: tx.TraceId(),
+		SpanId:    tx.SpanId(),
+		ParentId:  tx.ParentId(),
+		Service:   "my-service",
+		Name:      "http.server.request",
+		Resource:  tx.Method().String() + " " + normalizedPath,
+		SpanType:  "web",
 	}
 }
 
