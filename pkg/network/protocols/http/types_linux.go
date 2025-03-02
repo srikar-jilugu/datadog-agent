@@ -20,8 +20,8 @@ type SslSock struct {
 	Pad_cgo_0 [4]byte
 }
 type SslReadArgs struct {
-	Ctx uint64
-	Buf uint64
+	Ctx *byte
+	Buf *byte
 }
 
 type EbpfEvent struct {

@@ -97,9 +97,8 @@ type ProtocolStack struct {
 	Flags       uint8
 }
 type ProtocolStackWrapper struct {
-	Updated   uint64
-	Stack     ProtocolStack
-	Pad_cgo_0 [4]byte
+	Stack   ProtocolStack
+	Updated uint64
 }
 type TLSTags struct {
 	Chosen_version   uint16
@@ -108,9 +107,8 @@ type TLSTags struct {
 	Pad_cgo_0        [1]byte
 }
 type TLSTagsWrapper struct {
-	Updated   uint64
-	Info      TLSTags
-	Pad_cgo_0 [2]byte
+	Info    TLSTags
+	Updated uint64
 }
 
 type _Ctype_struct_sock uint64
