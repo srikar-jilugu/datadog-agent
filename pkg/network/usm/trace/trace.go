@@ -29,8 +29,8 @@ type Span struct {
 	Duration  int64              `msg:"duration"`
 	Resource  string             `msg:"resource"`
 	SpanType  string             `msg:"type"`
-	meta      map[string]string  `msg:"meta,omitempty"`
-	metrics   map[string]float64 `msg:"metrics,omitempty"`
+	Meta      map[string]string  `msg:"meta,omitempty"`
+	Metrics   map[string]float64 `msg:"metrics,omitempty"`
 }
 
 type (

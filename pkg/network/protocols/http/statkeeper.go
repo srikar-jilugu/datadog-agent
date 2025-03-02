@@ -170,7 +170,7 @@ func (h *StatKeeper) add(tx Transaction) {
 }
 
 func txToSpan(tx Transaction, normalizedPath string) trace.Span {
-	return trace.Span{
+	s := trace.Span{
 		TraceId_l: tx.TraceId(),
 		SpanId:    tx.SpanId(),
 		ParentId:  tx.ParentId(),
@@ -178,7 +178,31 @@ func txToSpan(tx Transaction, normalizedPath string) trace.Span {
 		Name:      "http.server.request",
 		Resource:  tx.Method().String() + " " + normalizedPath,
 		SpanType:  "web",
+		Meta:      map[string]string{},
+		Metrics:   map[string]float64{},
 	}
+
+	s.Meta["http.url"] = string(toFullUrl(tx))
+	s.Meta["http.method"] = tx.Method().String()
+	s.Meta["http.status_code"] = strconv.Itoa(int(tx.StatusCode()))
+
+	return s
+}
+
+func toFullUrl(tx Transaction) []byte {
+	isHttp := bool(tx.StaticTags() == 0)
+	scheme := "https"
+	if isHttp {
+		scheme = "http"
+	}
+
+	pathBuffer := make([]byte, 208)
+	hostBuffer := make([]byte, 208)
+
+	pathBuffer, _ = tx.Path(pathBuffer)
+	hostBuffer, _ = tx.Host(hostBuffer)
+
+	return []byte(fmt.Sprintf("%s://%s%s", scheme, hostBuffer, pathBuffer))
 }
 
 func pathIsMalformed(fullPath []byte) bool {

@@ -32,6 +32,7 @@ type Transaction interface {
 	ResponseLastSeen() uint64
 	SetResponseLastSeen(ls uint64)
 	RequestStarted() uint64
+	Host(buffer []byte) ([]byte, bool)
 }
 
 func computePath(targetBuffer, requestBuffer []byte) ([]byte, bool) {
@@ -61,4 +62,33 @@ func computePath(targetBuffer, requestBuffer []byte) ([]byte, bool) {
 	// indicate if we knowingly captured the entire path
 	fullPath := n < len(b)
 	return targetBuffer[:n], fullPath
+}
+
+func computeHost(targetBuffer, requestBuffer []byte) ([]byte, bool) {
+	bLen := bytes.IndexByte(requestBuffer, 0)
+	if bLen == -1 {
+		bLen = len(requestBuffer)
+	}
+	// trim null byte + after
+	b := requestBuffer[:bLen]
+
+	// find the start of the Host header
+	hostHeader := []byte("\r\nHost: ")
+	start := bytes.Index(b, hostHeader)
+	if start == -1 {
+		return nil, false
+	}
+	start += len(hostHeader)
+
+	// find the end of the Host header value
+	end := bytes.IndexByte(b[start:], '\r')
+	if end == -1 {
+		end = len(b)
+	} else {
+		end += start
+	}
+
+	n := copy(targetBuffer, b[start:end])
+	fullHost := n < (end - start)
+	return targetBuffer[:n], fullHost
 }

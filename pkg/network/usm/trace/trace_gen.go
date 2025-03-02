@@ -85,11 +85,11 @@ func (z *Span) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "meta")
 				return
 			}
-			if z.meta == nil {
-				z.meta = make(map[string]string, zb0002)
-			} else if len(z.meta) > 0 {
-				for key := range z.meta {
-					delete(z.meta, key)
+			if z.Meta == nil {
+				z.Meta = make(map[string]string, zb0002)
+			} else if len(z.Meta) > 0 {
+				for key := range z.Meta {
+					delete(z.Meta, key)
 				}
 			}
 			for zb0002 > 0 {
@@ -106,7 +106,7 @@ func (z *Span) DecodeMsg(dc *msgp.Reader) (err error) {
 					err = msgp.WrapError(err, "meta", za0001)
 					return
 				}
-				z.meta[za0001] = za0002
+				z.Meta[za0001] = za0002
 			}
 		case "metrics":
 			var zb0003 uint32
@@ -115,11 +115,11 @@ func (z *Span) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "metrics")
 				return
 			}
-			if z.metrics == nil {
-				z.metrics = make(map[string]float64, zb0003)
-			} else if len(z.metrics) > 0 {
-				for key := range z.metrics {
-					delete(z.metrics, key)
+			if z.Metrics == nil {
+				z.Metrics = make(map[string]float64, zb0003)
+			} else if len(z.Metrics) > 0 {
+				for key := range z.Metrics {
+					delete(z.Metrics, key)
 				}
 			}
 			for zb0003 > 0 {
@@ -136,7 +136,7 @@ func (z *Span) DecodeMsg(dc *msgp.Reader) (err error) {
 					err = msgp.WrapError(err, "metrics", za0003)
 					return
 				}
-				z.metrics[za0003] = za0004
+				z.Metrics[za0003] = za0004
 			}
 		default:
 			err = dc.Skip()
@@ -155,11 +155,11 @@ func (z *Span) EncodeMsg(en *msgp.Writer) (err error) {
 	zb0001Len := uint32(11)
 	var zb0001Mask uint16 /* 11 bits */
 	_ = zb0001Mask
-	if z.meta == nil {
+	if z.Meta == nil {
 		zb0001Len--
 		zb0001Mask |= 0x200
 	}
-	if z.metrics == nil {
+	if z.Metrics == nil {
 		zb0001Len--
 		zb0001Mask |= 0x400
 	}
@@ -267,12 +267,12 @@ func (z *Span) EncodeMsg(en *msgp.Writer) (err error) {
 			if err != nil {
 				return
 			}
-			err = en.WriteMapHeader(uint32(len(z.meta)))
+			err = en.WriteMapHeader(uint32(len(z.Meta)))
 			if err != nil {
 				err = msgp.WrapError(err, "meta")
 				return
 			}
-			for za0001, za0002 := range z.meta {
+			for za0001, za0002 := range z.Meta {
 				err = en.WriteString(za0001)
 				if err != nil {
 					err = msgp.WrapError(err, "meta")
@@ -291,12 +291,12 @@ func (z *Span) EncodeMsg(en *msgp.Writer) (err error) {
 			if err != nil {
 				return
 			}
-			err = en.WriteMapHeader(uint32(len(z.metrics)))
+			err = en.WriteMapHeader(uint32(len(z.Metrics)))
 			if err != nil {
 				err = msgp.WrapError(err, "metrics")
 				return
 			}
-			for za0003, za0004 := range z.metrics {
+			for za0003, za0004 := range z.Metrics {
 				err = en.WriteString(za0003)
 				if err != nil {
 					err = msgp.WrapError(err, "metrics")
@@ -320,11 +320,11 @@ func (z *Span) MarshalMsg(b []byte) (o []byte, err error) {
 	zb0001Len := uint32(11)
 	var zb0001Mask uint16 /* 11 bits */
 	_ = zb0001Mask
-	if z.meta == nil {
+	if z.Meta == nil {
 		zb0001Len--
 		zb0001Mask |= 0x200
 	}
-	if z.metrics == nil {
+	if z.Metrics == nil {
 		zb0001Len--
 		zb0001Mask |= 0x400
 	}
@@ -363,8 +363,8 @@ func (z *Span) MarshalMsg(b []byte) (o []byte, err error) {
 		if (zb0001Mask & 0x200) == 0 { // if not omitted
 			// string "meta"
 			o = append(o, 0xa4, 0x6d, 0x65, 0x74, 0x61)
-			o = msgp.AppendMapHeader(o, uint32(len(z.meta)))
-			for za0001, za0002 := range z.meta {
+			o = msgp.AppendMapHeader(o, uint32(len(z.Meta)))
+			for za0001, za0002 := range z.Meta {
 				o = msgp.AppendString(o, za0001)
 				o = msgp.AppendString(o, za0002)
 			}
@@ -372,8 +372,8 @@ func (z *Span) MarshalMsg(b []byte) (o []byte, err error) {
 		if (zb0001Mask & 0x400) == 0 { // if not omitted
 			// string "metrics"
 			o = append(o, 0xa7, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73)
-			o = msgp.AppendMapHeader(o, uint32(len(z.metrics)))
-			for za0003, za0004 := range z.metrics {
+			o = msgp.AppendMapHeader(o, uint32(len(z.Metrics)))
+			for za0003, za0004 := range z.Metrics {
 				o = msgp.AppendString(o, za0003)
 				o = msgp.AppendFloat64(o, za0004)
 			}
@@ -461,11 +461,11 @@ func (z *Span) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "meta")
 				return
 			}
-			if z.meta == nil {
-				z.meta = make(map[string]string, zb0002)
-			} else if len(z.meta) > 0 {
-				for key := range z.meta {
-					delete(z.meta, key)
+			if z.Meta == nil {
+				z.Meta = make(map[string]string, zb0002)
+			} else if len(z.Meta) > 0 {
+				for key := range z.Meta {
+					delete(z.Meta, key)
 				}
 			}
 			for zb0002 > 0 {
@@ -482,7 +482,7 @@ func (z *Span) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "meta", za0001)
 					return
 				}
-				z.meta[za0001] = za0002
+				z.Meta[za0001] = za0002
 			}
 		case "metrics":
 			var zb0003 uint32
@@ -491,11 +491,11 @@ func (z *Span) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "metrics")
 				return
 			}
-			if z.metrics == nil {
-				z.metrics = make(map[string]float64, zb0003)
-			} else if len(z.metrics) > 0 {
-				for key := range z.metrics {
-					delete(z.metrics, key)
+			if z.Metrics == nil {
+				z.Metrics = make(map[string]float64, zb0003)
+			} else if len(z.Metrics) > 0 {
+				for key := range z.Metrics {
+					delete(z.Metrics, key)
 				}
 			}
 			for zb0003 > 0 {
@@ -512,7 +512,7 @@ func (z *Span) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "metrics", za0003)
 					return
 				}
-				z.metrics[za0003] = za0004
+				z.Metrics[za0003] = za0004
 			}
 		default:
 			bts, err = msgp.Skip(bts)
@@ -529,15 +529,15 @@ func (z *Span) UnmarshalMsg(bts []byte) (o []byte, err error) {
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Span) Msgsize() (s int) {
 	s = 1 + 9 + msgp.Uint64Size + 8 + msgp.Uint64Size + 10 + msgp.Uint64Size + 8 + msgp.StringPrefixSize + len(z.Service) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Int64Size + 9 + msgp.Int64Size + 9 + msgp.StringPrefixSize + len(z.Resource) + 5 + msgp.StringPrefixSize + len(z.SpanType) + 5 + msgp.MapHeaderSize
-	if z.meta != nil {
-		for za0001, za0002 := range z.meta {
+	if z.Meta != nil {
+		for za0001, za0002 := range z.Meta {
 			_ = za0002
 			s += msgp.StringPrefixSize + len(za0001) + msgp.StringPrefixSize + len(za0002)
 		}
 	}
 	s += 8 + msgp.MapHeaderSize
-	if z.metrics != nil {
-		for za0003, za0004 := range z.metrics {
+	if z.Metrics != nil {
+		for za0003, za0004 := range z.Metrics {
 			_ = za0004
 			s += msgp.StringPrefixSize + len(za0003) + msgp.Float64Size
 		}

@@ -317,6 +317,10 @@ func (e *EbpfTx) SpanId() uint64 {
 	return e.Stream.Span_id
 }
 
+func (e *EbpfTx) Host(buffer []byte) ([]byte, bool) {
+	return []byte{0}, false
+}
+
 func (e *EbpfTx) ParentId() uint64 {
 	return e.Stream.Parent_id
 }

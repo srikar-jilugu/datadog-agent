@@ -25,6 +25,10 @@ func (e *EbpfEvent) Path(buffer []byte) ([]byte, bool) {
 	return computePath(buffer, e.Http.Request_fragment[:])
 }
 
+func (e *EbpfEvent) Host(buffer []byte) ([]byte, bool) {
+	return computeHost(buffer, e.Http.Request_fragment[:])
+}
+
 // RequestLatency returns the latency of the request in nanoseconds
 func (e *EbpfEvent) RequestLatency() float64 {
 	if uint64(e.Http.Request_started) == 0 || uint64(e.Http.Response_last_seen) == 0 {
