@@ -25,8 +25,8 @@ type Span struct {
 	ParentId  uint64             `msg:"parent_id"`
 	Service   string             `msg:"service"`
 	Name      string             `msg:"name"`
-	Start     int64              `msg:"start"`
-	Duration  int64              `msg:"duration"`
+	Start     uint64             `msg:"start"`
+	Duration  uint64             `msg:"duration"`
 	Resource  string             `msg:"resource"`
 	SpanType  string             `msg:"type"`
 	Meta      map[string]string  `msg:"meta,omitempty"`
@@ -87,7 +87,7 @@ func (w *writer) flush(chunk map[uint64][]Span) {
 	req.Header.Set("X-Datadog-Trace-Count", strconv.Itoa(len(chunk)))
 
 	req.Header.Set("Datadog-Meta-Lang-Version", "0.0.1")
-	req.Header.Set("Datadog-Meta-Lang-Interpreter", "beyla")
+	req.Header.Set("Datadog-Meta-Lang-Interpreter", "system-probe-ebpf")
 	req.Header.Set("Datadog-Meta-Tracer-Version", "0.1.0")
 
 	// Create a new HTTP client

@@ -180,6 +180,8 @@ func txToSpan(tx Transaction, normalizedPath string) trace.Span {
 		SpanType:  "web",
 		Meta:      map[string]string{},
 		Metrics:   map[string]float64{},
+		Start:     tx.RequestStarted(),
+		Duration:  uint64(tx.RequestLatency()),
 	}
 
 	s.Meta["http.url"] = string(toFullUrl(tx))
