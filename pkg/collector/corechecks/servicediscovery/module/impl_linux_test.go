@@ -10,9 +10,11 @@
 package module
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -1392,5 +1394,31 @@ func BenchmarkGetNSInfoOld(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		getNsInfoOld(os.Getpid())
+	}
+}
+
+func BenchmarkNewNetIPSocket(b *testing.B) {
+	testdata := []byte(`  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: 00000000:A79D 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 18302 1 ffff0000c937a400 100 0 0 10 0
+   1: 00000000:87C5 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 15222 1 ffff0001f5506c00 100 0 0 10 0
+   2: 3500007F:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000   102        0 19180 1 ffff0000c6960900 100 0 0 10 5
+   3: 00000000:C1C3 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 18295 1 ffff0000c937b600 100 0 0 10 0
+   4: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 18389 1 ffff0000c937da00 100 0 0 10 0
+   5: 00000000:006F 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 14436 1 ffff0001f5501200 100 0 0 10 0
+   6: 00000000:CEA5 00000000:0000 0A 00000000:00000000 00:00000000 00000000   114        0 18335 1 ffff0000c937f500 100 0 0 10 0
+   7: 00000000:8AA9 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 19666 1 ffff0000c5913600 100 0 0 10 0
+   8: 00000000:0801 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 19316 1 ffff0000c6961b00 100 0 0 10 0
+   9: 0337D30A:0016 0237D30A:C929 01 00000000:00000000 02:00040746 00000000     0        0 398812 4 ffff0000c5912400 20 4 29 10 -1`)
+
+	rdr := bytes.NewReader(testdata)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		_, _ = rdr.Seek(0, io.SeekStart)
+		ports, err := newNetIPSocketReader(rdr, tcpListen, nil)
+		if err != nil {
+			b.Fatal(err)
+		}
+		runtime.KeepAlive(ports)
 	}
 }

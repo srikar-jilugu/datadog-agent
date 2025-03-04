@@ -430,9 +430,13 @@ func newNetIPSocket(file string, expectedState uint64, shouldIgnore func(uint16)
 	}
 	defer f.Close()
 
+	return newNetIPSocketReader(f, expectedState, shouldIgnore)
+}
+
+func newNetIPSocketReader(rdr io.Reader, expectedState uint64, shouldIgnore func(uint16) bool) (map[uint64]uint16, error) {
 	netIPSocket := make(map[uint64]uint16)
 
-	lr := io.LimitReader(f, readLimit)
+	lr := io.LimitReader(rdr, readLimit)
 	s := bufio.NewScanner(lr)
 	s.Scan() // skip first line with headers
 	for s.Scan() {
