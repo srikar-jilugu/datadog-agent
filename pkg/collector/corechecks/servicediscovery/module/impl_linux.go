@@ -7,6 +7,7 @@ package module
 
 import (
 	"bufio"
+	"bytes"
 	"cmp"
 	"errors"
 	"fmt"
@@ -390,31 +391,31 @@ var (
 // parseNetIPSocketLine parses a single line, represented by a list of fields.
 // It returns the inode and local port of the socket if the line is valid.
 // Based on parseNetIPSocketLine() in net_ip_socket.go from github.com/prometheus/procfs.
-func parseNetIPSocketLine(fields []string, expectedState uint64) (uint64, uint16, error) {
+func parseNetIPSocketLine(fields [][]byte, expectedState uint64) (uint64, uint16, error) {
 	if len(fields) < 10 {
 		return 0, 0, errInvalidLine
 	}
 	var localPort uint16
 	var inode uint64
 
-	if state, err := strconv.ParseUint(fields[3], 16, 64); err != nil {
+	if state, err := strconv.ParseUint(string(fields[3]), 16, 64); err != nil {
 		return 0, 0, errInvalidState
 	} else if state != expectedState {
 		return 0, 0, errUnsupportedState
 	}
 
 	// local_address
-	l := strings.Split(fields[1], ":")
-	if len(l) != 2 {
+	_, portStr, found := bytes.Cut(fields[1], []byte(":"))
+	if !found {
 		return 0, 0, errInvalidLocalIP
 	}
-	localPortTemp, err := strconv.ParseUint(l[1], 16, 64)
+	localPortTemp, err := strconv.ParseUint(string(portStr), 16, 16)
 	if err != nil {
 		return 0, 0, errInvalidLocalPort
 	}
 	localPort = uint16(localPortTemp)
 
-	if inode, err = strconv.ParseUint(fields[9], 0, 64); err != nil {
+	if inode, err = strconv.ParseUint(string(fields[9]), 0, 64); err != nil {
 		return 0, 0, errInvalidInode
 	}
 
@@ -440,7 +441,7 @@ func newNetIPSocketReader(rdr io.Reader, expectedState uint64, shouldIgnore func
 	s := bufio.NewScanner(lr)
 	s.Scan() // skip first line with headers
 	for s.Scan() {
-		fields := strings.Fields(s.Text())
+		fields := bytes.Fields(s.Bytes())
 		inode, port, err := parseNetIPSocketLine(fields, expectedState)
 		if err != nil {
 			continue
