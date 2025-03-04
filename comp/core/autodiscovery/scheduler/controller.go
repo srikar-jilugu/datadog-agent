@@ -154,6 +154,7 @@ func (ms *Controller) processNextWorkItem() bool {
 		return true
 	}
 
+	ms.m.Lock() //lock on activeSchedulers and scheduledConfigs
 	currentState := Unscheduled
 	desiredState := desiredConfigState.desiredState
 	configName := desiredConfigState.config.Name
@@ -161,12 +162,12 @@ func (ms *Controller) processNextWorkItem() bool {
 		currentState = Scheduled
 	}
 	if desiredState == currentState {
+		ms.m.Unlock()
 		ms.queue.Done(configDigest)               // no action needed
 		ms.configStateStore.Cleanup(configDigest) // cleanup the config state if it is unscheduled already
 		return true
 	}
 	log.Tracef("Controller starts processing config %s: currentState: %d, desiredState: %d", configName, currentState, desiredState)
-	ms.m.Lock() //lock on activeSchedulers
 	for _, scheduler := range ms.activeSchedulers {
 		if desiredState == Scheduled {
 			//to be scheduled
