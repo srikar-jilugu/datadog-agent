@@ -77,24 +77,24 @@ func (ownersLanguages *OwnersLanguages) String() string {
 	ownersLanguages.mutex.Lock()
 	defer ownersLanguages.mutex.Unlock()
 
-	state := ""
+	var builder strings.Builder
 	for owner, langs := range ownersLanguages.containersLanguages {
-		state += fmt.Sprintf("===== %s/%s/%s ====\n", owner.Namespace, owner.Kind, owner.Name)
+		builder.WriteString(fmt.Sprintf("===== %s/%s/%s ====\n", owner.Namespace, owner.Kind, owner.Name))
 		if langs.dirty {
-			state += "dirty\n"
+			builder.WriteString("dirty\n")
 		} else {
-			state += "clean\n"
+			builder.WriteString("clean\n")
 		}
 
 		for container, languageSet := range langs.languages {
-			state += container.Name + ": "
+			builder.WriteString(fmt.Sprintf("%s: ", container.Name))
 			for languagename := range languageSet {
-				state += fmt.Sprintf("%s,", languagename)
+				builder.WriteString(fmt.Sprintf("%s,", languagename))
 			}
-			state += "\n"
+			builder.WriteString("\n")
 		}
 	}
-	return state
+	return builder.String()
 }
 
 // getOrInitialize returns the containers languages for a specific namespaced owner, initialising it if it doesn't already
