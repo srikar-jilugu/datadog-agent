@@ -18,7 +18,7 @@
     # Build image, use target none label to avoid replication
     - >
       docker buildx build --no-cache --push --pull --platform linux/$ARCH
-        --output type=image,compression=gzip,compression-level=9
+        --output type=image,compression=gzip,compression-level=8
         --build-arg CIBUILD=true
         --build-arg GENERAL_ARTIFACTS_CACHE_BUCKET_URL=${GENERAL_ARTIFACTS_CACHE_BUCKET_URL}
         $BUILD_ARG
