@@ -43,38 +43,38 @@ var helperNames = map[int]string{
 	ringbufOutput:   "bpf_ringbuf_output",
 }
 
-type telemetryKey struct {
+type TelemetryKey struct {
 	resourceName names.ResourceName
 	moduleName   names.ModuleName
 }
 
-func (k *telemetryKey) bytes() []byte {
+func (k *TelemetryKey) bytes() []byte {
 	return []byte(k.String())
 }
 
-func (k *telemetryKey) String() string {
+func (k *TelemetryKey) String() string {
 	return fmt.Sprintf("%s,%s", k.resourceName.Name(), k.moduleName.Name())
 }
 
-// ebpfErrorsTelemetry interface allows easy mocking for UTs without a need to initialize the whole ebpf sub-system and execute ebpf maps APIs
-type ebpfErrorsTelemetry interface {
+// EbpfErrorsTelemetry interface allows easy mocking for UTs without a need to initialize the whole ebpf sub-system and execute ebpf maps APIs
+type EbpfErrorsTelemetry interface {
 	sync.Locker
-	fill([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, helperErrTelemetry]) error
-	cleanup([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, helperErrTelemetry]) error
-	setProbe(name telemetryKey, hash uint64)
+	fill([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, HelperErrTelemetry]) error
+	cleanup([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, HelperErrTelemetry]) error
+	setProbe(name TelemetryKey, hash uint64)
 	isInitialized() bool
-	forEachMapErrorEntryInMaps(yield func(telemetryKey, uint64, mapErrTelemetry) bool)
-	forEachHelperErrorEntryInMaps(yield func(telemetryKey, uint64, helperErrTelemetry) bool)
+	forEachMapErrorEntryInMaps(yield func(TelemetryKey, uint64, mapErrTelemetry) bool)
+	ForEachHelperErrorEntryInMaps(yield func(TelemetryKey, uint64, HelperErrTelemetry) bool)
 }
 
-// ebpfTelemetry struct implements ebpfErrorsTelemetry interface and contains all the maps that
+// ebpfTelemetry struct implements EbpfErrorsTelemetry interface and contains all the maps that
 // are registered to have their telemetry collected.
 type ebpfTelemetry struct {
 	mtx                   sync.Mutex
-	mapKeys               map[telemetryKey]uint64
-	probeKeys             map[telemetryKey]uint64
+	mapKeys               map[TelemetryKey]uint64
+	probeKeys             map[TelemetryKey]uint64
 	mapErrMapsByModule    map[names.ModuleName]*maps.GenericMap[uint64, mapErrTelemetry]
-	helperErrMapsByModule map[names.ModuleName]*maps.GenericMap[uint64, helperErrTelemetry]
+	helperErrMapsByModule map[names.ModuleName]*maps.GenericMap[uint64, HelperErrTelemetry]
 	initialized           bool
 }
 
@@ -90,7 +90,7 @@ func (e *ebpfTelemetry) Unlock() {
 
 // fill initializes the maps for holding telemetry info.
 // It must be called after the manager is initialized
-func (e *ebpfTelemetry) fill(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, helperErrTelemetry]) error {
+func (e *ebpfTelemetry) fill(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry]) error {
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 
@@ -116,7 +116,7 @@ func (e *ebpfTelemetry) fill(maps []names.MapName, mn names.ModuleName, mapErrMa
 	return nil
 }
 
-func (e *ebpfTelemetry) cleanup(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, helperErrTelemetry]) error {
+func (e *ebpfTelemetry) cleanup(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry]) error {
 	var errs error
 
 	e.mtx.Lock()
@@ -151,7 +151,7 @@ func (e *ebpfTelemetry) cleanup(maps []names.MapName, mn names.ModuleName, mapEr
 	return errs
 }
 
-func (e *ebpfTelemetry) setProbe(key telemetryKey, hash uint64) {
+func (e *ebpfTelemetry) setProbe(key TelemetryKey, hash uint64) {
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 	e.probeKeys[key] = hash
@@ -161,7 +161,7 @@ func (e *ebpfTelemetry) isInitialized() bool {
 	return e.initialized
 }
 
-func (e *ebpfTelemetry) forEachMapErrorEntryInMaps(yield func(key telemetryKey, eBPFKey uint64, val mapErrTelemetry) bool) {
+func (e *ebpfTelemetry) forEachMapErrorEntryInMaps(yield func(key TelemetryKey, eBPFKey uint64, val mapErrTelemetry) bool) {
 	var mval mapErrTelemetry
 	for mod, errMap := range e.mapErrMapsByModule {
 		for mKey, k := range e.mapKeys {
@@ -181,8 +181,8 @@ func (e *ebpfTelemetry) forEachMapErrorEntryInMaps(yield func(key telemetryKey, 
 	}
 }
 
-func (e *ebpfTelemetry) forEachHelperErrorEntryInMaps(yield func(key telemetryKey, eBPFKey uint64, val helperErrTelemetry) bool) {
-	var hval helperErrTelemetry
+func (e *ebpfTelemetry) ForEachHelperErrorEntryInMaps(yield func(key TelemetryKey, eBPFKey uint64, val HelperErrTelemetry) bool) {
+	var hval HelperErrTelemetry
 	for mod, errMap := range e.helperErrMapsByModule {
 		for pKey, k := range e.probeKeys {
 			if mod != pKey.moduleName {
@@ -200,13 +200,13 @@ func (e *ebpfTelemetry) forEachHelperErrorEntryInMaps(yield func(key telemetryKe
 	}
 }
 
-// newEBPFTelemetry initializes a new ebpfTelemetry object
-func newEBPFTelemetry() ebpfErrorsTelemetry {
+// NewEBPFTelemetry initializes a new ebpfTelemetry object
+func NewEBPFTelemetry() EbpfErrorsTelemetry {
 	errorsTelemetry = &ebpfTelemetry{
-		mapKeys:               make(map[telemetryKey]uint64),
-		probeKeys:             make(map[telemetryKey]uint64),
+		mapKeys:               make(map[TelemetryKey]uint64),
+		probeKeys:             make(map[TelemetryKey]uint64),
 		mapErrMapsByModule:    make(map[names.ModuleName]*maps.GenericMap[uint64, mapErrTelemetry]),
-		helperErrMapsByModule: make(map[names.ModuleName]*maps.GenericMap[uint64, helperErrTelemetry]),
+		helperErrMapsByModule: make(map[names.ModuleName]*maps.GenericMap[uint64, HelperErrTelemetry]),
 	}
 	return errorsTelemetry
 }
@@ -232,9 +232,9 @@ func (e *ebpfTelemetry) initializeMapErrTelemetryMap(maps []names.MapName, mn na
 	return nil
 }
 
-func (e *ebpfTelemetry) initializeHelperErrTelemetryMap(module names.ModuleName, helperErrMap *maps.GenericMap[uint64, helperErrTelemetry]) error {
+func (e *ebpfTelemetry) initializeHelperErrTelemetryMap(module names.ModuleName, helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry]) error {
 	// the `probeKeys` get added during instruction patching, so we just try to insert entries for any that don't exist
-	z := new(helperErrTelemetry)
+	z := new(HelperErrTelemetry)
 	for p, key := range e.probeKeys {
 		if p.moduleName != module {
 			continue
@@ -278,7 +278,7 @@ func PatchEBPFTelemetry(programSpecs map[string]*ebpf.ProgramSpec, enable bool, 
 	return patchEBPFTelemetry(programSpecs, enable, mn, errorsTelemetry)
 }
 
-func patchEBPFTelemetry(programSpecs map[string]*ebpf.ProgramSpec, enable bool, mn names.ModuleName, bpfTelemetry ebpfErrorsTelemetry) error {
+func patchEBPFTelemetry(programSpecs map[string]*ebpf.ProgramSpec, enable bool, mn names.ModuleName, bpfTelemetry EbpfErrorsTelemetry) error {
 	const symbol = "telemetry_program_id_key"
 	newIns := asm.Mov.Reg(asm.R1, asm.R1)
 	if enable {
@@ -317,21 +317,21 @@ func keyHash() hash.Hash64 {
 	return fnv.New64a()
 }
 
-func mapTelemetryKey(name names.MapName, mn names.ModuleName) telemetryKey {
-	return telemetryKey{resourceName: &name, moduleName: mn}
+func mapTelemetryKey(name names.MapName, mn names.ModuleName) TelemetryKey {
+	return TelemetryKey{resourceName: &name, moduleName: mn}
 }
 
-func probeTelemetryKey(programName names.ProgramName, mn names.ModuleName) telemetryKey {
-	return telemetryKey{resourceName: &programName, moduleName: mn}
+func probeTelemetryKey(programName names.ProgramName, mn names.ModuleName) TelemetryKey {
+	return TelemetryKey{resourceName: &programName, moduleName: mn}
 }
 
-func eBPFMapErrorKey(h hash.Hash64, name telemetryKey) uint64 {
+func eBPFMapErrorKey(h hash.Hash64, name TelemetryKey) uint64 {
 	h.Reset()
 	_, _ = h.Write(name.bytes())
 	return h.Sum64()
 }
 
-func eBPFHelperErrorKey(h hash.Hash64, name telemetryKey) uint64 {
+func eBPFHelperErrorKey(h hash.Hash64, name TelemetryKey) uint64 {
 	h.Reset()
 	_, _ = h.Write(name.bytes())
 	return h.Sum64()

@@ -8,6 +8,7 @@
 package events
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/ebpf/telemetry"
 	"os"
 	"path/filepath"
 	"sync"
@@ -72,6 +73,62 @@ func TestConsumer(t *testing.T) {
 		actual := result[uint64(i)]
 		assert.Equalf(t, 1, actual, "eventID=%d should have 1 occurrence. got %d", i, actual)
 	}
+}
+
+func TestEagainErrors(t *testing.T) {
+	kversion, err := kernel.HostVersion()
+	require.NoError(t, err)
+	if minVersion := kernel.VersionCode(4, 14, 0); kversion < minVersion {
+		t.Skipf("package not supported by kernels < %s", minVersion)
+	}
+
+	const numEvents = 100
+	c := config.New()
+	program, err := NewEBPFProgram(c)
+	require.NoError(t, err)
+
+	var mux sync.Mutex
+	result := make(map[uint64]int)
+	callback := func(events []uint64) {
+		mux.Lock()
+		defer mux.Unlock()
+		for _, n := range events {
+			result[n] = +1
+		}
+	}
+
+	consumer, err := NewConsumer("test", program.Manager, callback)
+	require.NoError(t, err)
+	consumer.Start()
+
+	err = program.Start()
+	require.NoError(t, err)
+
+	// generate test events
+	generator := newEventGenerator(program, t)
+	for i := 0; i < numEvents; i++ {
+		generator.Generate(uint64(i))
+	}
+	generator.Stop()
+	time.Sleep(100 * time.Millisecond)
+
+	// this ensures that any incomplete batch left in eBPF is fully processed
+	consumer.Sync()
+	program.Stop(manager.CleanAll)
+	consumer.Stop()
+
+	// ensure that we have received each event exactly once
+	for i := 0; i < numEvents; i++ {
+		actual := result[uint64(i)]
+		assert.Equalf(t, 1, actual, "eventID=%d should have 1 occurrence. got %d", i, actual)
+	}
+
+	ebpfTelemetry := telemetry.NewEBPFTelemetry()
+	ebpfTelemetry.ForEachHelperErrorEntryInMaps(
+		func(tKey telemetry.TelemetryKey, eBPFKey uint64, val telemetry.HelperErrTelemetry) bool {
+			assert.Equal(t, uint64(0), val.Count)
+			return true
+		})
 }
 
 func TestInvalidBatchCountMetric(t *testing.T) {
