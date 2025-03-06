@@ -285,20 +285,28 @@ build do
         FileUtils.rm([libssl_match, libcrypto_match])
       end
     elsif windows_target?
-      dll_folder = File.join(install_dir, "embedded3", "DLLS")
-      # Build the cryptography library in this case so that it gets linked to Agent's OpenSSL
-      # We first need to copy some files around (we need the .lib files for building)
-      copy File.join(install_dir, "embedded3", "lib", "libssl.dll.a"),
-           File.join(dll_folder, "libssl-3-x64.lib")
-      copy File.join(install_dir, "embedded3", "lib", "libcrypto.dll.a"),
-           File.join(dll_folder, "libcrypto-3-x64.lib")
+      block "Patch cryptography's dll references" do
+        # We delete the libraries shipped with the wheel and replace references to those names
+        # in the binary that references it using search-and-replace
+        cryptography_libs_folder = File.join(install_dir, "embedded3", "lib", "site-packages", "cryptography.libs")
+        libssl_match = Dir.glob(File.join(cryptography_libs_folder, "libssl-3-*.dll"))[0]
+        libcrypto_match = Dir.glob(File.join(cryptography_libs_folder, "libcrypto-3-*.dll"))[0]
 
-      command "#{python} -m pip install --force-reinstall --no-deps --no-binary cryptography cryptography==43.0.1",
-              env: {
-                "OPENSSL_LIB_DIR" => dll_folder,
-                "OPENSSL_INCLUDE_DIR" => File.join(install_dir, "embedded3", "include"),
-                "OPENSSL_LIBS" => "libssl-3-x64:libcrypto-3-x64",
-              }
+        file_to_patch = File.join(install_dir, "embedded3", "lib", "site-packages", "cryptography", "hazmat", "bindings", "_rust.pyd")
+        file_contents = File.read(file_to_patch, mode: "rb")
+        substitutions = [
+          [File.basename(libssl_match), "libssl-3-x64.dll"],
+          [File.basename(libcrypto_match), "libcrypto-3-x64.dll"],
+        ]
+        for original, target in substitutions
+          # Patch by search-and-replace
+          # We pad with zeros to maintain offsets, knowing that mangled names are always longer than the ones we want.
+          file_contents.gsub!(original, target + "\0"*(original.length - target.length))
+        end
+        File.binwrite(file_to_patch, file_contents)
+        FileUtils.rm([libssl_match, libcrypto_match])
+      end
+
       # Python extensions on windows require this to find their DLL dependencies,
       # we abuse the `.pth` loading system to inject it
       block "Inject dll path for Python extensions" do
