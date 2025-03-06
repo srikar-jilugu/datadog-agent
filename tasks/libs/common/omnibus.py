@@ -80,8 +80,10 @@ def _get_environment_for_cache() -> dict:
             'VAULT_',
             'VALIDATE_',
             'XPC_',
-            'WINDOWS_',
         ]
+        if sys.platform != 'win32':
+            excluded_prefixes += ['WINDOWS_']
+
         excluded_suffixes = [
             '_SHA256',
             '_VERSION',
