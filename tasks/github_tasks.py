@@ -407,7 +407,7 @@ def pr_commenter(
 
     from tasks.libs.ciproviders.github_api import GithubAPI
 
-    if not body and not delete:
+    if (not body and not delete) or 'CI_COMMIT_TAG' in os.environ:
         return
 
     assert not delete or not body, "Use delete with an empty body to delete the comment"
