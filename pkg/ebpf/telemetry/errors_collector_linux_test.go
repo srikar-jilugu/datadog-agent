@@ -71,7 +71,7 @@ func (m *mockErrorsTelemetry) forEachMapErrorEntryInMaps(yield func(telemetryKey
 	}
 }
 
-func (m *mockErrorsTelemetry) ForEachHelperErrorEntryInMaps(yield func(telemetryKey, uint64, helperErrTelemetry) bool) {
+func (m *mockErrorsTelemetry) forEachHelperErrorEntryInMaps(yield func(telemetryKey, uint64, helperErrTelemetry) bool) {
 	for i, telemetry := range m.helperErrMap {
 		if !yield(i.tKey, i.eBPFKey, telemetry) {
 			return

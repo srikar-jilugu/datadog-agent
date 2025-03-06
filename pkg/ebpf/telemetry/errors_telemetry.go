@@ -64,7 +64,7 @@ type ebpfErrorsTelemetry interface {
 	setProbe(name telemetryKey, hash uint64)
 	isInitialized() bool
 	forEachMapErrorEntryInMaps(yield func(telemetryKey, uint64, mapErrTelemetry) bool)
-	ForEachHelperErrorEntryInMaps(yield func(telemetryKey, uint64, helperErrTelemetry) bool)
+	forEachHelperErrorEntryInMaps(yield func(telemetryKey, uint64, helperErrTelemetry) bool)
 }
 
 // ebpfTelemetry struct implements ebpfErrorsTelemetry interface and contains all the maps that
@@ -181,7 +181,7 @@ func (e *ebpfTelemetry) forEachMapErrorEntryInMaps(yield func(key telemetryKey, 
 	}
 }
 
-func (e *ebpfTelemetry) ForEachHelperErrorEntryInMaps(yield func(key telemetryKey, eBPFKey uint64, val helperErrTelemetry) bool) {
+func (e *ebpfTelemetry) forEachHelperErrorEntryInMaps(yield func(key telemetryKey, eBPFKey uint64, val helperErrTelemetry) bool) {
 	var hval helperErrTelemetry
 	for mod, errMap := range e.helperErrMapsByModule {
 		for pKey, k := range e.probeKeys {

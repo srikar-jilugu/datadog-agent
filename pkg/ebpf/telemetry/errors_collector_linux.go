@@ -98,7 +98,7 @@ func (e *EBPFErrorsCollector) Collect(ch chan<- prometheus.Metric) {
 		return true
 	})
 
-	e.t.ForEachHelperErrorEntryInMaps(func(tKey telemetryKey, eBPFKey uint64, val helperErrTelemetry) bool {
+	e.t.forEachHelperErrorEntryInMaps(func(tKey telemetryKey, eBPFKey uint64, val helperErrTelemetry) bool {
 		for i, helperName := range helperNames {
 			base := maxErrno * i
 			if count := getErrCount(val.Count[base : base+maxErrno]); len(count) > 0 {
