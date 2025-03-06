@@ -13,4 +13,4 @@ package telemetry
 import "C"
 
 type mapErrTelemetry C.map_err_telemetry_t
-type HelperErrTelemetry C.helper_err_telemetry_t
+type helperErrTelemetry C.helper_err_telemetry_t
