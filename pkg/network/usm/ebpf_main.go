@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"sort"
+	"strings"
 	"unsafe"
 
 	manager "github.com/DataDog/ebpf-manager"
@@ -42,14 +44,16 @@ var (
 	errNoProtocols = errors.New("no protocol monitors were initialised")
 
 	// knownProtocols holds all known protocols supported by USM to initialize.
-	knownProtocols = []*protocols.ProtocolSpec{
-		http.Spec,
-		http2.Spec,
-		kafka.Spec,
-		postgres.Spec,
-		redis.Spec,
-		// opensslSpec is unique, as we're modifying its factory during runtime to allow getting more parameters in the
-		// factory.
+	knownProtocols = map[*protocols.ProtocolSpec]protocols.NetifProtocolProgramType{
+		http.Spec:     protocols.NetifProgHTTP,
+		http2.Spec:    protocols.NetifProgHTTP2,
+		kafka.Spec:    protocols.NetifProgKafka,
+		postgres.Spec: protocols.NetifProgPostgres,
+		redis.Spec:    protocols.NetifProgRedis,
+	}
+
+	// knownTLSModules holds all known TLS modules supported by USM to initialize.
+	knownTLSModules = []*protocols.ProtocolSpec{
 		opensslSpec,
 		goTLSSpec,
 		istioSpec,
@@ -110,12 +114,12 @@ func newEBPFProgram(c *config.Config, connectionProtocolMap *ebpf.Map) (*ebpfPro
 					UID:          probeUID,
 				},
 			},
-			{
-				ProbeIdentificationPair: manager.ProbeIdentificationPair{
-					EBPFFuncName: "tracepoint__net__netif_receive_skb",
-					UID:          probeUID,
-				},
-			},
+			//{
+			//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			//		EBPFFuncName: "tracepoint__net__netif_receive_skb",
+			//		UID:          probeUID,
+			//	},
+			//},
 			{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
 					EBPFFuncName: protocolDispatcherSocketFilterFunction,
@@ -523,16 +527,50 @@ func (e *ebpfProgram) init(buf bytecode.AssetReader, options manager.Options) er
 		}
 	}
 
+	supportedProtocols := make([]*protocols.ProtocolSpec, 0, len(supported))
+	for _, p := range supported {
+		if _, ok := knownProtocols[p]; ok {
+			supportedProtocols = append(supportedProtocols, p)
+		}
+	}
+	sort.Slice(supportedProtocols, func(i, j int) bool {
+		return knownProtocols[supportedProtocols[i]] < knownProtocols[supportedProtocols[j]]
+	})
+	e.Manager.Probes = append(e.Manager.Probes, &manager.Probe{
+		ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			EBPFFuncName: fmt.Sprintf("tracepoint__net__netif_receive_skb_%s", strings.ToLower(supportedProtocols[0].Instance.Name())),
+		},
+	})
+	options.ActivatedProbes = append(options.ActivatedProbes, &manager.ProbeSelector{
+		ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			EBPFFuncName: fmt.Sprintf("tracepoint__net__netif_receive_skb_%s", strings.ToLower(supportedProtocols[0].Instance.Name())),
+		},
+	})
+
 	err := e.InitWithOptions(buf, &options)
 	if err != nil {
 		cleanup()
-	} else {
-		// Update the protocols lists to reflect the ones we actually enabled
-		e.enabledProtocols = supported
-		e.disabledProtocols = notSupported
+		return err
 	}
 
-	return err
+	netifDispatcherMapping, _, err := e.Manager.GetMap("netif_dispacther_mapping")
+	if err != nil {
+		cleanup()
+		return err
+	}
+
+	// Build tail call map using NetifProtocolProgramType values from knownProtocols.
+	for i := 0; i < len(supportedProtocols)-1; i++ {
+		key := knownProtocols[supportedProtocols[i]]
+		value := knownProtocols[supportedProtocols[i+1]]
+		netifDispatcherMapping.Put(unsafe.Pointer(&key), unsafe.Pointer(&value))
+	}
+
+	// Update the protocols lists to reflect the ones we actually enabled
+	e.enabledProtocols = supported
+	e.disabledProtocols = notSupported
+	return nil
+
 }
 
 func getAssetName(module string, debug bool) string {
@@ -647,7 +685,12 @@ func (e *ebpfProgram) initProtocols(c *config.Config) error {
 	e.enabledProtocols = make([]*protocols.ProtocolSpec, 0)
 	e.disabledProtocols = make([]*protocols.ProtocolSpec, 0)
 
-	for _, spec := range knownProtocols {
+	allSpecs := make([]*protocols.ProtocolSpec, 0, len(knownProtocols)+len(knownTLSModules))
+	for spec, _ := range knownProtocols {
+		allSpecs = append(allSpecs, spec)
+	}
+	allSpecs = append(allSpecs, knownTLSModules...)
+	for _, spec := range allSpecs {
 		protocol, err := spec.Factory(e.Manager.Manager, c)
 		if err != nil {
 			return &errNotSupported{err}

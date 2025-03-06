@@ -130,6 +130,13 @@ var Spec = &protocols.ProtocolSpec{
 				EBPFFuncName: tlsHandleResponseTailCall,
 			},
 		},
+		{
+			ProgArrayName: protocols.NetifDispatcherProgs,
+			Key:           uint32(protocols.NetifProgPostgres),
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{
+				EBPFFuncName: "tracepoint__net__netif_receive_skb_postgres",
+			},
+		},
 	},
 }
 

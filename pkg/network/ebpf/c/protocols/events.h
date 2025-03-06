@@ -82,7 +82,7 @@
                     return;                                                                             \
                 }                                                                                       \
                                                                                                         \
-                _LOG(name, "batch flushed: cpu: %d idx: %llu", key.cpu, batch->idx);                      \
+                _LOG(name, "guy batch flushed: cpu: %d idx: %llu", key.cpu, batch->idx);                      \
                 batch->dropped_events = 0;                                                              \
                 batch->failed_flushes = 0;                                                              \
                 batch->len = 0;                                                                         \

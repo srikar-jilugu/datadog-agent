@@ -70,6 +70,13 @@ var Spec = &protocols.ProtocolSpec{
 				EBPFFuncName: tlsTerminationTailCall,
 			},
 		},
+		{
+			ProgArrayName: protocols.NetifDispatcherProgs,
+			Key:           uint32(protocols.NetifProgRedis),
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{
+				EBPFFuncName: "tracepoint__net__netif_receive_skb_redis",
+			},
+		},
 	},
 }
 

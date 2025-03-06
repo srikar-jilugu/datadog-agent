@@ -10,6 +10,7 @@ package protocols
 // #cgo CFLAGS: -I ../../ebpf/c  -I ../ebpf/c
 // #include "../ebpf/c/protocols/classification/defs.h"
 // #include "../ebpf/c/protocols/postgres/types.h"
+// #include "../ebpf/c/protocols/flush-types.h"
 import "C"
 
 const (
@@ -106,4 +107,14 @@ const (
 	ebpfMySQL ebpfProtocolType = C.PROTOCOL_MYSQL
 	// GRPC protocol
 	ebpfGRPC ebpfProtocolType = C.PROTOCOL_GRPC
+)
+
+type NetifProtocolProgramType C.netif_protocol_prog_t
+
+const (
+	NetifProgHTTP     NetifProtocolProgramType = C.NETIF_PROG_HTTP
+	NetifProgHTTP2    NetifProtocolProgramType = C.NETIF_PROG_HTTP2
+	NetifProgKafka    NetifProtocolProgramType = C.NETIF_PROG_KAFKA
+	NetifProgPostgres NetifProtocolProgramType = C.NETIF_PROG_POSTGRES
+	NetifProgRedis    NetifProtocolProgramType = C.NETIF_PROG_REDIS
 )

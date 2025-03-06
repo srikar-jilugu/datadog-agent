@@ -201,6 +201,13 @@ var Spec = &protocols.ProtocolSpec{
 				EBPFFuncName: tlsTerminationTailCall,
 			},
 		},
+		{
+			ProgArrayName: protocols.NetifDispatcherProgs,
+			Key:           uint32(protocols.NetifProgHTTP2),
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{
+				EBPFFuncName: "tracepoint__net__netif_receive_skb_http2",
+			},
+		},
 	},
 }
 

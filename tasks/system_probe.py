@@ -491,6 +491,7 @@ def ninja_cgo_type_files(nw: NinjaWriter):
             ],
             "pkg/network/protocols/ebpf_types.go": [
                 "pkg/network/ebpf/c/protocols/postgres/types.h",
+                "pkg/network/ebpf/c/protocols/flush.h",
             ],
             "pkg/network/protocols/http/gotls/go_tls_types.go": [
                 "pkg/network/ebpf/c/protocols/tls/go-tls-types.h",

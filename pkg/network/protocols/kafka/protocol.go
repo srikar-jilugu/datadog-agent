@@ -221,6 +221,13 @@ var Spec = &protocols.ProtocolSpec{
 				EBPFFuncName: tlsDispatcherTailCall,
 			},
 		},
+		{
+			ProgArrayName: protocols.NetifDispatcherProgs,
+			Key:           uint32(protocols.NetifProgKafka),
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{
+				EBPFFuncName: "tracepoint__net__netif_receive_skb_kafka",
+			},
+		},
 	},
 }
 

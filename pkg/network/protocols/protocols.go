@@ -23,6 +23,7 @@ const (
 	TLSDispatcherProgramsMap                    = "tls_process_progs"
 	ProtocolDispatcherClassificationPrograms    = "dispatcher_classification_progs"
 	TLSProtocolDispatcherClassificationPrograms = "tls_dispatcher_classification_progs"
+	NetifDispatcherProgs                        = "netif_dispatcher_progs"
 
 	DefaultMapCleanerBatchSize = 1
 )

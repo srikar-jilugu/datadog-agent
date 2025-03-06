@@ -92,3 +92,13 @@ const (
 
 	ebpfGRPC ebpfProtocolType = 0x2001
 )
+
+type NetifProtocolProgramType uint32
+
+const (
+	NetifProgHTTP     NetifProtocolProgramType = 0x0
+	NetifProgHTTP2    NetifProtocolProgramType = 0x1
+	NetifProgKafka    NetifProtocolProgramType = 0x2
+	NetifProgPostgres NetifProtocolProgramType = 0x3
+	NetifProgRedis    NetifProtocolProgramType = 0x4
+)
