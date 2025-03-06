@@ -6,6 +6,6 @@ package telemetry
 type mapErrTelemetry struct {
 	Count [64]uint64
 }
-type HelperErrTelemetry struct {
+type helperErrTelemetry struct {
 	Count [384]uint64
 }

@@ -56,25 +56,25 @@ func (k *TelemetryKey) String() string {
 	return fmt.Sprintf("%s,%s", k.resourceName.Name(), k.moduleName.Name())
 }
 
-// EbpfErrorsTelemetry interface allows easy mocking for UTs without a need to initialize the whole ebpf sub-system and execute ebpf maps APIs
-type EbpfErrorsTelemetry interface {
+// ebpfErrorsTelemetry interface allows easy mocking for UTs without a need to initialize the whole ebpf sub-system and execute ebpf maps APIs
+type ebpfErrorsTelemetry interface {
 	sync.Locker
-	fill([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, HelperErrTelemetry]) error
-	cleanup([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, HelperErrTelemetry]) error
+	fill([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, helperErrTelemetry]) error
+	cleanup([]names.MapName, names.ModuleName, *maps.GenericMap[uint64, mapErrTelemetry], *maps.GenericMap[uint64, helperErrTelemetry]) error
 	setProbe(name TelemetryKey, hash uint64)
 	isInitialized() bool
 	forEachMapErrorEntryInMaps(yield func(TelemetryKey, uint64, mapErrTelemetry) bool)
-	ForEachHelperErrorEntryInMaps(yield func(TelemetryKey, uint64, HelperErrTelemetry) bool)
+	ForEachHelperErrorEntryInMaps(yield func(TelemetryKey, uint64, helperErrTelemetry) bool)
 }
 
-// ebpfTelemetry struct implements EbpfErrorsTelemetry interface and contains all the maps that
+// ebpfTelemetry struct implements ebpfErrorsTelemetry interface and contains all the maps that
 // are registered to have their telemetry collected.
 type ebpfTelemetry struct {
 	mtx                   sync.Mutex
 	mapKeys               map[TelemetryKey]uint64
 	probeKeys             map[TelemetryKey]uint64
 	mapErrMapsByModule    map[names.ModuleName]*maps.GenericMap[uint64, mapErrTelemetry]
-	helperErrMapsByModule map[names.ModuleName]*maps.GenericMap[uint64, HelperErrTelemetry]
+	helperErrMapsByModule map[names.ModuleName]*maps.GenericMap[uint64, helperErrTelemetry]
 	initialized           bool
 }
 
@@ -90,7 +90,7 @@ func (e *ebpfTelemetry) Unlock() {
 
 // fill initializes the maps for holding telemetry info.
 // It must be called after the manager is initialized
-func (e *ebpfTelemetry) fill(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry]) error {
+func (e *ebpfTelemetry) fill(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, helperErrTelemetry]) error {
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 
@@ -116,7 +116,7 @@ func (e *ebpfTelemetry) fill(maps []names.MapName, mn names.ModuleName, mapErrMa
 	return nil
 }
 
-func (e *ebpfTelemetry) cleanup(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry]) error {
+func (e *ebpfTelemetry) cleanup(maps []names.MapName, mn names.ModuleName, mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, helperErrTelemetry]) error {
 	var errs error
 
 	e.mtx.Lock()
@@ -181,8 +181,8 @@ func (e *ebpfTelemetry) forEachMapErrorEntryInMaps(yield func(key TelemetryKey, 
 	}
 }
 
-func (e *ebpfTelemetry) ForEachHelperErrorEntryInMaps(yield func(key TelemetryKey, eBPFKey uint64, val HelperErrTelemetry) bool) {
-	var hval HelperErrTelemetry
+func (e *ebpfTelemetry) ForEachHelperErrorEntryInMaps(yield func(key TelemetryKey, eBPFKey uint64, val helperErrTelemetry) bool) {
+	var hval helperErrTelemetry
 	for mod, errMap := range e.helperErrMapsByModule {
 		for pKey, k := range e.probeKeys {
 			if mod != pKey.moduleName {
@@ -200,13 +200,13 @@ func (e *ebpfTelemetry) ForEachHelperErrorEntryInMaps(yield func(key TelemetryKe
 	}
 }
 
-// NewEBPFTelemetry initializes a new ebpfTelemetry object
-func NewEBPFTelemetry() EbpfErrorsTelemetry {
+// newEBPFTelemetry initializes a new ebpfTelemetry object
+func newEBPFTelemetry() ebpfErrorsTelemetry {
 	errorsTelemetry = &ebpfTelemetry{
 		mapKeys:               make(map[TelemetryKey]uint64),
 		probeKeys:             make(map[TelemetryKey]uint64),
 		mapErrMapsByModule:    make(map[names.ModuleName]*maps.GenericMap[uint64, mapErrTelemetry]),
-		helperErrMapsByModule: make(map[names.ModuleName]*maps.GenericMap[uint64, HelperErrTelemetry]),
+		helperErrMapsByModule: make(map[names.ModuleName]*maps.GenericMap[uint64, helperErrTelemetry]),
 	}
 	return errorsTelemetry
 }
@@ -232,9 +232,9 @@ func (e *ebpfTelemetry) initializeMapErrTelemetryMap(maps []names.MapName, mn na
 	return nil
 }
 
-func (e *ebpfTelemetry) initializeHelperErrTelemetryMap(module names.ModuleName, helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry]) error {
+func (e *ebpfTelemetry) initializeHelperErrTelemetryMap(module names.ModuleName, helperErrMap *maps.GenericMap[uint64, helperErrTelemetry]) error {
 	// the `probeKeys` get added during instruction patching, so we just try to insert entries for any that don't exist
-	z := new(HelperErrTelemetry)
+	z := new(helperErrTelemetry)
 	for p, key := range e.probeKeys {
 		if p.moduleName != module {
 			continue
@@ -278,7 +278,7 @@ func PatchEBPFTelemetry(programSpecs map[string]*ebpf.ProgramSpec, enable bool, 
 	return patchEBPFTelemetry(programSpecs, enable, mn, errorsTelemetry)
 }
 
-func patchEBPFTelemetry(programSpecs map[string]*ebpf.ProgramSpec, enable bool, mn names.ModuleName, bpfTelemetry EbpfErrorsTelemetry) error {
+func patchEBPFTelemetry(programSpecs map[string]*ebpf.ProgramSpec, enable bool, mn names.ModuleName, bpfTelemetry ebpfErrorsTelemetry) error {
 	const symbol = "telemetry_program_id_key"
 	newIns := asm.Mov.Reg(asm.R1, asm.R1)
 	if enable {

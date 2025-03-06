@@ -45,10 +45,10 @@ func (m *MockProgramName) Name() string {
 }
 
 type mockErrorsTelemetry struct {
-	EbpfErrorsTelemetry
+	ebpfErrorsTelemetry
 	mtx          sync.Mutex
 	mapErrMap    map[telemetryIndex]mapErrTelemetry
-	helperErrMap map[telemetryIndex]HelperErrTelemetry
+	helperErrMap map[telemetryIndex]helperErrTelemetry
 }
 
 func (m *mockErrorsTelemetry) Lock() {
@@ -71,7 +71,7 @@ func (m *mockErrorsTelemetry) forEachMapErrorEntryInMaps(yield func(TelemetryKey
 	}
 }
 
-func (m *mockErrorsTelemetry) ForEachHelperErrorEntryInMaps(yield func(TelemetryKey, uint64, HelperErrTelemetry) bool) {
+func (m *mockErrorsTelemetry) ForEachHelperErrorEntryInMaps(yield func(TelemetryKey, uint64, helperErrTelemetry) bool) {
 	for i, telemetry := range m.helperErrMap {
 		if !yield(i.tKey, i.eBPFKey, telemetry) {
 			return
@@ -80,7 +80,7 @@ func (m *mockErrorsTelemetry) ForEachHelperErrorEntryInMaps(yield func(Telemetry
 }
 
 // creates an error collector and replaces the telemetry field with a mock
-func createTestCollector(telemetry EbpfErrorsTelemetry) prometheus.Collector {
+func createTestCollector(telemetry ebpfErrorsTelemetry) prometheus.Collector {
 	collector := NewEBPFErrorsCollector().(*EBPFErrorsCollector)
 	if collector != nil {
 		collector.t = telemetry
@@ -138,7 +138,7 @@ func TestEBPFErrorsCollector_SingleCollect(t *testing.T) {
 		}: {Count: [64]uint64{mapErrorsMockValue}},
 	}
 
-	helperEntries := map[telemetryIndex]HelperErrTelemetry{
+	helperEntries := map[telemetryIndex]helperErrTelemetry{
 		{
 			eBPFKey: 2,
 			tKey: TelemetryKey{
@@ -244,7 +244,7 @@ func TestEBPFErrorsCollector_DoubleCollect(t *testing.T) {
 		}: {Count: [64]uint64{mapErrorsMockValue1}},
 	}
 
-	helperEntries := map[telemetryIndex]HelperErrTelemetry{
+	helperEntries := map[telemetryIndex]helperErrTelemetry{
 		{
 			eBPFKey: 2,
 			tKey: TelemetryKey{
@@ -311,7 +311,7 @@ func TestEBPFErrorsCollector_DoubleCollect(t *testing.T) {
 				},
 			}: {Count: [64]uint64{mapErrorsMockValue2}},
 		},
-		helperErrMap: map[telemetryIndex]HelperErrTelemetry{
+		helperErrMap: map[telemetryIndex]helperErrTelemetry{
 			{
 				eBPFKey: 2,
 				tKey: TelemetryKey{

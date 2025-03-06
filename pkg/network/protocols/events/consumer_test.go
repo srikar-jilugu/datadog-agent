@@ -9,6 +9,7 @@ package events
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/ebpf/telemetry"
+	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -75,6 +76,28 @@ func TestConsumer(t *testing.T) {
 	}
 }
 
+const (
+	maxErrno    = 64
+	maxErrnoStr = "other"
+
+	readIndx int = iota
+	readUserIndx
+	readKernelIndx
+	skbLoadBytes
+	perfEventOutput
+	ringbufOutput
+	mapErr = math.MaxInt
+)
+
+var helperNames = map[int]string{
+	readIndx:        "bpf_probe_read",
+	readUserIndx:    "bpf_probe_read_user",
+	readKernelIndx:  "bpf_probe_read_kernel",
+	skbLoadBytes:    "bpf_skb_load_bytes",
+	perfEventOutput: "bpf_perf_event_output",
+	ringbufOutput:   "bpf_ringbuf_output",
+}
+
 func TestEagainErrors(t *testing.T) {
 	kversion, err := kernel.HostVersion()
 	require.NoError(t, err)
@@ -84,6 +107,7 @@ func TestEagainErrors(t *testing.T) {
 
 	const numEvents = 100
 	c := config.New()
+	errorCollector := telemetry.NewTestEBPFErrorsCollector()
 	program, err := NewEBPFProgram(c)
 	require.NoError(t, err)
 
@@ -112,6 +136,9 @@ func TestEagainErrors(t *testing.T) {
 	generator.Stop()
 	time.Sleep(100 * time.Millisecond)
 
+	errorsMap := errorCollector.GetHelperErrorsMap()
+	assert.Equal(t, 0, errorsMap["bpf_ringbuf_output"])
+
 	// this ensures that any incomplete batch left in eBPF is fully processed
 	consumer.Sync()
 	program.Stop(manager.CleanAll)
@@ -122,13 +149,6 @@ func TestEagainErrors(t *testing.T) {
 		actual := result[uint64(i)]
 		assert.Equalf(t, 1, actual, "eventID=%d should have 1 occurrence. got %d", i, actual)
 	}
-
-	ebpfTelemetry := telemetry.NewEBPFTelemetry()
-	ebpfTelemetry.ForEachHelperErrorEntryInMaps(
-		func(tKey telemetry.TelemetryKey, eBPFKey uint64, val telemetry.HelperErrTelemetry) bool {
-			assert.Equal(t, uint64(0), val.Count)
-			return true
-		})
 }
 
 func TestInvalidBatchCountMetric(t *testing.T) {

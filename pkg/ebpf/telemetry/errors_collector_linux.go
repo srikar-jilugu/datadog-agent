@@ -20,12 +20,12 @@ const (
 )
 
 // A singleton instance of the ebpf telemetry struct. Used by the collector and the ebpf managers (via ErrorsTelemetryModifier).
-var errorsTelemetry EbpfErrorsTelemetry
+var errorsTelemetry ebpfErrorsTelemetry
 
 // EBPFErrorsCollector implements the prometheus Collector interface
 // for collecting statistics about errors of ebpf helpers and ebpf maps operations.
 type EBPFErrorsCollector struct {
-	t            EbpfErrorsTelemetry
+	t            ebpfErrorsTelemetry
 	mapOpsErrors *prometheus.CounterVec
 	helperErrors *prometheus.CounterVec
 	lastValues   map[metricKey]uint64
@@ -44,7 +44,7 @@ func NewEBPFErrorsCollector() prometheus.Collector {
 	}
 
 	return &EBPFErrorsCollector{
-		t: NewEBPFTelemetry(),
+		t: newEBPFTelemetry(),
 		mapOpsErrors: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Subsystem: "ebpf__maps",
@@ -98,7 +98,7 @@ func (e *EBPFErrorsCollector) Collect(ch chan<- prometheus.Metric) {
 		return true
 	})
 
-	e.t.ForEachHelperErrorEntryInMaps(func(tKey TelemetryKey, eBPFKey uint64, val HelperErrTelemetry) bool {
+	e.t.ForEachHelperErrorEntryInMaps(func(tKey TelemetryKey, eBPFKey uint64, val helperErrTelemetry) bool {
 		for i, helperName := range helperNames {
 			base := maxErrno * i
 			if count := getErrCount(val.Count[base : base+maxErrno]); len(count) > 0 {

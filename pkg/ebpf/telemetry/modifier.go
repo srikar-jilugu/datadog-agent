@@ -151,13 +151,13 @@ func (t *ErrorsTelemetryModifier) BeforeInit(m *manager.Manager, module names.Mo
 }
 
 // getErrMaps returns the mapErrMap and helperErrMap from the manager.
-func getErrMaps(m *manager.Manager) (mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, HelperErrTelemetry], err error) {
+func getErrMaps(m *manager.Manager) (mapErrMap *maps.GenericMap[uint64, mapErrTelemetry], helperErrMap *maps.GenericMap[uint64, helperErrTelemetry], err error) {
 	mapErrMap, err = maps.GetMap[uint64, mapErrTelemetry](m, MapErrTelemetryMapName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get generic map %s: %w", MapErrTelemetryMapName, err)
 	}
 
-	helperErrMap, err = maps.GetMap[uint64, HelperErrTelemetry](m, HelperErrTelemetryMapName)
+	helperErrMap, err = maps.GetMap[uint64, helperErrTelemetry](m, HelperErrTelemetryMapName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get generic map %s: %w", HelperErrTelemetryMapName, err)
 	}
