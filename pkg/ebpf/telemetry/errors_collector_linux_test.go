@@ -24,7 +24,7 @@ const (
 )
 
 type telemetryIndex struct {
-	tKey    TelemetryKey
+	tKey    telemetryKey
 	eBPFKey uint64
 }
 
@@ -63,7 +63,7 @@ func (m *mockErrorsTelemetry) isInitialized() bool {
 	return m.mapErrMap != nil && m.helperErrMap != nil
 }
 
-func (m *mockErrorsTelemetry) forEachMapErrorEntryInMaps(yield func(TelemetryKey, uint64, mapErrTelemetry) bool) {
+func (m *mockErrorsTelemetry) forEachMapErrorEntryInMaps(yield func(telemetryKey, uint64, mapErrTelemetry) bool) {
 	for i, telemetry := range m.mapErrMap {
 		if !yield(i.tKey, i.eBPFKey, telemetry) {
 			return
@@ -71,7 +71,7 @@ func (m *mockErrorsTelemetry) forEachMapErrorEntryInMaps(yield func(TelemetryKey
 	}
 }
 
-func (m *mockErrorsTelemetry) ForEachHelperErrorEntryInMaps(yield func(TelemetryKey, uint64, helperErrTelemetry) bool) {
+func (m *mockErrorsTelemetry) ForEachHelperErrorEntryInMaps(yield func(telemetryKey, uint64, helperErrTelemetry) bool) {
 	for i, telemetry := range m.helperErrMap {
 		if !yield(i.tKey, i.eBPFKey, telemetry) {
 			return
@@ -124,14 +124,14 @@ func TestEBPFErrorsCollector_SingleCollect(t *testing.T) {
 	mapEntries := map[telemetryIndex]mapErrTelemetry{
 		{
 			eBPFKey: 1,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockMapName{n: mockMapName},
 				moduleName:   names.NewModuleName("m1"),
 			},
 		}: {Count: [64]uint64{mapErrorsMockValue}},
 		{
 			eBPFKey: 2,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockMapName{n: mockMapName},
 				moduleName:   names.NewModuleName("m2"),
 			},
@@ -141,14 +141,14 @@ func TestEBPFErrorsCollector_SingleCollect(t *testing.T) {
 	helperEntries := map[telemetryIndex]helperErrTelemetry{
 		{
 			eBPFKey: 2,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockProgramName{n: mockProbeName},
 				moduleName:   names.NewModuleName("m3"),
 			},
 		}: {Count: [384]uint64{helperErrorsMockValue}},
 		{
 			eBPFKey: 3,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockProgramName{n: mockProbeName},
 				moduleName:   names.NewModuleName("m4"),
 			},
@@ -230,14 +230,14 @@ func TestEBPFErrorsCollector_DoubleCollect(t *testing.T) {
 	mapEntries := map[telemetryIndex]mapErrTelemetry{
 		{
 			eBPFKey: 1,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockMapName{n: mockMapName},
 				moduleName:   names.NewModuleName("m1"),
 			},
 		}: {Count: [64]uint64{mapErrorsMockValue1}},
 		{
 			eBPFKey: 2,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockMapName{n: mockMapName},
 				moduleName:   names.NewModuleName("m2"),
 			},
@@ -247,14 +247,14 @@ func TestEBPFErrorsCollector_DoubleCollect(t *testing.T) {
 	helperEntries := map[telemetryIndex]helperErrTelemetry{
 		{
 			eBPFKey: 2,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockProgramName{n: mockProbeName},
 				moduleName:   names.NewModuleName("m3"),
 			},
 		}: {Count: [384]uint64{helperErrorsMockValue1}},
 		{
 			eBPFKey: 3,
-			tKey: TelemetryKey{
+			tKey: telemetryKey{
 				resourceName: &MockProgramName{n: mockProbeName},
 				moduleName:   names.NewModuleName("m4"),
 			},
@@ -298,14 +298,14 @@ func TestEBPFErrorsCollector_DoubleCollect(t *testing.T) {
 		mapErrMap: map[telemetryIndex]mapErrTelemetry{
 			{
 				eBPFKey: 1,
-				tKey: TelemetryKey{
+				tKey: telemetryKey{
 					resourceName: &MockMapName{n: mockMapName},
 					moduleName:   names.NewModuleName("m1"),
 				},
 			}: {Count: [64]uint64{mapErrorsMockValue2}},
 			{
 				eBPFKey: 2,
-				tKey: TelemetryKey{
+				tKey: telemetryKey{
 					resourceName: &MockMapName{n: mockMapName},
 					moduleName:   names.NewModuleName("m2"),
 				},
@@ -314,14 +314,14 @@ func TestEBPFErrorsCollector_DoubleCollect(t *testing.T) {
 		helperErrMap: map[telemetryIndex]helperErrTelemetry{
 			{
 				eBPFKey: 2,
-				tKey: TelemetryKey{
+				tKey: telemetryKey{
 					resourceName: &MockProgramName{n: mockProbeName},
 					moduleName:   names.NewModuleName("m3"),
 				},
 			}: {Count: [384]uint64{helperErrorsMockValue2}},
 			{
 				eBPFKey: 3,
-				tKey: TelemetryKey{
+				tKey: telemetryKey{
 					resourceName: &MockProgramName{n: mockProbeName},
 					moduleName:   names.NewModuleName("m4"),
 				},
