@@ -37,18 +37,31 @@ struct syscalls_enter_write_args {
 
 SEC("tracepoint/syscalls/sys_enter_write")
 int tracepoint__syscalls__sys_enter_write(struct syscalls_enter_write_args *ctx) {
-    __u32 zero = 0;
-    __u32 pid = GET_USER_MODE_PID(bpf_get_current_pid_tgid());
-    test_ctx_t *test_ctx = bpf_map_lookup_elem(&test, &zero);
-    if (!test_ctx || test_ctx->expected_fd != ctx->fd || test_ctx->expected_pid != pid)
-        return 0;
+//    __u32 zero = 0;
+//    __u32 pid = GET_USER_MODE_PID(bpf_get_current_pid_tgid());
+//    test_ctx_t *test_ctx = bpf_map_lookup_elem(&test, &zero);
+//    if (!test_ctx || test_ctx->expected_fd != ctx->fd || test_ctx->expected_pid != pid)
+//        return 0;
+//
+//    // we're echoing to userspace whatever we read from the eBPF map
+//    __u64 event = test_ctx->event_id;
+//
+//    // these functions are dynamically defined by `USM_EVENTS_INIT`
+//    test_batch_enqueue(&event);
+//    test_batch_flush((void*)ctx);
+//    return 0;
 
-    // we're echoing to userspace whatever we read from the eBPF map
-    __u64 event = test_ctx->event_id;
-
-    // these functions are dynamically defined by `USM_EVENTS_INIT`
+    bpf_printk("in tracepoint/syscalls/sys_enter_write\n");
+    __u64 event = 1234;
     test_batch_enqueue(&event);
-    test_batch_flush((void*)ctx);
+    return 0;
+}
+
+SEC("tracepoint/net/netif_receive_skb")
+int tracepoint__net__netif_receive_skb(void *ctx) {
+//    CHECK_BPF_PROGRAM_BYPASSED()
+    bpf_printk("in tracepoint/net/netif_receive_skb\n");
+    test_batch_flush_with_telemetry((void*)ctx);
     return 0;
 }
 

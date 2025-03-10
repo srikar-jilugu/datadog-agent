@@ -123,18 +123,19 @@ func TestEagainErrors(t *testing.T) {
 
 	consumer, err := NewConsumer("test", program.Manager, callback)
 	require.NoError(t, err)
-	consumer.Start()
+	//consumer.Start()
 
 	err = program.Start()
 	require.NoError(t, err)
 
-	// generate test events
-	generator := newEventGenerator(program, t)
-	for i := 0; i < numEvents; i++ {
-		generator.Generate(uint64(i))
-	}
-	generator.Stop()
-	time.Sleep(100 * time.Millisecond)
+	//// generate test events
+	//generator := newEventGenerator(program, t)
+	//for i := 0; i < numEvents; i++ {
+	//	generator.Generate(uint64(i))
+	//}
+	//generator.Stop()
+	//time.Sleep(100 * time.Millisecond)
+	time.Sleep(20 * time.Second)
 
 	errorsMap := errorCollector.GetHelperErrorsMap()
 	assert.Equal(t, 0, errorsMap["bpf_ringbuf_output"])

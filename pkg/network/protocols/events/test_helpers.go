@@ -36,6 +36,11 @@ func NewEBPFProgram(c *config.Config) (*ddebpf.Manager, error) {
 					EBPFFuncName: "tracepoint__syscalls__sys_enter_write",
 				},
 			},
+			{
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{
+					EBPFFuncName: "tracepoint__net__netif_receive_skb",
+				},
+			},
 		},
 	}
 	options := manager.Options{
@@ -44,6 +49,11 @@ func NewEBPFProgram(c *config.Config) (*ddebpf.Manager, error) {
 			&manager.ProbeSelector{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
 					EBPFFuncName: "tracepoint__syscalls__sys_enter_write",
+				},
+			},
+			&manager.ProbeSelector{
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{
+					EBPFFuncName: "tracepoint__net__netif_receive_skb",
 				},
 			},
 		},
