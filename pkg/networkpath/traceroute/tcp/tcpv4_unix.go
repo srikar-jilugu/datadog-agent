@@ -89,8 +89,9 @@ func (t *TCPv4) TracerouteSequential() (*common.Results, error) {
 	hops := make([]*common.Hop, 0, t.MaxTTL-t.MinTTL)
 
 	for i := int(t.MinTTL); i <= int(t.MaxTTL); i++ {
+		identification := uint16(rand.Intn(65535))
 		seqNumber := rand.Uint32()
-		hop, err := t.sendAndReceive(rawIcmpConn, rawTCPConn, i, seqNumber, t.Timeout)
+		hop, err := t.sendAndReceive(rawIcmpConn, rawTCPConn, i, seqNumber, identification, t.Timeout)
 		if err != nil {
 			return nil, fmt.Errorf("failed to run traceroute: %w", err)
 		}
@@ -112,8 +113,8 @@ func (t *TCPv4) TracerouteSequential() (*common.Results, error) {
 	}, nil
 }
 
-func (t *TCPv4) sendAndReceive(rawIcmpConn rawConnWrapper, rawTCPConn rawConnWrapper, ttl int, seqNum uint32, timeout time.Duration) (*common.Hop, error) {
-	tcpHeader, tcpPacket, err := t.createRawTCPSyn(seqNum, ttl)
+func (t *TCPv4) sendAndReceive(rawIcmpConn rawConnWrapper, rawTCPConn rawConnWrapper, ttl int, seqNum uint32, identification uint16, timeout time.Duration) (*common.Hop, error) {
+	tcpHeader, tcpPacket, err := t.createRawTCPSyn(seqNum, identification, ttl)
 	if err != nil {
 		log.Errorf("failed to create TCP packet with TTL: %d, error: %s", ttl, err.Error())
 		return nil, err

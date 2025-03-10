@@ -7,6 +7,7 @@
 package tcp
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
 	"time"
@@ -57,8 +58,8 @@ func (t *TCPv4) Close() error {
 }
 
 // createRawTCPSyn creates a TCP packet with the specified parameters
-func (t *TCPv4) createRawTCPSyn(seqNum uint32, ttl int) (*ipv4.Header, []byte, error) {
-	ipHdr, packet, hdrlen, err := t.createRawTCPSynBuffer(seqNum, ttl)
+func (t *TCPv4) createRawTCPSyn(seqNum uint32, identification uint16, ttl int) (*ipv4.Header, []byte, error) {
+	ipHdr, packet, hdrlen, err := t.createRawTCPSynBuffer(seqNum, identification, ttl)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -66,18 +67,21 @@ func (t *TCPv4) createRawTCPSyn(seqNum uint32, ttl int) (*ipv4.Header, []byte, e
 	return ipHdr, packet[hdrlen:], nil
 }
 
-func (t *TCPv4) createRawTCPSynBuffer(seqNum uint32, ttl int) (*ipv4.Header, []byte, int, error) {
+func (t *TCPv4) createRawTCPSynBuffer(seqNum uint32, identification uint16, ttl int) (*ipv4.Header, []byte, int, error) {
 	// if this function is modified in a way that changes the size,
 	// update the NewSerializeBufferExpectedSize call in NewTCPv4
 	ipLayer := &layers.IPv4{
 		Version:  4,
 		Length:   20,
 		TTL:      uint8(ttl),
-		Id:       uint16(41821),
+		Id:       identification,
 		Protocol: 6,
 		DstIP:    t.Target,
 		SrcIP:    t.srcIP,
 	}
+
+	tsVal := make([]byte, 8)
+	binary.BigEndian.PutUint32(tsVal, uint32(time.Now().UnixMilli()))
 
 	tcpLayer := &layers.TCP{
 		SrcPort: layers.TCPPort(t.srcPort),
@@ -85,7 +89,32 @@ func (t *TCPv4) createRawTCPSynBuffer(seqNum uint32, ttl int) (*ipv4.Header, []b
 		Seq:     seqNum,
 		Ack:     0,
 		SYN:     true,
-		Window:  1024,
+		Window:  35844,
+		Options: []layers.TCPOption{
+			{
+				OptionType:   layers.TCPOptionKindMSS,
+				OptionLength: 4,
+				OptionData:   []byte{0x23, 0x01}, // 8961
+			},
+			{
+				OptionType:   layers.TCPOptionKindSACKPermitted,
+				OptionLength: 2,
+			},
+			{
+				OptionType:   layers.TCPOptionKindTimestamps,
+				OptionLength: 10,
+				OptionData:   tsVal,
+			},
+			{
+				OptionType:   layers.TCPOptionKindNop,
+				OptionLength: 1,
+			},
+			{
+				OptionType:   layers.TCPOptionKindWindowScale,
+				OptionLength: 3,
+				OptionData:   []byte{0x02}, // 2
+			},
+		},
 	}
 
 	err := tcpLayer.SetNetworkLayerForChecksum(ipLayer)

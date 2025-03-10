@@ -90,7 +90,7 @@ func TestSendAndReceive(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			sendPacketFunc = test.sendFunc
 			listenPacketsFunc = test.listenFunc
-			actual, err := tcpv4.sendAndReceive(nil, nil, test.ttl, 418, 1*time.Second)
+			actual, err := tcpv4.sendAndReceive(nil, nil, test.ttl, 418, 419, 1*time.Second)
 			if test.errMsg != "" {
 				require.Error(t, err)
 				assert.True(t, strings.Contains(err.Error(), test.errMsg), "error mismatch: excpected %q, got %q", test.errMsg, err.Error())
