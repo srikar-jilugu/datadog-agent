@@ -49,6 +49,9 @@ func SecurityProfileToProto(input *SecurityProfile) *proto.SecurityProfile {
 		Selector:        cgroupModel.WorkloadSelectorToProto(&input.selector),
 	}
 
+	input.versionContextsLock.Lock()
+	defer input.versionContextsLock.Unlock()
+
 	for key, ctx := range input.versionContexts {
 		outCtx := &proto.ProfileContext{
 			FirstSeen:      ctx.firstSeenNano,
