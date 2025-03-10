@@ -8,6 +8,7 @@ package processor
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"regexp"
 	"sync"
 
@@ -250,10 +251,72 @@ func (p *Processor) processMessage(msg *message.Message) {
 			return
 		}
 
-		p.utilization.Stop() // Explicitly call stop here to avoid counting writing on the output channel as processing time
-		p.outputChan <- msg
-		p.pipelineMonitor.ReportComponentIngress(msg, "strategy")
+		if toSend := p.applyJqRules(msg); toSend {
+			p.utilization.Stop() // Explicitly call stop here to avoid counting writing on the output channel as processing time
+			p.outputChan <- msg
+			p.pipelineMonitor.ReportComponentIngress(msg, "strategy")
+		}
 	}
+
+}
+
+func (p *Processor) applyJqRules(msg *message.Message) bool {
+	var data any
+	err := json.Unmarshal(msg.GetContent(), &data)
+	if err != nil {
+		panic(err)
+	}
+	rules := append(p.processingRules, msg.Origin.LogSource.Config.ProcessingRules...)
+	for _, rule := range rules {
+		if rule.JqQuery == nil {
+			continue
+		}
+		switch rule.Type {
+		case config.ExcludeAtMatch:
+			iter := rule.JqQuery.Run(data)
+			for {
+				v, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if _, ok := v.(error); ok {
+					break
+				}
+				return false
+			}
+		case config.IncludeAtMatch:
+			iter := rule.JqQuery.Run(data)
+			for {
+				v, ok := iter.Next()
+				if !ok {
+					return false
+				}
+				if _, ok := v.(error); ok {
+					return false
+				}
+				return true
+			}
+		case config.MaskSequences:
+			iter := rule.JqQuery.Run(data)
+			for {
+				v, ok := iter.Next()
+				if !ok {
+					return false
+				}
+				if _, ok := v.(error); ok {
+					return false
+				}
+				data = v
+				break
+			}
+		}
+	}
+	encoded, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	msg.SetContent(encoded)
+	return true
 
 }
 
@@ -267,6 +330,9 @@ func (p *Processor) applyRedactingRules(msg *message.Message) bool {
 
 	rules := append(p.processingRules, msg.Origin.LogSource.Config.ProcessingRules...)
 	for _, rule := range rules {
+		if rule.Pattern == "" {
+			continue
+		}
 		switch rule.Type {
 		case config.ExcludeAtMatch:
 			// if this message matches, we ignore it

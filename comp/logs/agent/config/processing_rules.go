@@ -8,6 +8,8 @@ package config
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/itchyny/gojq"
 )
 
 // Processing rule types
@@ -24,9 +26,12 @@ type ProcessingRule struct {
 	Type               string
 	Name               string
 	ReplacePlaceholder string `mapstructure:"replace_placeholder" json:"replace_placeholder" yaml:"replace_placeholder"`
+	Jq                 string
 	Pattern            string
 	// TODO: should be moved out
-	Regex       *regexp.Regexp
+	Regex   *regexp.Regexp
+	JqQuery *gojq.Query
+
 	Placeholder []byte
 }
 
@@ -48,6 +53,15 @@ func ValidateProcessingRules(rules []*ProcessingRule) error {
 			return fmt.Errorf("type must be set for processing rule `%s`", rule.Name)
 		default:
 			return fmt.Errorf("type %s is not supported for processing rule `%s`", rule.Type, rule.Name)
+		}
+
+		if rule.Jq != "" {
+			query, err := gojq.Parse(rule.Jq)
+			if err != nil {
+				return fmt.Errorf("invalid jq query %s for processing rule: %s", rule.Jq, rule.Name)
+			}
+			rule.JqQuery = query
+			continue
 		}
 
 		if rule.Pattern == "" {
