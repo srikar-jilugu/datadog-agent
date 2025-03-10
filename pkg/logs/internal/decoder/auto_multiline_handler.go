@@ -16,8 +16,9 @@ import (
 
 // AutoMultilineHandler aggreagates multiline logs.
 type AutoMultilineHandler struct {
-	labeler    *automultilinedetection.Labeler
-	aggregator *automultilinedetection.Aggregator
+	labeler          *automultilinedetection.Labeler
+	aggregator       *automultilinedetection.Aggregator
+	jsonRecombinator *automultilinedetection.JSONRecombinator
 }
 
 // NewAutoMultilineHandler creates a new auto multiline handler.
@@ -53,12 +54,19 @@ func NewAutoMultilineHandler(outputFn func(m *message.Message), maxContentSize i
 			pkgconfigsetup.Datadog().GetBool("logs_config.tag_truncated_logs"),
 			pkgconfigsetup.Datadog().GetBool("logs_config.tag_multi_line_logs"),
 			tailerInfo),
+		jsonRecombinator: automultilinedetection.NewJSONRecombinator(),
 	}
 }
 
 func (a *AutoMultilineHandler) process(msg *message.Message) {
-	label := a.labeler.Label(msg.GetContent())
-	a.aggregator.Aggregate(msg, label)
+	msgs := a.jsonRecombinator.Process(msg)
+	if msgs == nil {
+		return
+	}
+	for _, msg := range msgs {
+		label := a.labeler.Label(msg.GetContent())
+		a.aggregator.Aggregate(msg, label)
+	}
 }
 
 func (a *AutoMultilineHandler) flushChan() <-chan time.Time {
