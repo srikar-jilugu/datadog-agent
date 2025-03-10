@@ -7,7 +7,6 @@
 package automultilinedetection
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,13 +17,12 @@ func TestDecoder(t *testing.T) {
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`{"foo":`)))
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`"bar"`)))
 	assert.Equal(t, Complete, decoder.Write([]byte(`}`)))
-	assert.Equal(t, `{"foo":"bar"}`, string(decoder.Flush()))
+	// assert.Equal(t, `{"foo":"bar"}`, string(decoder.Flush()))
 
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`{   `)))
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`"foo"`)))
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`:"bar"`)))
 	assert.Equal(t, Complete, decoder.Write([]byte(`}`)))
-	decoder.Flush()
 
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`{   `)))
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`"foo":  `)))
@@ -32,7 +30,6 @@ func TestDecoder(t *testing.T) {
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`"bar nested"`)))
 	assert.Equal(t, Incomplete, decoder.Write([]byte(`}`)))
 	assert.Equal(t, Complete, decoder.Write([]byte(`}`)))
-	decoder.Flush()
 
 	nested := `
 		{
@@ -48,7 +45,7 @@ func TestDecoder(t *testing.T) {
 	}
 	`
 	assert.Equal(t, Complete, decoder.Write([]byte(nested)))
-	fmt.Println(string(decoder.Flush()))
+	// fmt.Println(string(decoder.Flush()))
 
 	largeJson := `
 		{
@@ -114,7 +111,7 @@ func TestDecoder(t *testing.T) {
 	}
 	`
 	assert.Equal(t, Complete, decoder.Write([]byte(largeJson)))
-	fmt.Println(string(decoder.Flush()))
+	// fmt.Println(string(decoder.Flush()))
 
 	// lines := strings.Split(largeJson, "\n")
 	// for _, line := range lines {

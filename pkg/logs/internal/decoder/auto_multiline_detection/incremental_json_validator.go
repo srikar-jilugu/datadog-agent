@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"strings"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 )
@@ -42,7 +41,7 @@ func NewIncrementalJsonValidator() *IncrementalJsonValidator {
 
 func (d *IncrementalJsonValidator) Write(s []byte) JSONState {
 	_, err := d.writer.Write(s)
-	d.resultBuffer.Write([]byte(strings.TrimSpace(string(s))))
+	d.resultBuffer.Write(s)
 
 	if err != nil {
 		return Invalid
@@ -74,14 +73,10 @@ func (d *IncrementalJsonValidator) Write(s []byte) JSONState {
 	return Incomplete
 }
 
-func (d *IncrementalJsonValidator) Flush() []byte {
+func (d *IncrementalJsonValidator) Reset() {
 	d.writer.Reset()
 	d.decoder = json.NewDecoder(d.writer)
 	d.objCount = 0
-	outBuf := &bytes.Buffer{}
-	_ = json.Compact(outBuf, d.resultBuffer.Bytes())
-	defer d.resultBuffer.Reset()
-	return outBuf.Bytes()
 }
 
 type JSONRecombinator struct {
@@ -98,19 +93,30 @@ func NewJSONRecombinator() *JSONRecombinator {
 }
 
 func (r *JSONRecombinator) Process(msg *message.Message) []*message.Message {
+	r.messageBuf = append(r.messageBuf, msg)
+
 	switch r.decoder.Write(msg.GetContent()) {
 	case Incomplete:
-		r.messageBuf = append(r.messageBuf, msg)
+		break
 	case Complete:
-		msg.SetContent(r.decoder.Flush())
+		r.decoder.Reset()
+		outBuf := &bytes.Buffer{}
+		inBuf := &bytes.Buffer{}
+		for _, m := range r.messageBuf {
+			inBuf.Write(m.GetContent())
+		}
+		err := json.Compact(outBuf, inBuf.Bytes())
+		if err != nil {
+			return []*message.Message{msg}
+		}
 		r.messageBuf = r.messageBuf[:0]
+		msg.SetContent(outBuf.Bytes())
 		return []*message.Message{msg}
 	case Invalid:
-		_ = r.decoder.Flush()
-		r.messageBuf = append(r.messageBuf, msg)
+		r.decoder.Reset()
 		msgs := r.messageBuf
 		r.messageBuf = r.messageBuf[:0]
 		return msgs
 	}
-	return nil
+	return []*message.Message{}
 }

@@ -60,9 +60,6 @@ func NewAutoMultilineHandler(outputFn func(m *message.Message), maxContentSize i
 
 func (a *AutoMultilineHandler) process(msg *message.Message) {
 	msgs := a.jsonRecombinator.Process(msg)
-	if msgs == nil {
-		return
-	}
 	for _, msg := range msgs {
 		label := a.labeler.Label(msg.GetContent())
 		a.aggregator.Aggregate(msg, label)
