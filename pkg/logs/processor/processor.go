@@ -301,17 +301,26 @@ func (p *Processor) applyJqRules(msg *message.Message) bool {
 			for {
 				v, ok := iter.Next()
 				if !ok {
-					return false
+					break
 				}
 				if _, ok := v.(error); ok {
-					return false
+					break
 				}
 				data = v
 				break
 			}
 		}
 	}
-	encoded, err := json.Marshal(data)
+	mapData := data.(map[string]any)
+	if msg, ok := mapData["message"].(map[string]any); ok {
+		messageField, err := json.Marshal(msg)
+		if err != nil {
+			panic(err)
+		}
+		mapData["message"] = string(messageField)
+	}
+
+	encoded, err := json.Marshal(mapData)
 	if err != nil {
 		panic(err)
 	}
