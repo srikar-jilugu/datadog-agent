@@ -24,9 +24,9 @@
   script:
     - !reference [.agent_build_script]
   variables:
-    KUBERNETES_CPU_REQUEST: 16
-    KUBERNETES_MEMORY_REQUEST: "32Gi"
-    KUBERNETES_MEMORY_LIMIT: "32Gi"
+    KUBERNETES_CPU_REQUEST: 47
+    KUBERNETES_MEMORY_REQUEST: "64Gi"
+    KUBERNETES_MEMORY_LIMIT: "64Gi"
   artifacts:
     expire_in: 2 weeks
     paths:

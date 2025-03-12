@@ -33,9 +33,9 @@
     - !reference [.lint_linux_packages]
     - !reference [.upload_sbom_artifacts]
   variables:
-    KUBERNETES_MEMORY_REQUEST: "32Gi"
-    KUBERNETES_MEMORY_LIMIT: "32Gi"
-    KUBERNETES_CPU_REQUEST: 16
+    KUBERNETES_CPU_REQUEST: 47
+    KUBERNETES_MEMORY_REQUEST: "64Gi"
+    KUBERNETES_MEMORY_LIMIT: "64Gi"
     DD_PKG_ARCH: "x86_64"
     PACKAGE_ARCH: "amd64"
     DD_CC: 'x86_64-unknown-linux-gnu-gcc'

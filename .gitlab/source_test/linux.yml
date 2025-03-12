@@ -21,9 +21,9 @@
     - !reference [.fast_on_dev_branch_only]
   variables:
     FLAVORS: '--flavor base'
-    KUBERNETES_CPU_REQUEST: 16
-    KUBERNETES_MEMORY_REQUEST: 16Gi
-    KUBERNETES_MEMORY_LIMIT: 16Gi
+    KUBERNETES_CPU_REQUEST: 47
+    KUBERNETES_MEMORY_REQUEST: "64Gi"
+    KUBERNETES_MEMORY_LIMIT: "64Gi"
     TEST_OUTPUT_FILE: test_output.json
     EXTERNAL_LINKS_PATH: external_links_$CI_JOB_ID.json
   script:
