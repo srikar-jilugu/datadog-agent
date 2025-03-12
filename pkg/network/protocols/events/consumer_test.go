@@ -8,7 +8,8 @@
 package events
 
 import (
-	"github.com/DataDog/datadog-agent/pkg/ebpf/telemetry"
+	"context"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -23,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ddebpf "github.com/DataDog/datadog-agent/pkg/ebpf"
+	"github.com/DataDog/datadog-agent/pkg/ebpf/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/network/config"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 )
@@ -125,17 +127,14 @@ func TestEagainErrors(t *testing.T) {
 	require.NoError(t, err)
 	consumer.Start()
 
+	// Start readers
+	rt := startReaders(t, 1)
+	t.Cleanup(func() { stopReaders(rt) })
+
 	err = program.Start()
 	require.NoError(t, err)
 
-	//// generate test events
-	//generator := newEventGenerator(program, t)
-	//for i := 0; i < numEvents; i++ {
-	//	generator.Generate(uint64(i))
-	//}
-	//generator.Stop()
-	//time.Sleep(100 * time.Millisecond)
-	time.Sleep(20 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	errorsMap := errorCollector.GetHelperErrorsMap()
 	assert.Equal(t, 0, errorsMap["bpf_ringbuf_output"])
@@ -149,6 +148,78 @@ func TestEagainErrors(t *testing.T) {
 	for i := 0; i < numEvents; i++ {
 		actual := result[uint64(i)]
 		assert.Equalf(t, 1, actual, "eventID=%d should have 1 occurrence. got %d", i, actual)
+	}
+}
+
+type ReaderTask struct {
+	ctx       context.Context
+	cancel    context.CancelFunc
+	wg        sync.WaitGroup
+	files     []string
+	chunkSize int
+}
+
+func startReaders(t *testing.T, numReaders int) *ReaderTask {
+	t.Helper()
+
+	tempFiles := make([]string, numReaders)
+	for i := 0; i < numReaders; i++ {
+		file, err := os.CreateTemp("", "testfile_*.bin")
+		if err != nil {
+			t.Fatalf("Failed to create temp file: %v", err)
+		}
+		tempFiles[i] = file.Name()
+		file.Write(make([]byte, 1024*1024)) // 1MB of data
+		file.Close()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	rt := &ReaderTask{
+		ctx:       ctx,
+		cancel:    cancel,
+		files:     tempFiles,
+		chunkSize: 4096,
+	}
+
+	for _, file := range rt.files {
+		rt.wg.Add(1)
+		go func(f string) {
+			defer rt.wg.Done()
+			readFileInChunks(ctx, f, rt.chunkSize)
+		}(file)
+	}
+
+	return rt
+}
+
+func readFileInChunks(ctx context.Context, filePath string, chunkSize int) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	buffer := make([]byte, chunkSize)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			_, err := file.Read(buffer)
+			if err == io.EOF {
+				file.Seek(0, 0) // Restart reading
+			} else if err != nil {
+				return
+			}
+		}
+	}
+}
+
+func stopReaders(rt *ReaderTask) {
+	rt.cancel()
+	rt.wg.Wait()
+	for _, file := range rt.files {
+		os.Remove(file)
 	}
 }
 
