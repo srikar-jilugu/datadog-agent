@@ -10,7 +10,6 @@ package events
 import (
 	"context"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -76,28 +75,6 @@ func TestConsumer(t *testing.T) {
 		actual := result[uint64(i)]
 		assert.Equalf(t, 1, actual, "eventID=%d should have 1 occurrence. got %d", i, actual)
 	}
-}
-
-const (
-	maxErrno    = 64
-	maxErrnoStr = "other"
-
-	readIndx int = iota
-	readUserIndx
-	readKernelIndx
-	skbLoadBytes
-	perfEventOutput
-	ringbufOutput
-	mapErr = math.MaxInt
-)
-
-var helperNames = map[int]string{
-	readIndx:        "bpf_probe_read",
-	readUserIndx:    "bpf_probe_read_user",
-	readKernelIndx:  "bpf_probe_read_kernel",
-	skbLoadBytes:    "bpf_skb_load_bytes",
-	perfEventOutput: "bpf_perf_event_output",
-	ringbufOutput:   "bpf_ringbuf_output",
 }
 
 func TestEagainErrors(t *testing.T) {
