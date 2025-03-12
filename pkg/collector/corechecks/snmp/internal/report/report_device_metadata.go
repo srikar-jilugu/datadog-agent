@@ -14,18 +14,16 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-	sortutil "github.com/DataDog/datadog-agent/pkg/util/sort"
-
-	devicemetadata "github.com/DataDog/datadog-agent/pkg/networkdevice/metadata"
-	"github.com/DataDog/datadog-agent/pkg/networkdevice/profile/profiledefinition"
-	"github.com/DataDog/datadog-agent/pkg/networkdevice/utils"
-
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/snmp/internal/checkconfig"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/snmp/internal/common"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/snmp/internal/lldp"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/snmp/internal/metadata"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/snmp/internal/valuestore"
+	devicemetadata "github.com/DataDog/datadog-agent/pkg/networkdevice/metadata"
+	"github.com/DataDog/datadog-agent/pkg/networkdevice/profile/profiledefinition"
+	"github.com/DataDog/datadog-agent/pkg/networkdevice/utils"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	sortutil "github.com/DataDog/datadog-agent/pkg/util/sort"
 )
 
 const interfaceStatusMetric = "snmp.interface.status"
@@ -62,8 +60,9 @@ func (ms *MetricSender) ReportNetworkDeviceMetadata(config *checkconfig.CheckCon
 	interfaces := buildNetworkInterfacesMetadata(config.DeviceID, metadataStore)
 	ipAddresses := buildNetworkIPAddressesMetadata(config.DeviceID, metadataStore)
 	topologyLinks := buildNetworkTopologyMetadata(config.DeviceID, metadataStore, interfaces)
+	vpns := buildVPNConnectionMetadata(config.DeviceID, metadataStore)
 
-	metadataPayloads := devicemetadata.BatchPayloads(config.Namespace, config.ResolvedSubnetName, collectTime, devicemetadata.PayloadMetadataBatchSize, devices, interfaces, ipAddresses, topologyLinks, nil, diagnoses)
+	metadataPayloads := devicemetadata.BatchPayloads(config.Namespace, config.ResolvedSubnetName, collectTime, devicemetadata.PayloadMetadataBatchSize, devices, interfaces, ipAddresses, topologyLinks, vpns, nil, diagnoses)
 
 	for _, payload := range metadataPayloads {
 		payloadBytes, err := json.Marshal(payload)
@@ -470,6 +469,30 @@ func buildNetworkTopologyMetadataWithCDP(deviceID string, store *metadata.Store,
 		links = append(links, newLink)
 	}
 	return links
+}
+
+func buildVPNConnectionMetadata(deviceID string, store *metadata.Store) (vpns []devicemetadata.VPNConnectionMetadata) {
+	if store == nil {
+		return nil
+	}
+
+	indexes := store.GetColumnIndexes("vpn.ipsec_tunnel_local_addr")
+	if len(indexes) == 0 {
+		log.Debugf("unable to build vpn metadata: no vpn indexes found")
+		return nil
+	}
+
+	sort.Strings(indexes)
+	vpns = make([]devicemetadata.VPNConnectionMetadata, 0, len(indexes))
+	for _, index := range indexes {
+		vpns = append(vpns, devicemetadata.VPNConnectionMetadata{
+			DeviceID:               deviceID,
+			DestOutsideIPAddress:   store.GetColumnAsString("vpn.ipsec_tunnel_remote_addr", index),
+			SourceOutsideIPAddress: store.GetColumnAsString("vpn.ipsec_tunnel_local_addr", index),
+		})
+	}
+
+	return vpns
 }
 
 func getRemDeviceAddressByCDPRemIndex(store *metadata.Store, strIndex string) string {

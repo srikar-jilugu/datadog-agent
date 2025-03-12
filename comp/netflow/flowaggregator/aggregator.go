@@ -18,17 +18,15 @@ import (
 
 	log "github.com/DataDog/datadog-agent/comp/core/log/def"
 	"github.com/DataDog/datadog-agent/comp/forwarder/eventplatform"
+	"github.com/DataDog/datadog-agent/comp/netflow/common"
+	"github.com/DataDog/datadog-agent/comp/netflow/config"
 	"github.com/DataDog/datadog-agent/comp/netflow/format"
+	"github.com/DataDog/datadog-agent/comp/netflow/goflowlib"
 	rdnsquerier "github.com/DataDog/datadog-agent/comp/rdnsquerier/def"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/sender"
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
-
 	"github.com/DataDog/datadog-agent/pkg/networkdevice/metadata"
-
-	"github.com/DataDog/datadog-agent/comp/netflow/common"
-	"github.com/DataDog/datadog-agent/comp/netflow/config"
-	"github.com/DataDog/datadog-agent/comp/netflow/goflowlib"
 )
 
 const flushFlowsToSendInterval = 10 * time.Second
@@ -191,7 +189,7 @@ func (agg *FlowAggregator) sendExporterMetadata(flows []*common.Flow, flushTime 
 		for _, exporterID := range ids {
 			netflowExporters = append(netflowExporters, exporterMap[namespace][exporterID])
 		}
-		metadataPayloads := metadata.BatchPayloads(namespace, "", flushTime, metadata.PayloadMetadataBatchSize, nil, nil, nil, nil, netflowExporters, nil)
+		metadataPayloads := metadata.BatchPayloads(namespace, "", flushTime, metadata.PayloadMetadataBatchSize, nil, nil, nil, nil, nil, netflowExporters, nil)
 		for _, payload := range metadataPayloads {
 			payloadBytes, err := json.Marshal(payload)
 			if err != nil {

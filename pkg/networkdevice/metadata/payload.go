@@ -34,17 +34,18 @@ const (
 
 // NetworkDevicesMetadata contains network devices metadata
 type NetworkDevicesMetadata struct {
-	Subnet           string                 `json:"subnet,omitempty"`
-	Namespace        string                 `json:"namespace"`
-	Devices          []DeviceMetadata       `json:"devices,omitempty"`
-	Interfaces       []InterfaceMetadata    `json:"interfaces,omitempty"`
-	IPAddresses      []IPAddressMetadata    `json:"ip_addresses,omitempty"`
-	Links            []TopologyLinkMetadata `json:"links,omitempty"`
-	NetflowExporters []NetflowExporter      `json:"netflow_exporters,omitempty"`
-	Diagnoses        []DiagnosisMetadata    `json:"diagnoses,omitempty"`
-	DeviceOIDs       []DeviceOID            `json:"device_oids,omitempty"`
-	DeviceScanStatus *ScanStatusMetadata    `json:"scan_status,omitempty"`
-	CollectTimestamp int64                  `json:"collect_timestamp"`
+	Subnet           string                  `json:"subnet,omitempty"`
+	Namespace        string                  `json:"namespace"`
+	Devices          []DeviceMetadata        `json:"devices,omitempty"`
+	Interfaces       []InterfaceMetadata     `json:"interfaces,omitempty"`
+	IPAddresses      []IPAddressMetadata     `json:"ip_addresses,omitempty"`
+	Links            []TopologyLinkMetadata  `json:"links,omitempty"`
+	VPNConnections   []VPNConnectionMetadata `json:"vpns,omitempty"`
+	NetflowExporters []NetflowExporter       `json:"netflow_exporters,omitempty"`
+	Diagnoses        []DiagnosisMetadata     `json:"diagnoses,omitempty"`
+	DeviceOIDs       []DeviceOID             `json:"device_oids,omitempty"`
+	DeviceScanStatus *ScanStatusMetadata     `json:"scan_status,omitempty"`
+	CollectTimestamp int64                   `json:"collect_timestamp"`
 }
 
 // DeviceMetadata contains device metadata
@@ -187,4 +188,12 @@ type DiagnosisMetadata struct {
 	ResourceType string      `json:"resource_type"`
 	ResourceID   string      `json:"resource_id"`
 	Diagnoses    []Diagnosis `json:"diagnoses"`
+}
+
+type VPNConnectionMetadata struct {
+	DeviceID               string `json:"device_id"`
+	SourceInsideIPAddress  string `json:"src_inside_ip_address"`
+	SourceOutsideIPAddress string `json:"src_outside_ip_addr"`
+	DestInsideIPAddress    string `json:"dest_inside_ip_addr"`
+	DestOutsideIPAddress   string `json:"dest_outside_ip_addr"`
 }

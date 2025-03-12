@@ -8,12 +8,24 @@ package metadata
 import (
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/snmp/gosnmplib"
 	"github.com/gosnmp/gosnmp"
+
+	"github.com/DataDog/datadog-agent/pkg/snmp/gosnmplib"
 )
 
 // BatchPayloads batch NDM metadata payloads
-func BatchPayloads(namespace string, subnet string, collectTime time.Time, batchSize int, devices []DeviceMetadata, interfaces []InterfaceMetadata, ipAddresses []IPAddressMetadata, topologyLinks []TopologyLinkMetadata, netflowExporters []NetflowExporter, diagnoses []DiagnosisMetadata) []NetworkDevicesMetadata {
+func BatchPayloads(
+	namespace string,
+	subnet string,
+	collectTime time.Time,
+	batchSize int,
+	devices []DeviceMetadata,
+	interfaces []InterfaceMetadata,
+	ipAddresses []IPAddressMetadata,
+	topologyLinks []TopologyLinkMetadata,
+	vpnConnections []VPNConnectionMetadata,
+	netflowExporters []NetflowExporter,
+	diagnoses []DiagnosisMetadata) []NetworkDevicesMetadata {
 
 	var payloads []NetworkDevicesMetadata
 	var resourceCount int
@@ -38,6 +50,11 @@ func BatchPayloads(namespace string, subnet string, collectTime time.Time, batch
 	for _, linkMetadata := range topologyLinks {
 		payloads, curPayload, resourceCount = appendToPayloads(namespace, subnet, collectTime, batchSize, resourceCount, payloads, curPayload)
 		curPayload.Links = append(curPayload.Links, linkMetadata)
+	}
+
+	for _, vpn := range vpnConnections {
+		payloads, curPayload, resourceCount = appendToPayloads(namespace, subnet, collectTime, batchSize, resourceCount, payloads, curPayload)
+		curPayload.VPNConnections = append(curPayload.VPNConnections, vpn)
 	}
 
 	for _, netflowExporter := range netflowExporters {
