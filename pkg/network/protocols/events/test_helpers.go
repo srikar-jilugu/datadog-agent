@@ -31,9 +31,14 @@ func NewEBPFProgram(c *config.Config) (*ddebpf.Manager, error) {
 
 	m := &manager.Manager{
 		Probes: []*manager.Probe{
+			//{
+			//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			//		EBPFFuncName: "tracepoint__syscalls__sys_enter_write",
+			//	},
+			//},
 			{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
-					EBPFFuncName: "tracepoint__syscalls__sys_enter_write",
+					EBPFFuncName: "tracepoint__syscalls__sys_enter_read",
 				},
 			},
 			{
@@ -46,9 +51,14 @@ func NewEBPFProgram(c *config.Config) (*ddebpf.Manager, error) {
 	options := manager.Options{
 		RemoveRlimit: true,
 		ActivatedProbes: []manager.ProbesSelector{
+			//&manager.ProbeSelector{
+			//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			//		EBPFFuncName: "tracepoint__syscalls__sys_enter_write",
+			//	},
+			//},
 			&manager.ProbeSelector{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
-					EBPFFuncName: "tracepoint__syscalls__sys_enter_write",
+					EBPFFuncName: "tracepoint__syscalls__sys_enter_read",
 				},
 			},
 			&manager.ProbeSelector{

@@ -123,7 +123,7 @@ func TestEagainErrors(t *testing.T) {
 
 	consumer, err := NewConsumer("test", program.Manager, callback)
 	require.NoError(t, err)
-	//consumer.Start()
+	consumer.Start()
 
 	err = program.Start()
 	require.NoError(t, err)

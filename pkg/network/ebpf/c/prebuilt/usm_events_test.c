@@ -35,6 +35,12 @@ struct syscalls_enter_write_args {
     size_t count;
 };
 
+struct trace_event_raw_sys_enter {
+    __u64 unused;      // Internal, often ignored
+    long id;           // System call number (for 'read', it’s 0)
+    unsigned long args[6]; // Up to 6 syscall arguments
+};
+
 SEC("tracepoint/syscalls/sys_enter_write")
 int tracepoint__syscalls__sys_enter_write(struct syscalls_enter_write_args *ctx) {
 //    __u32 zero = 0;
@@ -57,11 +63,21 @@ int tracepoint__syscalls__sys_enter_write(struct syscalls_enter_write_args *ctx)
     return 0;
 }
 
+SEC("tracepoint/syscalls/sys_enter_read")
+int tracepoint__syscalls__sys_enter_read(struct trace_event_raw_sys_enter *ctx) {
+
+    bpf_printk("in tracepoint/syscalls/sys_enter_read\n");
+    __u64 event = 1234;
+    test_batch_enqueue(&event);
+    test_batch_flush_with_telemetry((void*)ctx);
+    return 0;
+}
+
 SEC("tracepoint/net/netif_receive_skb")
 int tracepoint__net__netif_receive_skb(void *ctx) {
 //    CHECK_BPF_PROGRAM_BYPASSED()
     bpf_printk("in tracepoint/net/netif_receive_skb\n");
-    test_batch_flush_with_telemetry((void*)ctx);
+//    test_batch_flush_with_telemetry((void*)ctx);
     return 0;
 }
 
