@@ -22,7 +22,9 @@ third_party_licenses "../LICENSE-3rdparty.csv"
 homepage 'http://www.datadoghq.com'
 
 if ENV.has_key?("OMNIBUS_WORKERS_OVERRIDE")
-  COMPRESSION_THREADS = ENV["OMNIBUS_WORKERS_OVERRIDE"].to_i
+  # The number of compression threads cannot exceed 31
+  workers = ENV["OMNIBUS_WORKERS_OVERRIDE"].to_i
+  COMPRESSION_THREADS = workers < 32 ? workers : 31
 else
   COMPRESSION_THREADS = 1
 end
