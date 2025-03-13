@@ -76,7 +76,10 @@ func NewEBPFProgram(c *config.Config) (*ddebpf.Manager, error) {
 	}
 	ddEbpfManager := ddebpf.NewManager(m, "usm", &ebpftelemetry.ErrorsTelemetryModifier{})
 
-	Configure(config.New(), "test", ddEbpfManager.Manager, &options)
+	c = config.New()
+	//c.USMDataChannelSize = 10000
+	//c.USMKernelBufferPages = 64
+	Configure(c, "test", ddEbpfManager.Manager, &options)
 	err = ddEbpfManager.InitWithOptions(bc, &options)
 	if err != nil {
 		return nil, err
