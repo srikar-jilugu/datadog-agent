@@ -96,7 +96,7 @@ func TestEagainErrors(t *testing.T) {
 		mux.Lock()
 		defer mux.Unlock()
 		for _, n := range events {
-			result[n] = +1
+			result[n] += 1
 		}
 	}
 
