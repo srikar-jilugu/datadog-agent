@@ -138,6 +138,7 @@ const SizeofBatch = 0x1f0
 const TCPFailureConnReset = 0x68
 const TCPFailureConnTimeout = 0x6e
 const TCPFailureConnRefused = 0x6f
+const TCPFailureConnNoRouteToHost = 0x71
 
 const SizeofConn = 0x78
 

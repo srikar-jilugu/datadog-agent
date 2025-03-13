@@ -219,7 +219,7 @@ int BPF_BYPASSABLE_KPROBE(kprobe__tcp_done, struct sock *sk) {
         increment_telemetry_count(tcp_done_missing_pid);
         return 0;
     }
-
+ 
     if (!handle_tcp_failure(sk, &t)) {
         return 0;
     }
