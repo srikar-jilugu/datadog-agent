@@ -9,6 +9,8 @@ package protocols
 
 import (
 	"io"
+	"os"
+	"strconv"
 
 	manager "github.com/DataDog/ebpf-manager"
 	"github.com/cilium/ebpf"
@@ -23,9 +25,25 @@ const (
 	TLSDispatcherProgramsMap                    = "tls_process_progs"
 	ProtocolDispatcherClassificationPrograms    = "dispatcher_classification_progs"
 	TLSProtocolDispatcherClassificationPrograms = "tls_dispatcher_classification_progs"
+)
 
+var (
 	DefaultMapCleanerBatchSize = 1
 )
+
+func init() {
+	env := os.Getenv("DD_USM_MAP_CLEANER_SIZE")
+	if env == "" {
+		return
+	}
+
+	i, err := strconv.ParseInt(env, 10, 64)
+	if err != nil {
+		return
+	}
+
+	DefaultMapCleanerBatchSize = int(i)
+}
 
 // Protocol is the interface that represents a protocol supported by USM.
 //
