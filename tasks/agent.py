@@ -127,6 +127,7 @@ def build(
     ctx,
     rebuild=False,
     race=False,
+    cpus=None,
     build_include=None,
     build_exclude=None,
     flavor=AgentFlavor.base.name,
@@ -217,7 +218,7 @@ def build(
             all_tags |= set(build_tags)
         build_tags = list(all_tags)
 
-    cmd = "go build -mod={go_mod} {race_opt} {build_type} -tags \"{go_build_tags}\" "
+    cmd = "go build -mod={go_mod} {race_opt} {cpus_opt} {build_type} -tags \"{go_build_tags}\" "
 
     if not agent_bin:
         agent_bin = os.path.join(BIN_PATH, bin_name("agent"))
@@ -229,6 +230,7 @@ def build(
     args = {
         "go_mod": go_mod,
         "race_opt": "-race" if race else "",
+        "cpus_opt": f"-p {cpus}" if cpus else "",
         "build_type": "-a" if rebuild else "",
         "go_build_tags": " ".join(build_tags),
         "agent_bin": agent_bin,

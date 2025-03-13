@@ -20,6 +20,7 @@ BIN_PATH = os.path.join(BIN_DIR, bin_name("process-agent"))
 def build(
     ctx,
     race=False,
+    cpus=None,
     build_include=None,
     build_exclude=None,
     install_path=None,
@@ -72,12 +73,13 @@ def build(
         os.remove(BIN_PATH)
 
     # TODO static option
-    cmd = 'go build -mod={go_mod} {race_opt} {build_type} -tags "{go_build_tags}" '
+    cmd = 'go build -mod={go_mod} {race_opt} {cpus_opt} {build_type} -tags "{go_build_tags}" '
     cmd += '-o {agent_bin} -gcflags="{gcflags}" -ldflags="{ldflags}" {REPO_PATH}/cmd/process-agent'
 
     args = {
         "go_mod": go_mod,
         "race_opt": "-race" if race else "",
+        "cpus_opt": f"-p {cpus}" if cpus else "",
         "build_type": "-a" if rebuild else "",
         "go_build_tags": " ".join(build_tags),
         "agent_bin": BIN_PATH,

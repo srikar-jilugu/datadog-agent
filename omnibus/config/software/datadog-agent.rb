@@ -105,10 +105,10 @@ build do
     if linux_target?
         include_sds = "--include-sds" # we only support SDS on Linux targets for now
     end
-    command "dda inv -e agent.build --exclude-rtloader #{include_sds} --major-version #{major_version_arg} --no-development --install-path=#{install_dir} --embedded-path=#{install_dir}/embedded --flavor #{flavor_arg} #{bundle_arg}", env: env
+    command "dda inv -e agent.build --cpus #{workers} --exclude-rtloader #{include_sds} --major-version #{major_version_arg} --no-development --install-path=#{install_dir} --embedded-path=#{install_dir}/embedded --flavor #{flavor_arg} #{bundle_arg}", env: env
 
     if heroku_target?
-      command "dda inv -e agent.build --exclude-rtloader --major-version #{major_version_arg} --no-development --install-path=#{install_dir} --embedded-path=#{install_dir}/embedded --flavor #{flavor_arg} --agent-bin=bin/agent/core-agent --bundle agent", env: env
+      command "dda inv -e agent.build --cpus #{workers} --exclude-rtloader --major-version #{major_version_arg} --no-development --install-path=#{install_dir} --embedded-path=#{install_dir}/embedded --flavor #{flavor_arg} --agent-bin=bin/agent/core-agent --bundle agent", env: env
     end
   end
 
@@ -140,7 +140,7 @@ build do
 
   if not bundled_agents.include? "trace-agent"
     platform = windows_arch_i386? ? "x86" : "x64"
-    command "invoke trace-agent.build --install-path=#{install_dir} --major-version #{major_version_arg} --flavor #{flavor_arg}", :env => env
+    command "invoke trace-agent.build --cpus #{workers} --install-path=#{install_dir} --major-version #{major_version_arg} --flavor #{flavor_arg}", :env => env
   end
 
   if windows_target?
@@ -151,7 +151,7 @@ build do
 
   # Process agent
   if not bundled_agents.include? "process-agent"
-    command "invoke -e process-agent.build --install-path=#{install_dir} --major-version #{major_version_arg} --flavor #{flavor_arg}", :env => env
+    command "invoke -e process-agent.build --cpus #{workers} --install-path=#{install_dir} --major-version #{major_version_arg} --flavor #{flavor_arg}", :env => env
   end
 
   if windows_target?
@@ -187,7 +187,7 @@ build do
   # Security agent
   secagent_support = (not heroku_target?) and (not windows_target? or (ENV['WINDOWS_DDPROCMON_DRIVER'] and not ENV['WINDOWS_DDPROCMON_DRIVER'].empty?))
   if secagent_support
-    command "invoke -e security-agent.build #{fips_args} --install-path=#{install_dir} --major-version #{major_version_arg}", :env => env
+    command "invoke -e security-agent.build --cpus #{workers} #{fips_args} --install-path=#{install_dir} --major-version #{major_version_arg}", :env => env
     if windows_target?
       copy 'bin/security-agent/security-agent.exe', "#{install_dir}/bin/agent"
     else

@@ -55,6 +55,7 @@ def build(
     build_tags,
     race=False,
     rebuild=False,
+    cpus=None,
     install_path=None,
     major_version='7',
     go_mod="readonly",
@@ -96,12 +97,13 @@ def build(
     if os.path.exists(BIN_PATH):
         os.remove(BIN_PATH)
 
-    cmd = 'go build -mod={go_mod} {race_opt} {build_type} -tags "{go_build_tags}" '
+    cmd = 'go build -mod={go_mod} {race_opt} {cpus_opt} {build_type} -tags "{go_build_tags}" '
     cmd += '-o {agent_bin} -gcflags="{gcflags}" -ldflags="{ldflags}" {REPO_PATH}/cmd/security-agent'
 
     args = {
         "go_mod": go_mod,
         "race_opt": "-race" if race else "",
+        "cpus_opt": f"-p {cpus}" if cpus else "",
         "build_type": "-a" if rebuild else "",
         "go_build_tags": " ".join(build_tags),
         "agent_bin": BIN_PATH,

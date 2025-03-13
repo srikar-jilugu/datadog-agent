@@ -17,6 +17,7 @@ def build(
     ctx,
     rebuild=False,
     race=False,
+    cpus=None,
     build_include=None,
     build_exclude=None,
     flavor=AgentFlavor.base.name,
@@ -63,9 +64,10 @@ def build(
 
     race_opt = "-race" if race else ""
     build_type = "-a" if rebuild else ""
+    cpus_opt = f"-p {cpus}" if cpus else ""
     go_build_tags = " ".join(build_tags)
     agent_bin = os.path.join(BIN_PATH, bin_name("trace-agent"))
-    cmd = f"go build -mod={go_mod} {race_opt} {build_type} -tags \"{go_build_tags}\" "
+    cmd = f"go build -mod={go_mod} {race_opt} {cpus_opt} {build_type} -tags \"{go_build_tags}\" "
     cmd += f"-o {agent_bin} -gcflags=\"{gcflags}\" -ldflags=\"{ldflags}\" {REPO_PATH}/cmd/trace-agent"
 
     # go generate only works if you are in the module the target file is in, so we
