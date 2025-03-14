@@ -16,7 +16,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/DataDog/datadog-agent/pkg/fleet/installer/paths"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -364,16 +363,16 @@ func movePackageFromSource(packageName string, rootPath string, sourcePath strin
 		// TODO: Do we want to differentiate between packages that cannot be deleted
 		// due to the pre-remove hook and other reasons?
 		// On Windows, if directory exists, check contents and copy missing files
-		if runtime.GOOS == "windows" {
-			if err := repairDirectory(sourcePath, targetPath); err != nil {
-				return "", fmt.Errorf("target package directory exists and could not be repaired: %w", err)
-			}
-			if err := paths.SetRepositoryPermissions(targetPath); err != nil {
-				return "", fmt.Errorf("could not set permissions on package: %w", err)
-			}
-			return targetPath, nil
+		//if runtime.GOOS == "windows" {
+		if err := repairDirectory(sourcePath, targetPath); err != nil {
+			return "", fmt.Errorf("target package directory exists and could not be repaired: %w", err)
 		}
-		return "", fmt.Errorf("target package already exists")
+		if err := paths.SetRepositoryPermissions(targetPath); err != nil {
+			return "", fmt.Errorf("could not set permissions on package: %w", err)
+		}
+		return targetPath, nil
+		//}
+		//return "", fmt.Errorf("target package already exists")
 	}
 	if !errors.Is(err, os.ErrNotExist) {
 		return "", fmt.Errorf("could not stat target package: %w", err)
