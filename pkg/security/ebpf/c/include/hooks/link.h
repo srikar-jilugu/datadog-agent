@@ -60,6 +60,15 @@ int hook_complete_walk(ctx_t *ctx) {
     set_file_inode(syscall->link.src_dentry, &syscall->link.src_file, 1);
     fill_file(syscall->link.src_dentry, &syscall->link.src_file);
 
+    syscall->link.target_file.metadata = syscall->link.src_file.metadata;
+    // we generate a fake target key as the inode is the same
+    syscall->link.target_file.path_key.ino = FAKE_INODE_MSW << 32 | bpf_get_prandom_u32();
+    // this is a hard link, source and target dentries are on the same filesystem & mount point
+    syscall->link.target_file.path_key.mount_id = syscall->link.src_file.path_key.mount_id;
+    if (is_overlayfs(syscall->link.src_dentry)) {
+        syscall->link.target_file.flags |= UPPER_LAYER;
+    }
+
     syscall->resolver.dentry = syscall->link.src_dentry;
     syscall->resolver.key = syscall->link.src_file.path_key;
     syscall->resolver.discarder_event_type = dentry_resolver_discarder_event_type(syscall);
@@ -213,7 +222,9 @@ int __attribute__((always_inline)) sys_link_ret(void *ctx, int retval, int dr_ty
         return 0;
     }
 
+    // target_dentry can only be accessed now because it was set by one of the create_link_dentry_common hooks
     if (IS_ERR(syscall->link.target_dentry)) {
+        // the link creation failed so we do not have the information regarding the target file
         pop_syscall(EVENT_LINK);
         return 0;
     }
@@ -227,15 +238,6 @@ int __attribute__((always_inline)) sys_link_ret(void *ctx, int retval, int dr_ty
 
     if (syscall->state != DISCARDED && is_event_enabled(EVENT_LINK)) {
         syscall->retval = retval;
-
-        syscall->link.target_file.metadata = syscall->link.src_file.metadata;
-        // we generate a fake target key as the inode is the same
-        syscall->link.target_file.path_key.ino = FAKE_INODE_MSW << 32 | bpf_get_prandom_u32();
-        // this is a hard link, source and target dentries are on the same filesystem & mount point
-        syscall->link.target_file.path_key.mount_id = syscall->link.src_file.path_key.mount_id;
-        if (is_overlayfs(syscall->link.src_dentry)) {
-            syscall->link.target_file.flags |= UPPER_LAYER;
-        }
 
         syscall->resolver.dentry = syscall->link.target_dentry;
         syscall->resolver.key = syscall->link.target_file.path_key;
