@@ -7,18 +7,9 @@
 
 package collectors
 
-import (
-	"fmt"
+type OrchestratorInformerFactory struct{}
 
-	"k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions"
-	vpai "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/client/informers/externalversions"
-	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/tools/cache"
-
-	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/cluster/orchestrator/processors"
-)
-
+/*
 // K8sCollector is an interface that represents the collection process for a k8s resource type.
 type K8sCollector interface {
 	Collector
@@ -79,3 +70,4 @@ func NewK8sProcessorContext(rcfg *CollectorRunConfig, metadata *CollectorMetadat
 		AnnotationsAsTags:  metadata.AnnotationsAsTags,
 	}
 }
+*/

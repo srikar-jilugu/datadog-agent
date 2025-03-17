@@ -9,7 +9,6 @@
 package k8s
 
 import (
-	"context"
 	"fmt"
 
 	model "github.com/DataDog/agent-payload/v5/process"
@@ -22,7 +21,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	corev1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // ClusterProcessor is a processor for Kubernetes clusters. There is no
@@ -112,18 +110,20 @@ func (p *ClusterProcessor) Process(ctx processors.ProcessorContext, list interfa
 		ExtendedResourcesAllocatable: extendedResourcesAllocatable,
 	}
 
-	kubeSystemCreationTimestamp, err := getKubeSystemCreationTimeStamp(pctx.APIClient.Cl.CoreV1())
-	if err != nil {
-		return processResult, 0, fmt.Errorf("error getting server kube system creation timestamp: %s", err.Error())
-	}
+	/*
+		kubeSystemCreationTimestamp, err := getKubeSystemCreationTimeStamp(pctx.APIClient.Cl.CoreV1())
+		if err != nil {
+			return processResult, 0, fmt.Errorf("error getting server kube system creation timestamp: %s", err.Error())
+		}
 
-	apiVersion, err := pctx.APIClient.Cl.Discovery().ServerVersion()
-	if err != nil {
-		return processResult, 0, fmt.Errorf("error getting server apiVersion: %s", err.Error())
-	}
+		apiVersion, err := pctx.APIClient.Cl.Discovery().ServerVersion()
+		if err != nil {
+			return processResult, 0, fmt.Errorf("error getting server apiVersion: %s", err.Error())
+		}
 
-	clusterModel.ApiServerVersions = map[string]int32{apiVersion.String(): 1}
-
+		clusterModel.ApiServerVersions = map[string]int32{apiVersion.String(): 1}
+	*/
+	kubeSystemCreationTimestamp := metav1.Time{}
 	if !kubeSystemCreationTimestamp.IsZero() {
 		clusterModel.CreationTimestamp = kubeSystemCreationTimestamp.Unix()
 	}
@@ -171,6 +171,7 @@ func fillClusterResourceVersion(c *model.Cluster) error {
 	return nil
 }
 
+/*
 // getKubeSystemCreationTimeStamp returns the timestamp of the kube-system namespace from the cluster
 // We use it as the cluster timestamp as it is the first namespace which have been created by the cluster.
 func getKubeSystemCreationTimeStamp(coreClient corev1Client.CoreV1Interface) (metav1.Time, error) {
@@ -186,3 +187,4 @@ func getKubeSystemCreationTimeStamp(coreClient corev1Client.CoreV1Interface) (me
 	orchestrator.KubernetesResourceCache.Set(orchestrator.ClusterAgeCacheKey, svc.GetCreationTimestamp(), orchestrator.NoExpiration)
 	return ts, nil
 }
+*/
