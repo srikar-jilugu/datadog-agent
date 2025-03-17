@@ -16,14 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/kube-state-metrics/v2/pkg/allowdenylist"
 	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/customresourcestate"
 	"k8s.io/kube-state-metrics/v2/pkg/options"
 
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
@@ -32,7 +28,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator/sender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/cluster"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/cluster/ksm/customresources"
 	"github.com/DataDog/datadog-agent/pkg/config/model"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
@@ -70,6 +65,7 @@ var extendedCollectors = map[string]string{
 	"pods":  "core/v1, Resource=pods_extended",
 }
 
+/*
 // collectorNameReplacement contains a mapping of collector names as they would appear in the KSM config to what
 // their new collector name would be. For backwards compatibility.
 var collectorNameReplacement = map[string]string{
@@ -79,6 +75,7 @@ var collectorNameReplacement = map[string]string{
 	// the KSM builder in KSM 2.9 result in the detected custom resource store name being different.
 	"verticalpodautoscalers": "autoscaling.k8s.io/v1beta2, Resource=verticalpodautoscalers",
 }
+*/
 
 var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
 
@@ -139,7 +136,7 @@ type KSMConfig struct {
 	//              type: Gauge
 	//              gauge:
 	//                path: [status, agent, available]
-	CustomResource customresourcestate.Metrics `yaml:"custom_resource"`
+	//CustomResource customresourcestate.Metrics `yaml:"custom_resource"`
 
 	// LabelJoins allows adding the tags to join from other KSM metrics.
 	// Example: Joining for deployment metrics. Based on:
@@ -286,7 +283,7 @@ func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConf
 		return err
 	}
 
-	maps.Copy(k.metricNamesMapper, customresources.GetCustomMetricNamesMapper(k.instance.CustomResource.Spec.Resources))
+	//maps.Copy(k.metricNamesMapper, customresources.GetCustomMetricNamesMapper(k.instance.CustomResource.Spec.Resources))
 
 	// Retrieve cluster name
 	k.getClusterName()
@@ -328,8 +325,8 @@ func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConf
 			k.configurePodCollection(builder, k.instance.Collectors)
 
 			var collectors []string
-			var apiServerClient *apiserver.APIClient
-			var resources []*v1.APIResourceList
+			//var apiServerClient *apiserver.APIClient
+			//var resources []*v1.APIResourceList
 
 			switch k.instance.PodCollectionMode {
 			case nodeKubeletPodCollection:
@@ -338,42 +335,45 @@ func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConf
 				collectors = []string{"pods"}
 				setupLabelsAndAnnotationsAsTagsFunc()
 			case defaultPodCollection, clusterUnassignedPodCollection:
-				// We can try to get the API Client directly because this code will be retried if it fails
-				apiServerClient, err = apiserver.GetAPIClient()
-				if err != nil {
-					return err
-				}
+				/*
+					// We can try to get the API Client directly because this code will be retried if it fails
+					apiServerClient, err = apiserver.GetAPIClient()
+					if err != nil {
+						return err
+					}
 
-				apiServerClient, err := apiserver.GetAPIClient()
-				if err != nil {
-					return err
-				}
+					apiServerClient, err := apiserver.GetAPIClient()
+					if err != nil {
+						return err
+					}
 
-				err = apiserver.InitializeGlobalResourceTypeCache(apiServerClient.Cl.Discovery())
-				if err != nil {
-					return err
-				}
+					err = apiserver.InitializeGlobalResourceTypeCache(apiServerClient.Cl.Discovery())
+					if err != nil {
+						return err
+					}
 
-				setupLabelsAndAnnotationsAsTagsFunc()
+					setupLabelsAndAnnotationsAsTagsFunc()
 
-				// Discover resources that are currently available
-				resources, err = discoverResources(apiServerClient.Cl.Discovery())
-				if err != nil {
-					return err
-				}
+					// Discover resources that are currently available
+					resources, err = discoverResources(apiServerClient.Cl.Discovery())
+					if err != nil {
+						return err
+					}
 
-				// Prepare the collectors for the resources specified in the configuration file.
-				collectors, err = filterUnknownCollectors(k.instance.Collectors, resources)
-				if err != nil {
-					return err
-				}
+					// Prepare the collectors for the resources specified in the configuration file.
+					collectors, err = filterUnknownCollectors(k.instance.Collectors, resources)
+					if err != nil {
+						return err
+					}
 
-				// Enable the KSM default collectors if the config collectors list is empty.
-				if len(collectors) == 0 {
-					collectors = options.DefaultResources.AsSlice()
-				}
+					// Enable the KSM default collectors if the config collectors list is empty.
+					if len(collectors) == 0 {
+						collectors = options.DefaultResources.AsSlice()
+					}
 
-				builder.WithKubeClient(apiServerClient.InformerCl)
+					builder.WithKubeClient(apiServerClient.InformerCl)
+
+				*/
 			}
 
 			// Prepare watched namespaces
@@ -411,7 +411,7 @@ func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConf
 
 			// configure custom resources required for extended features and
 			// compatibility across deprecated/removed versions of APIs
-			cr := k.discoverCustomResources(apiServerClient, collectors, resources)
+			cr := k.discoverCustomResources(collectors)
 			builder.WithGenerateCustomResourceStoresFunc(builder.GenerateCustomResourceStoresFunc)
 			builder.WithCustomResourceStoreFactories(cr.factories...)
 			builder.WithCustomResourceClients(cr.clients)
@@ -458,6 +458,7 @@ func (k *KSMCheck) Configure(senderManager sender.SenderManager, integrationConf
 	return nil
 }
 
+/*
 func discoverResources(client discovery.DiscoveryInterface) ([]*v1.APIResourceList, error) {
 	_, resources, err := client.ServerGroupsAndResources()
 	if err != nil {
@@ -471,7 +472,9 @@ func discoverResources(client discovery.DiscoveryInterface) ([]*v1.APIResourceLi
 	}
 	return resources, nil
 }
+*/
 
+/*
 func filterUnknownCollectors(collectors []string, resources []*v1.APIResourceList) ([]string, error) {
 	resourcesSet := make(map[string]struct{}, len(collectors))
 	for _, resourceList := range resources {
@@ -494,6 +497,7 @@ func filterUnknownCollectors(collectors []string, resources []*v1.APIResourceLis
 	}
 	return filteredCollectors, nil
 }
+*/
 
 func (c *KSMConfig) parse(data []byte) error {
 	return yaml.Unmarshal(data, c)
@@ -505,7 +509,7 @@ type customResources struct {
 	clients    map[string]interface{}
 }
 
-func (k *KSMCheck) discoverCustomResources(c *apiserver.APIClient, collectors []string, resources []*v1.APIResourceList) customResources {
+func (k *KSMCheck) discoverCustomResources(collectors []string) customResources {
 	// automatically add extended collectors if their standard ones are
 	// enabled
 	for _, c := range collectors {
@@ -523,38 +527,42 @@ func (k *KSMCheck) discoverCustomResources(c *apiserver.APIClient, collectors []
 		}
 	}
 
-	// extended resource collectors always have a factory registered
-	factories := []customresource.RegistryFactory{
-		customresources.NewExtendedJobFactory(c),
-		customresources.NewCustomResourceDefinitionFactory(c),
-		customresources.NewAPIServiceFactory(c),
-		customresources.NewExtendedNodeFactory(c),
-		customresources.NewExtendedPodFactory(c),
-		customresources.NewVerticalPodAutoscalerFactory(c),
-	}
+	return customResources{}
+	/*
+		// extended resource collectors always have a factory registered
+		factories := []customresource.RegistryFactory{
+			customresources.NewExtendedJobFactory(c),
+			customresources.NewCustomResourceDefinitionFactory(c),
+			customresources.NewAPIServiceFactory(c),
+			customresources.NewExtendedNodeFactory(c),
+			customresources.NewExtendedPodFactory(c),
+			customresources.NewVerticalPodAutoscalerFactory(c),
+		}
 
-	factories = manageResourcesReplacement(c, factories, resources)
+		factories = manageResourcesReplacement(c, factories, resources)
 
-	clients := make(map[string]interface{}, len(factories))
-	for _, f := range factories {
-		client, _ := f.CreateClient(nil)
-		clients[f.Name()] = client
-	}
+		clients := make(map[string]interface{}, len(factories))
+		for _, f := range factories {
+			client, _ := f.CreateClient(nil)
+			clients[f.Name()] = client
+		}
 
-	customResourceFactories := customresources.GetCustomResourceFactories(k.instance.CustomResource, c)
-	customResourceClients, customResourceCollectors := customresources.GetCustomResourceClientsAndCollectors(k.instance.CustomResource.Spec.Resources, c)
+		customResourceFactories := customresources.GetCustomResourceFactories(k.instance.CustomResource, c)
+		customResourceClients, customResourceCollectors := customresources.GetCustomResourceClientsAndCollectors(k.instance.CustomResource.Spec.Resources, c)
 
-	collectors = lo.Uniq(append(collectors, customResourceCollectors...))
-	maps.Copy(clients, customResourceClients)
-	factories = append(factories, customResourceFactories...)
+		collectors = lo.Uniq(append(collectors, customResourceCollectors...))
+		maps.Copy(clients, customResourceClients)
+		factories = append(factories, customResourceFactories...)
 
-	return customResources{
-		collectors: collectors,
-		clients:    clients,
-		factories:  factories,
-	}
+		return customResources{
+			collectors: collectors,
+			clients:    clients,
+			factories:  factories,
+		}
+	*/
 }
 
+/*
 func manageResourcesReplacement(c *apiserver.APIClient, factories []customresource.RegistryFactory, resources []*v1.APIResourceList) []customresource.RegistryFactory {
 	// backwards/forwards compatibility resource factories are only
 	// registered if they're needed, otherwise they'd overwrite the default
@@ -593,6 +601,7 @@ func manageResourcesReplacement(c *apiserver.APIClient, factories []customresour
 
 	return factories
 }
+*/
 
 // Run runs the KSM check
 func (k *KSMCheck) Run() error {
@@ -621,30 +630,30 @@ func (k *KSMCheck) Run() error {
 	// If KSM is running in the node agent, and it's configured to collect only
 	// pods and from the node agent, we don't need to run leader election,
 	// because each node agent is responsible for collecting its own pods.
-	podsFromKubeletInNodeAgent := k.isRunningOnNodeAgent && k.instance.PodCollectionMode == nodeKubeletPodCollection
-
-	// If the check is configured as a cluster check, the cluster check worker needs to skip the leader election section.
-	// we also do a safety check for dedicated runners to avoid trying the leader election
-	if (!k.isCLCRunner || !k.instance.LeaderSkip) && !podsFromKubeletInNodeAgent {
-		// Only run if Leader Election is enabled.
-		if !pkgconfigsetup.Datadog().GetBool("leader_election") {
-			return log.Error("Leader Election not enabled. The cluster-agent will not run the kube-state-metrics core check.")
-		}
-
-		leader, errLeader := cluster.RunLeaderElection()
-		if errLeader != nil {
-			if errLeader == apiserver.ErrNotLeader {
-				log.Debugf("Not leader (leader is %q). Skipping the kube-state-metrics core check", leader)
-				return nil
+	_ = k.isRunningOnNodeAgent && k.instance.PodCollectionMode == nodeKubeletPodCollection
+	/*
+		// If the check is configured as a cluster check, the cluster check worker needs to skip the leader election section.
+		// we also do a safety check for dedicated runners to avoid trying the leader election
+		if (!k.isCLCRunner || !k.instance.LeaderSkip) && !podsFromKubeletInNodeAgent {
+			// Only run if Leader Election is enabled.
+			if !pkgconfigsetup.Datadog().GetBool("leader_election") {
+				return log.Error("Leader Election not enabled. The cluster-agent will not run the kube-state-metrics core check.")
 			}
 
-			_ = k.Warn("Leader Election error. Not running the kube-state-metrics core check.")
-			return err
+			leader, errLeader := cluster.RunLeaderElection()
+			if errLeader != nil {
+				if errLeader == apiserver.ErrNotLeader {
+					log.Debugf("Not leader (leader is %q). Skipping the kube-state-metrics core check", leader)
+					return nil
+				}
+
+				_ = k.Warn("Leader Election error. Not running the kube-state-metrics core check.")
+				return err
+			}
+
+			log.Tracef("Current leader: %q, running kube-state-metrics core check", leader)
 		}
-
-		log.Tracef("Current leader: %q, running kube-state-metrics core check", leader)
-	}
-
+	*/
 	defer sender.Commit()
 
 	labelJoiner := newLabelJoiner(k.instance.labelJoins)
@@ -1012,6 +1021,7 @@ func newCheck() check.Check {
 		})
 }
 
+/*
 // KubeStateMetricsFactoryWithParam is used only by test/benchmarks/kubernetes_state
 func KubeStateMetricsFactoryWithParam(labelsMapper map[string]string, labelJoins map[string]*JoinsConfigWithoutLabelsMapping, allStores [][]cache.Store) *KSMCheck {
 	check := newKSMCheck(
@@ -1024,6 +1034,7 @@ func KubeStateMetricsFactoryWithParam(labelsMapper map[string]string, labelJoins
 	check.allStores = allStores
 	return check
 }
+*/
 
 func newKSMCheck(base core.CheckBase, instance *KSMConfig) *KSMCheck {
 	return &KSMCheck{

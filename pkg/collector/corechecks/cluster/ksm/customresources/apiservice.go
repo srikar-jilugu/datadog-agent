@@ -7,23 +7,7 @@
 
 package customresources
 
-import (
-	"context"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	basemetrics "k8s.io/component-base/metrics"
-	v1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	apiregistrationclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1"
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-)
-
+/*
 var (
 	descAPIServiceAnnotationsName     = "kube_apiservice_annotations"
 	descAPIServiceAnnotationsHelp     = "Kubernetes annotations converted to Prometheus labels."
@@ -155,3 +139,4 @@ func wrapAPIServiceFunc(f func(*v1.APIService) *metric.Family) func(interface{})
 		return metricFamily
 	}
 }
+*/

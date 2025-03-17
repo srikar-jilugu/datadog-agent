@@ -1,3 +1,8 @@
+// Unless explicitly stated otherwise all files in this repository are licensed
+// under the Apache License Version 2.0.
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2016-present Datadog, Inc.
+
 //go:build kubeapiserver
 
 /*
@@ -22,13 +27,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
-
-	v1 "k8s.io/api/core/v1"
-	extension "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
 )
 
 const networkBandwidthResourceName = "kubernetes.io/network-bandwidth"
@@ -38,6 +37,7 @@ var (
 	matchAllCap        = regexp.MustCompile("([a-z0-9])([A-Z])")
 )
 
+/*
 func resourceVersionMetric(rv string) []*metric.Metric {
 	v, err := strconv.ParseFloat(rv, 64)
 	if err != nil {
@@ -58,6 +58,8 @@ func boolFloat64(b bool) float64 {
 	}
 	return 0
 }
+
+*/
 
 func kubeMapToPrometheusLabels(prefix string, input map[string]string) ([]string, []string) {
 	return mapToPrometheusLabels(input, prefix)
@@ -151,6 +153,7 @@ func mergeKeyValues(keyValues ...[]string) (keys, values []string) {
 	return keys, values
 }
 
+/*
 var (
 	conditionStatusesV1            = []v1.ConditionStatus{v1.ConditionTrue, v1.ConditionFalse, v1.ConditionUnknown}
 	conditionStatusesExtensionV1   = []extension.ConditionStatus{extension.ConditionTrue, extension.ConditionFalse, extension.ConditionUnknown}
@@ -176,7 +179,6 @@ func addConditionMetrics[T conditionStatus](cs T, statuses []T) []*metric.Metric
 
 	return ms
 }
-
 func addConditionMetricsV1(cs v1.ConditionStatus) []*metric.Metric {
 	return addConditionMetrics(cs, conditionStatusesV1)
 }
@@ -188,3 +190,4 @@ func addConditionMetricsExtensionV1(cs extension.ConditionStatus) []*metric.Metr
 func addConditionMetricsAPIServicesV1(cs apiregistrationv1.ConditionStatus) []*metric.Metric {
 	return addConditionMetrics(cs, conditionStatusesAPIServicesV1)
 }
+*/

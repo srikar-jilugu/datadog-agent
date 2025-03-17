@@ -13,24 +13,7 @@ package customresources
 // It exists here to provide backwards compatibility with k8s <1.19, as KSM 2.4
 // uses API v1 instead of v1beta1: https://github.com/kubernetes/kube-state-metrics/pull/1491
 
-import (
-	"context"
-
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/component-base/metrics"
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-)
-
+/*
 var (
 	descPodDisruptionBudgetLabelsDefaultLabels = []string{"namespace", "poddisruptionbudget"}
 	descPodDisruptionBudgetAnnotationsName     = "kube_poddisruptionbudget_annotations"
@@ -238,3 +221,4 @@ func wrapPodDisruptionBudgetFunc(f func(*policyv1beta1.PodDisruptionBudget) *met
 		return metricFamily
 	}
 }
+*/

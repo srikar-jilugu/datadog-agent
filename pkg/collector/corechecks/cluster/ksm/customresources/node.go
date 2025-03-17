@@ -7,25 +7,7 @@
 
 package customresources
 
-import (
-	"context"
-
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/component-base/metrics"
-	"k8s.io/kube-state-metrics/v2/pkg/constant"
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-)
-
+/*
 var descNodeLabelsDefaultLabels = []string{"node"}
 
 // NewExtendedNodeFactory returns a new Node metric family generator factory.
@@ -140,3 +122,4 @@ func (f *extendedNodeFactory) ListWatch(customResourceClient interface{}, _ stri
 		},
 	}
 }
+*/

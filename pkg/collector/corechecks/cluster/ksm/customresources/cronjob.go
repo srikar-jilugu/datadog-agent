@@ -13,26 +13,7 @@ package customresources
 // It exists here to provide backwards compatibility with k8s <1.19, as KSM 2.4
 // uses API v1 instead of v1beta1: https://github.com/kubernetes/kube-state-metrics/pull/1491
 
-import (
-	"context"
-	"time"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-	"github.com/pkg/errors"
-	"github.com/robfig/cron/v3"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	basemetrics "k8s.io/component-base/metrics"
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-)
-
+/*
 var (
 	descCronJobAnnotationsName     = "kube_cronjob_annotations"
 	descCronJobAnnotationsHelp     = "Kubernetes annotations converted to Prometheus labels."
@@ -360,3 +341,4 @@ func getNextScheduledTime(schedule string, lastScheduleTime *metav1.Time, create
 	}
 	return time.Time{}, errors.New("createdTime and lastScheduleTime are both zero")
 }
+*/

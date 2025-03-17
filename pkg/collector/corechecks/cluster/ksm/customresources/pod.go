@@ -8,17 +8,11 @@
 package customresources
 
 import (
-	"context"
-
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes"
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	basemetrics "k8s.io/component-base/metrics"
@@ -35,12 +29,14 @@ const (
 
 var descPodLabelsDefaultLabels = []string{"namespace", "pod", "uid"}
 
+/*
 // NewExtendedPodFactory returns a new Pod metric family generator factory.
 func NewExtendedPodFactory(client *apiserver.APIClient) customresource.RegistryFactory {
 	return &extendedPodFactory{
 		client: client.Cl,
 	}
 }
+*/
 
 // NewExtendedPodFactoryForKubelet returns a new Pod metric family generator
 // factory meant to be used when pods are collected from the Kubelet.
@@ -50,7 +46,7 @@ func NewExtendedPodFactoryForKubelet() customresource.RegistryFactory {
 }
 
 type extendedPodFactory struct {
-	client clientset.Interface
+	//client clientset.Interface
 }
 
 // Name is the name of the factory
@@ -59,7 +55,8 @@ func (f *extendedPodFactory) Name() string {
 }
 
 func (f *extendedPodFactory) CreateClient(_ *rest.Config) (interface{}, error) {
-	return f.client, nil
+	//return f.client, nil
+	return nil, nil
 }
 
 // MetricFamilyGenerators returns the extended pod metric family generators
@@ -246,16 +243,20 @@ func (f *extendedPodFactory) ExpectedType() interface{} {
 
 // ListWatch returns a ListerWatcher for v1.Pod
 func (f *extendedPodFactory) ListWatch(customResourceClient interface{}, ns string, fieldSelector string) cache.ListerWatcher {
-	client := customResourceClient.(clientset.Interface)
-	ctx := context.Background()
-	return &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			opts.FieldSelector = fieldSelector
-			return client.CoreV1().Pods(ns).List(ctx, opts)
-		},
-		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
-			opts.FieldSelector = fieldSelector
-			return client.CoreV1().Pods(ns).Watch(ctx, opts)
-		},
-	}
+	/*
+		client := customResourceClient.(clientset.Interface)
+		ctx := context.Background()
+		return &cache.ListWatch{
+			ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+				opts.FieldSelector = fieldSelector
+				return client.CoreV1().Pods(ns).List(ctx, opts)
+			},
+			WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
+				opts.FieldSelector = fieldSelector
+				return client.CoreV1().Pods(ns).Watch(ctx, opts)
+			},
+		}
+	*/
+
+	return &cache.ListWatch{}
 }

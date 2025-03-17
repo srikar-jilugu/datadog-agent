@@ -14,24 +14,7 @@ package customresources
 // that use autoscaling/v2beta2, as the KSM version that we depend on uses API
 // v2 instead of v2beta2.
 
-import (
-	"context"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-	autoscaling "k8s.io/api/autoscaling/v2beta2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	basemetrics "k8s.io/component-base/metrics"
-
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-)
-
+/*
 type metricTargetType int
 
 const (
@@ -404,3 +387,4 @@ func wrapHPAFunc(f func(*autoscaling.HorizontalPodAutoscaler) *metric.Family) fu
 		return metricFamily
 	}
 }
+*/

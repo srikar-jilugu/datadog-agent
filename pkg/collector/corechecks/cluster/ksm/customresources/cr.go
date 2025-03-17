@@ -7,28 +7,7 @@
 
 package customresources
 
-import (
-	"context"
-	"time"
-
-	"github.com/DataDog/datadog-agent/pkg/config/setup"
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-
-	"github.com/mitchellh/mapstructure"
-	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/customresourcestate"
-	"k8s.io/kube-state-metrics/v2/pkg/discovery"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-)
-
+/*
 // NewCustomResourceFactory returns a new custom resource factory that uses the provided client for all CRDs
 func NewCustomResourceFactory(factory customresource.RegistryFactory, client dynamic.Interface) customresource.RegistryFactory {
 	return &crFactory{
@@ -112,6 +91,9 @@ func (d customResourceDecoder) Decode(v interface{}) error {
 	return mapstructure.Decode(d.data, v)
 }
 
+*/
+
+/*
 // GetCustomResourceFactories returns a list of custom resource factories
 func GetCustomResourceFactories(resources customresourcestate.Metrics, c *apiserver.APIClient) (factories []customresource.RegistryFactory) {
 	discovererInstance := &discovery.CRDiscoverer{
@@ -144,7 +126,9 @@ func GetCustomResourceFactories(resources customresourcestate.Metrics, c *apiser
 
 	return factories
 }
+*/
 
+/*
 // GetCustomResourceClientsAndCollectors returns a map of custom resource clients and a list of collectors
 func GetCustomResourceClientsAndCollectors(resources []customresourcestate.Resource, c *apiserver.APIClient) (clients map[string]interface{}, collectors []string) {
 	clients = make(map[string]interface{})
@@ -164,3 +148,4 @@ func GetCustomResourceClientsAndCollectors(resources []customresourcestate.Resou
 
 	return clients, collectors
 }
+*/

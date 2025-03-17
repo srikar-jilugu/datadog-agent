@@ -13,27 +13,7 @@ package customresources
 // It exists here to provide backwards compatibility because the support of VPA has been dropped upstream by:
 // https://github.com/kubernetes/kube-state-metrics/pull/2017
 
-import (
-	"context"
-
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	vpav1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/autoscaler/vertical-pod-autoscaler/pkg/client/clientset/versioned"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	basemetrics "k8s.io/component-base/metrics"
-	"k8s.io/kube-state-metrics/v2/pkg/constant"
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-)
-
+/*
 var (
 	descVerticalPodAutoscalerAnnotationsName     = "kube_verticalpodautoscaler_annotations"
 	descVerticalPodAutoscalerAnnotationsHelp     = "Kubernetes annotations converted to Prometheus labels."
@@ -346,3 +326,4 @@ func (f *vpaFactory) ListWatch(customResourceClient interface{}, ns string, fiel
 		},
 	}
 }
+*/

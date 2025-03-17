@@ -7,25 +7,7 @@
 
 package customresources
 
-import (
-	"context"
-
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	basemetrics "k8s.io/component-base/metrics"
-
-	"k8s.io/kube-state-metrics/v2/pkg/customresource"
-	"k8s.io/kube-state-metrics/v2/pkg/metric"
-	generator "k8s.io/kube-state-metrics/v2/pkg/metric_generator"
-
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-)
-
+/*
 var (
 	descCustomResourceDefinitionAnnotationsName     = "kube_customresourcedefinition_annotations"
 	descCustomResourceDefinitionAnnotationsHelp     = "Kubernetes annotations converted to Prometheus labels."
@@ -159,3 +141,4 @@ func wrapCustomResourceDefinition(f func(*v1.CustomResourceDefinition) *metric.F
 		return metricFamily
 	}
 }
+*/
