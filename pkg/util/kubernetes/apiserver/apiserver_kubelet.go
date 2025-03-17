@@ -7,6 +7,7 @@
 
 package apiserver
 
+/*
 import (
 	"context"
 
@@ -82,3 +83,4 @@ func processKubeServices(nodeList *v1.NodeList, pods []*kubelet.Pod, endpointLis
 		cache.Cache.Set(nodeNameCacheKey, newMetaBundle, metadataMapExpire)
 	}
 }
+*/

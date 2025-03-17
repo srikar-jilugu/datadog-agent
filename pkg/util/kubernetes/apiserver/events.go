@@ -9,6 +9,7 @@ package apiserver
 
 //// Covered by test/integration/util/kube_apiserver/apiserver_test.go
 
+/*
 import (
 	"context"
 	"fmt"
@@ -159,3 +160,4 @@ func (c *APIClient) listForEventResync(eventReadTimeout int64, eventCardinalityL
 	}
 	return added, evList.ResourceVersion, time.Now(), nil
 }
+*/

@@ -12,40 +12,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"sync"
 	"time"
-
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	vpa "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/client/clientset/versioned"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
-
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/metadata"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/restmapper"
-	"k8s.io/client-go/scale"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
-	apiregistrationclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1"
 
 	apiv1 "github.com/DataDog/datadog-agent/pkg/clusteragent/api/v1"
 	pkgconfigsetup "github.com/DataDog/datadog-agent/pkg/config/setup"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver/common"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/DataDog/datadog-agent/pkg/util/pointer"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
 )
 
@@ -83,37 +56,37 @@ type APIClient struct {
 	//
 
 	// Cl holds the main kubernetes client
-	Cl kubernetes.Interface
+	//Cl kubernetes.Interface
 
 	// DynamicCl holds a dynamic kubernetes client
-	DynamicCl dynamic.Interface
+	//DynamicCl dynamic.Interface
 
 	// ScaleCl holds the scale kubernetes client
-	ScaleCl scale.ScalesGetter
+	//ScaleCl scale.ScalesGetter
 
 	// RESTMapper is used to map resources to GVR
 	// Implement with restmapper.NewDeferredDiscoveryRESTMapper(cachedClient)
 	// So that nothing is fetched until needed
-	RESTMapper meta.RESTMapper
+	//RESTMapper meta.RESTMapper
 
 	//
 	// Informer clients (high or no timeout, use for Informers/Watch calls)
 	//
 
 	// InformerCl holds the main kubernetes client with long TO
-	InformerCl kubernetes.Interface
+	//InformerCl kubernetes.Interface
 
 	// DynamicCl holds a dynamic kubernetes client with long TO
-	DynamicInformerCl dynamic.Interface
+	//DynamicInformerCl dynamic.Interface
 
 	// CRDInformerClient holds the extension kubernetes client with long TO
-	CRDInformerClient clientset.Interface
+	//CRDInformerClient clientset.Interface
 
 	// APISInformerClient holds the APIService kubernetes client with long TO
-	APISInformerClient apiregistrationclient.ApiregistrationV1Interface
+	//APISInformerClient apiregistrationclient.ApiregistrationV1Interface
 
 	// VPAInformerClient holds kubernetes VerticalPodAutoscalers client with long TO
-	VPAInformerClient vpa.Interface
+	//VPAInformerClient vpa.Interface
 
 	//
 	// Informer factories (based on informers client)
@@ -126,20 +99,20 @@ type APIClient struct {
 	//
 
 	// InformerFactory gives access to informers.
-	InformerFactory informers.SharedInformerFactory
+	//InformerFactory informers.SharedInformerFactory
 
 	// CertificateSecretInformerFactory gives access to filtered informers
 	// This informer can be used by the Admission Controller to only watch the secret object
 	// that contains the webhook certificate.
-	CertificateSecretInformerFactory informers.SharedInformerFactory
+	//CertificateSecretInformerFactory informers.SharedInformerFactory
 
 	// WebhookConfigInformerFactory gives access to filtered informers
 	// This informer can be used by the Admission Controller to only watch
 	// the corresponding MutatingWebhookConfiguration object.
-	WebhookConfigInformerFactory informers.SharedInformerFactory
+	//WebhookConfigInformerFactory informers.SharedInformerFactory
 
 	// DynamicInformerFactory gives access to dynamic informers
-	DynamicInformerFactory dynamicinformer.DynamicSharedInformerFactory
+	//DynamicInformerFactory dynamicinformer.DynamicSharedInformerFactory
 
 	//
 	// Internal
@@ -206,6 +179,7 @@ func WaitForAPIClient(ctx context.Context) (*APIClient, error) {
 	}
 }
 
+/*
 // GetClientConfig returns a REST client configuration
 func GetClientConfig(timeout time.Duration, qps float32, burst int) (*rest.Config, error) {
 	var clientConfig *rest.Config
@@ -249,6 +223,9 @@ func GetClientConfig(timeout time.Duration, qps float32, burst int) (*rest.Confi
 	return clientConfig, nil
 }
 
+*/
+
+/*
 // GetKubeClient returns a kubernetes API server client
 // You should not use this function except if you need to create a *NEW* Client.
 func GetKubeClient(timeout time.Duration, qps float32, burst int) (kubernetes.Interface, error) {
@@ -261,7 +238,9 @@ func GetKubeClient(timeout time.Duration, qps float32, burst int) (kubernetes.In
 
 	return kubernetes.NewForConfig(clientConfig)
 }
+*/
 
+/*
 func getKubeDynamicClient(timeout time.Duration, qps float32, burst int) (dynamic.Interface, error) {
 	clientConfig, err := GetClientConfig(timeout, qps, burst)
 	if err != nil {
@@ -270,7 +249,9 @@ func getKubeDynamicClient(timeout time.Duration, qps float32, burst int) (dynami
 
 	return dynamic.NewForConfig(clientConfig)
 }
+*/
 
+/*
 func getCRDClient(timeout time.Duration, qps float32, burst int) (*clientset.Clientset, error) {
 	clientConfig, err := GetClientConfig(timeout, qps, burst)
 	if err != nil {
@@ -279,7 +260,9 @@ func getCRDClient(timeout time.Duration, qps float32, burst int) (*clientset.Cli
 
 	return clientset.NewForConfig(clientConfig)
 }
+*/
 
+/*
 func getAPISClient(timeout time.Duration, qps float32, burst int) (*apiregistrationclient.ApiregistrationV1Client, error) {
 	clientConfig, err := GetClientConfig(timeout, qps, burst)
 	if err != nil {
@@ -287,7 +270,9 @@ func getAPISClient(timeout time.Duration, qps float32, burst int) (*apiregistrat
 	}
 	return apiregistrationclient.NewForConfig(clientConfig)
 }
+*/
 
+/*
 func getKubeVPAClient(timeout time.Duration, qps float32, burst int) (vpa.Interface, error) {
 	clientConfig, err := GetClientConfig(timeout, qps, burst)
 	if err != nil {
@@ -296,7 +281,9 @@ func getKubeVPAClient(timeout time.Duration, qps float32, burst int) (vpa.Interf
 
 	return vpa.NewForConfig(clientConfig)
 }
+*/
 
+/*
 func getScaleClient(discoveryCl discovery.ServerResourcesInterface, restMapper meta.RESTMapper, timeout time.Duration, qps float32, burst int) (scale.ScalesGetter, error) {
 	clientConfig, err := GetClientConfig(timeout, qps, burst)
 	if err != nil {
@@ -309,7 +296,9 @@ func getScaleClient(discoveryCl discovery.ServerResourcesInterface, restMapper m
 	scaleKindResolver := scale.NewDiscoveryScaleKindResolver(discoveryCl)
 	return scale.NewForConfig(clientConfig, restMapper, dynamic.LegacyAPIPathResolverFunc, scaleKindResolver)
 }
+*/
 
+/*
 // GetInformerWithOptions returns
 func (c *APIClient) GetInformerWithOptions(resyncPeriod *time.Duration, options ...informers.SharedInformerOption) informers.SharedInformerFactory {
 	if resyncPeriod == nil {
@@ -318,104 +307,106 @@ func (c *APIClient) GetInformerWithOptions(resyncPeriod *time.Duration, options 
 
 	return informers.NewSharedInformerFactoryWithOptions(c.InformerCl, *resyncPeriod, options...)
 }
+*/
 
 func (c *APIClient) connect() error {
-	var err error
-	// Clients
-	c.Cl, err = GetKubeClient(c.defaultClientTimeout, standardClientQPSLimit, standardClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver client: %v", err)
-		return err
-	}
-
-	c.DynamicCl, err = getKubeDynamicClient(c.defaultClientTimeout, controllerClientQPSLimit, controllerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver dynamic client: %v", err)
-		return err
-	}
-
-	// RESTMapper
-	cachedClient := memory.NewMemCacheClient(c.Cl.Discovery())
-	c.RESTMapper = restmapper.NewDeferredDiscoveryRESTMapper(cachedClient)
-
-	// Scale client  has specific init and dependencies
-	c.ScaleCl, err = getScaleClient(c.Cl.Discovery(), c.RESTMapper, c.defaultClientTimeout, controllerClientQPSLimit, controllerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get scale client: %v", err)
-		return err
-	}
-
-	// Informer clients
-	c.InformerCl, err = GetKubeClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver client: %v", err)
-		return err
-	}
-
-	c.DynamicInformerCl, err = getKubeDynamicClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver dynamic client: %v", err)
-		return err
-	}
-
-	c.VPAInformerClient, err = getKubeVPAClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver vpa client: %v", err)
-		return err
-	}
-
-	c.CRDInformerClient, err = getCRDClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver CRDClient client: %v", err)
-		return err
-	}
-
-	c.APISInformerClient, err = getAPISClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
-	if err != nil {
-		log.Infof("Could not get apiserver APISClient client: %v", err)
-		return err
-	}
-
-	// Creating informers
-	c.InformerFactory = c.GetInformerWithOptions(nil)
-
-	if pkgconfigsetup.Datadog().GetBool("admission_controller.enabled") ||
-		pkgconfigsetup.Datadog().GetBool("compliance_config.enabled") ||
-		pkgconfigsetup.Datadog().GetBool("orchestrator_explorer.enabled") ||
-		pkgconfigsetup.Datadog().GetBool("external_metrics_provider.use_datadogmetric_crd") ||
-		pkgconfigsetup.Datadog().GetBool("external_metrics_provider.wpa_controller") ||
-		pkgconfigsetup.Datadog().GetBool("cluster_checks.enabled") ||
-		pkgconfigsetup.Datadog().GetBool("autoscaling.workload.enabled") {
-		c.DynamicInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(c.DynamicInformerCl, c.defaultInformerResyncPeriod)
-	}
-
-	if pkgconfigsetup.Datadog().GetBool("admission_controller.enabled") {
-		nameFieldkey := "metadata.name"
-		optionsForService := func(options *metav1.ListOptions) {
-			options.FieldSelector = fields.OneTermEqualSelector(nameFieldkey, pkgconfigsetup.Datadog().GetString("admission_controller.certificate.secret_name")).String()
+	/*
+		var err error
+		// Clients
+		c.Cl, err = GetKubeClient(c.defaultClientTimeout, standardClientQPSLimit, standardClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver client: %v", err)
+			return err
 		}
-		c.CertificateSecretInformerFactory = c.GetInformerWithOptions(
-			nil,
-			informers.WithTweakListOptions(optionsForService),
-			informers.WithNamespace(common.GetResourcesNamespace()),
-		)
 
-		optionsForWebhook := func(options *metav1.ListOptions) {
-			options.FieldSelector = fields.OneTermEqualSelector(nameFieldkey, pkgconfigsetup.Datadog().GetString("admission_controller.webhook_name")).String()
+		c.DynamicCl, err = getKubeDynamicClient(c.defaultClientTimeout, controllerClientQPSLimit, controllerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver dynamic client: %v", err)
+			return err
 		}
-		c.WebhookConfigInformerFactory = c.GetInformerWithOptions(
-			nil,
-			informers.WithTweakListOptions(optionsForWebhook),
-		)
-	}
 
-	// Try to get apiserver version to confim connectivity
-	APIversion := c.Cl.Discovery().RESTClient().APIVersion()
-	if APIversion.Empty() {
-		return fmt.Errorf("cannot retrieve the version of the API server at the moment")
-	}
-	log.Debugf("Connected to kubernetes apiserver, version %s", APIversion.Version)
+		// RESTMapper
+		//cachedClient := memory.NewMemCacheClient(c.Cl.Discovery())
+		//c.RESTMapper = restmapper.NewDeferredDiscoveryRESTMapper(cachedClient)
 
+		// Scale client  has specific init and dependencies
+		c.ScaleCl, err = getScaleClient(c.Cl.Discovery(), c.RESTMapper, c.defaultClientTimeout, controllerClientQPSLimit, controllerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get scale client: %v", err)
+			return err
+		}
+
+		// Informer clients
+		c.InformerCl, err = GetKubeClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver client: %v", err)
+			return err
+		}
+
+		c.DynamicInformerCl, err = getKubeDynamicClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver dynamic client: %v", err)
+			return err
+		}
+
+		c.VPAInformerClient, err = getKubeVPAClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver vpa client: %v", err)
+			return err
+		}
+
+		c.CRDInformerClient, err = getCRDClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver CRDClient client: %v", err)
+			return err
+		}
+
+		c.APISInformerClient, err = getAPISClient(c.defaultInformerTimeout, informerClientQPSLimit, informerClientQPSBurst)
+		if err != nil {
+			log.Infof("Could not get apiserver APISClient client: %v", err)
+			return err
+		}
+
+		// Creating informers
+		c.InformerFactory = c.GetInformerWithOptions(nil)
+
+		if pkgconfigsetup.Datadog().GetBool("admission_controller.enabled") ||
+			pkgconfigsetup.Datadog().GetBool("compliance_config.enabled") ||
+			pkgconfigsetup.Datadog().GetBool("orchestrator_explorer.enabled") ||
+			pkgconfigsetup.Datadog().GetBool("external_metrics_provider.use_datadogmetric_crd") ||
+			pkgconfigsetup.Datadog().GetBool("external_metrics_provider.wpa_controller") ||
+			pkgconfigsetup.Datadog().GetBool("cluster_checks.enabled") ||
+			pkgconfigsetup.Datadog().GetBool("autoscaling.workload.enabled") {
+			c.DynamicInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(c.DynamicInformerCl, c.defaultInformerResyncPeriod)
+		}
+
+		if pkgconfigsetup.Datadog().GetBool("admission_controller.enabled") {
+			nameFieldkey := "metadata.name"
+			optionsForService := func(options *metav1.ListOptions) {
+				options.FieldSelector = fields.OneTermEqualSelector(nameFieldkey, pkgconfigsetup.Datadog().GetString("admission_controller.certificate.secret_name")).String()
+			}
+			c.CertificateSecretInformerFactory = c.GetInformerWithOptions(
+				nil,
+				informers.WithTweakListOptions(optionsForService),
+				informers.WithNamespace(common.GetResourcesNamespace()),
+			)
+
+			optionsForWebhook := func(options *metav1.ListOptions) {
+				options.FieldSelector = fields.OneTermEqualSelector(nameFieldkey, pkgconfigsetup.Datadog().GetString("admission_controller.webhook_name")).String()
+			}
+			c.WebhookConfigInformerFactory = c.GetInformerWithOptions(
+				nil,
+				informers.WithTweakListOptions(optionsForWebhook),
+			)
+		}
+
+		// Try to get apiserver version to confim connectivity
+		APIversion := c.Cl.Discovery().RESTClient().APIVersion()
+		if APIversion.Empty() {
+			return fmt.Errorf("cannot retrieve the version of the API server at the moment")
+		}
+		log.Debugf("Connected to kubernetes apiserver, version %s", APIversion.Version)
+	*/
 	return nil
 }
 
@@ -433,11 +424,14 @@ func NewMetadataMapperBundle() *MetadataMapperBundle {
 	}
 }
 
+/*
 // ComponentStatuses returns the component status list from the APIServer
 func (c *APIClient) ComponentStatuses() (*v1.ComponentStatusList, error) {
 	return c.Cl.CoreV1().ComponentStatuses().List(context.TODO(), metav1.ListOptions{TimeoutSeconds: pointer.Ptr(int64(c.defaultClientTimeout.Seconds()))})
 }
+*/
 
+/*
 func (c *APIClient) getOrCreateConfigMap(name, namespace string) (cmEvent *v1.ConfigMap, err error) {
 	cmEvent, err = c.Cl.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -455,7 +449,9 @@ func (c *APIClient) getOrCreateConfigMap(name, namespace string) (cmEvent *v1.Co
 	}
 	return cmEvent, nil
 }
+*/
 
+/*
 // GetTokenFromConfigmap returns the value of the `tokenValue` from the `tokenKey` in the ConfigMap `configMapDCAToken` if its timestamp is less than tokenTimeout old.
 func (c *APIClient) GetTokenFromConfigmap(token string) (string, time.Time, error) {
 	namespace := common.GetResourcesNamespace()
@@ -495,7 +491,9 @@ func (c *APIClient) GetTokenFromConfigmap(token string) (string, time.Time, erro
 	}
 	return tokenValue, tokenTime, err
 }
+*/
 
+/*
 // UpdateTokenInConfigmap updates the value of the `tokenValue` from the `tokenKey` and
 // sets its collected timestamp in the ConfigMap `configmaptokendca`
 func (c *APIClient) UpdateTokenInConfigmap(token, tokenValue string, timestamp time.Time) error {
@@ -521,7 +519,9 @@ func (c *APIClient) UpdateTokenInConfigmap(token, tokenValue string, timestamp t
 	log.Debugf("Updated %s to %s in the ConfigMap %s", eventTokenKey, tokenValue, configMapDCAToken)
 	return nil
 }
+*/
 
+/*
 // NodeLabels is used to fetch the labels attached to a given node.
 func (c *APIClient) NodeLabels(nodeName string) (map[string]string, error) {
 	node, err := c.Cl.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
@@ -548,7 +548,9 @@ func (c *APIClient) GetNodeForPod(ctx context.Context, namespace, podName string
 	}
 	return pod.Spec.NodeName, nil
 }
+*/
 
+/*
 // GetMetadataMapBundleOnAllNodes is used for the CLI svcmap command to run fetch the metadata map of all nodes.
 func GetMetadataMapBundleOnAllNodes(cl *APIClient) (*apiv1.MetadataResponse, error) {
 	stats := apiv1.NewMetadataResponse()
@@ -572,7 +574,9 @@ func GetMetadataMapBundleOnAllNodes(cl *APIClient) (*apiv1.MetadataResponse, err
 	}
 	return stats, nil
 }
+*/
 
+/*
 // GetMetadataMapBundleOnNode is used for the CLI metamap command to output given a nodeName.
 func GetMetadataMapBundleOnNode(nodeName string) (*apiv1.MetadataResponse, error) {
 	stats := apiv1.NewMetadataResponse()
@@ -585,6 +589,7 @@ func GetMetadataMapBundleOnNode(nodeName string) (*apiv1.MetadataResponse, error
 	stats.Nodes[nodeName] = convertmetadataMapperBundleToAPI(bundle)
 	return stats, nil
 }
+*/
 
 // GetPodMetadataNames is used when the API endpoint of the DCA to get the metadata of a pod is hit.
 func GetPodMetadataNames(nodeName, ns, podName string) ([]string, error) {
@@ -618,6 +623,7 @@ func getMetadataMapBundle(nodeName string) (*MetadataMapperBundle, error) {
 	return metaBundle.(*MetadataMapperBundle), nil
 }
 
+/*
 func getNodeList(cl *APIClient) ([]v1.Node, error) {
 	nodes, err := cl.Cl.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{TimeoutSeconds: pointer.Ptr(int64(cl.defaultClientTimeout.Seconds()))})
 	if err != nil {
@@ -626,7 +632,9 @@ func getNodeList(cl *APIClient) ([]v1.Node, error) {
 	}
 	return nodes.Items, nil
 }
+*/
 
+/*
 // GetNode retrieves a node by name
 func GetNode(cl *APIClient, name string) (*v1.Node, error) {
 	node, err := cl.Cl.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
@@ -636,7 +644,9 @@ func GetNode(cl *APIClient, name string) (*v1.Node, error) {
 	}
 	return node, nil
 }
+*/
 
+/*
 // GetRESTObject allows to retrieve a custom resource from the APIserver
 func (c *APIClient) GetRESTObject(path string, output runtime.Object) error {
 	result := c.Cl.CoreV1().RESTClient().Get().AbsPath(path).Do(context.TODO())
@@ -646,7 +656,9 @@ func (c *APIClient) GetRESTObject(path string, output runtime.Object) error {
 
 	return result.Into(output)
 }
+*/
 
+/*
 // IsAPIServerReady retrieves the API Server readiness status
 func (c *APIClient) IsAPIServerReady(ctx context.Context) (bool, error) {
 	path := "/readyz"
@@ -654,7 +666,9 @@ func (c *APIClient) IsAPIServerReady(ctx context.Context) (bool, error) {
 
 	return err == nil, err
 }
+*/
 
+/*
 func convertmetadataMapperBundleToAPI(input *MetadataMapperBundle) *apiv1.MetadataResponseBundle {
 	output := apiv1.NewMetadataResponseBundle()
 	if input == nil {
@@ -665,7 +679,9 @@ func convertmetadataMapperBundleToAPI(input *MetadataMapperBundle) *apiv1.Metada
 	}
 	return output
 }
+*/
 
+/*
 // GetARandomNodeName chooses a random node and returns its name. Returns an
 // error if there are no nodes or if there's an error listing them.
 func (c *APIClient) GetARandomNodeName(ctx context.Context) (string, error) {
@@ -682,7 +698,9 @@ func (c *APIClient) GetARandomNodeName(ctx context.Context) (string, error) {
 
 	return nodeList.Items[0].Name, nil
 }
+*/
 
+/*
 // RESTClient returns a new REST client
 func (c *APIClient) RESTClient(apiPath string, groupVersion *schema.GroupVersion, negotiatedSerializer runtime.NegotiatedSerializer) (*rest.RESTClient, error) {
 	clientConfig, err := GetClientConfig(c.defaultClientTimeout, standardClientQPSLimit, standardClientQPSBurst)
@@ -696,7 +714,9 @@ func (c *APIClient) RESTClient(apiPath string, groupVersion *schema.GroupVersion
 
 	return rest.RESTClientFor(clientConfig)
 }
+*/
 
+/*
 // MetadataClient returns a new kubernetes metadata client
 func (c *APIClient) MetadataClient() (metadata.Interface, error) {
 	clientConfig, err := GetClientConfig(c.defaultInformerTimeout, standardClientQPSLimit, standardClientQPSBurst)
@@ -707,7 +727,9 @@ func (c *APIClient) MetadataClient() (metadata.Interface, error) {
 	metaclient := metadata.NewForConfigOrDie(clientConfig)
 	return metaclient, nil
 }
+*/
 
+/*
 // NewSPDYExecutor returns a new SPDY executor for the provided method and URL
 func (c *APIClient) NewSPDYExecutor(apiPath string, groupVersion *schema.GroupVersion, negotiatedSerializer runtime.NegotiatedSerializer, method string, url *url.URL) (remotecommand.Executor, error) {
 	clientConfig, err := GetClientConfig(c.defaultClientTimeout, standardClientQPSLimit, standardClientQPSBurst)
@@ -721,7 +743,9 @@ func (c *APIClient) NewSPDYExecutor(apiPath string, groupVersion *schema.GroupVe
 
 	return remotecommand.NewSPDYExecutor(clientConfig, method, url)
 }
+*/
 
+/*
 // GetKubeSecret fetches a secret from k8s
 func GetKubeSecret(namespace string, name string) (map[string][]byte, error) {
 	kubeClient, err := GetKubeClient(10*time.Second, 0, 0) // Default QPS and burst to Kube client defaults using 0)
@@ -736,3 +760,4 @@ func GetKubeSecret(namespace string, name string) (map[string][]byte, error) {
 
 	return secret.Data, nil
 }
+*/

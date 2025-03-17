@@ -7,6 +7,12 @@
 
 package apiserver
 
+/*
+import (
+	"github.com/DataDog/datadog-agent/pkg/diagnose/diagnosis"
+	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver/common"
+)
+
 import (
 	"context"
 
@@ -65,3 +71,4 @@ func listRBAC(client *APIClient, namespace string) (*authorizationv1.SubjectRule
 
 	return &response.Status, nil
 }
+*/

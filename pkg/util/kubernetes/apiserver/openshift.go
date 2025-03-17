@@ -7,6 +7,7 @@
 
 package apiserver
 
+/*
 import (
 	"context"
 
@@ -35,3 +36,4 @@ func (c *APIClient) DetectOpenShiftAPILevel() OpenShiftAPILevel {
 	// Fallback to NotOpenShift
 	return NotOpenShift
 }
+*/
