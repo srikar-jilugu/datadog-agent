@@ -110,6 +110,8 @@ func (s *TimeSampler) newSketchSeries(ck ckey.ContextKey, points []metrics.Sketc
 		return nil
 	}
 
+	fmt.Printf("======================== sketch context: %+v\n", ctx)
+
 	ss := &metrics.SketchSeries{
 		Name:       ctx.Name,
 		Tags:       ctx.Tags(),

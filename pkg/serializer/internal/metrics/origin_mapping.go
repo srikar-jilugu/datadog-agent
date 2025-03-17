@@ -6,15 +6,25 @@
 package metrics
 
 import (
+	"fmt"
+
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 )
 
 func metricSourceToOriginProduct(ms metrics.MetricSource) int32 {
+	const serieMetadataOriginOriginProductServerlessType = 1
 	const serieMetadataOriginOriginProductAgentType = 10
 	const serieMetadataOriginOriginProductDatadogExporterType = 19
 	if ms >= metrics.MetricSourceOpenTelemetryCollectorUnknown && ms <= metrics.MetricSourceOpenTelemetryCollectorCouchdbReceiver {
 		return serieMetadataOriginOriginProductDatadogExporterType
 	}
+	switch ms {
+	case metrics.MetricSourceAwsLambda,
+		metrics.MetricSourceAzureFunctions,
+		metrics.MetricSourceGoogleCloudRun:
+		return serieMetadataOriginOriginProductServerlessType
+	}
+
 	return serieMetadataOriginOriginProductAgentType
 }
 
@@ -320,6 +330,13 @@ func metricSourceToOriginCategory(ms metrics.MetricSource) int32 {
 		metrics.MetricSourceQuarkus,
 		metrics.MetricSourceMilvus:
 		return 11 // integrationMetrics
+	case metrics.MetricSourceAwsLambda:
+		fmt.Println("====================== MetricSourceAwsLambda -> Origin Category 38")
+		return 38
+	case metrics.MetricSourceAzureFunctions:
+		return 71
+	case metrics.MetricSourceGoogleCloudRun:
+		return 36
 	default:
 		return 0
 	}

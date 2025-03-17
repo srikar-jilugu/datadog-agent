@@ -630,6 +630,7 @@ func (f *DefaultForwarder) SubmitMetadata(payload transaction.BytesPayloads, ext
 // SubmitV1Series will send timeserie to v1 endpoint (this will be remove once
 // the backend handles v2 endpoints).
 func (f *DefaultForwarder) SubmitV1Series(payloads transaction.BytesPayloads, extra http.Header) error {
+	fmt.Println("=================== SubmitV1Series")
 	transactions := f.createHTTPTransactions(endpoints.V1SeriesEndpoint, payloads, transaction.Series, extra)
 	return f.sendHTTPTransactions(transactions)
 }

@@ -342,6 +342,12 @@ func (s *Serializer) SendIterableSeries(serieSource metrics.SerieSource) error {
 	seriesSerializer := metricsserializer.CreateIterableSeries(serieSource)
 	useV1API := !s.config.GetBool("use_v2_api.series")
 
+	if serieSource.Current() != nil {
+		fmt.Printf("==================== metric source: %v\n", serieSource.Current().Source)
+	}
+
+	fmt.Println("============== (serializer) useV1API: ", useV1API)
+
 	var seriesBytesPayloads transaction.BytesPayloads
 	var extraHeaders http.Header
 	var err error

@@ -141,6 +141,7 @@ func (d *ServerlessDemultiplexer) AggregateSample(sample metrics.MetricSample) {
 	d.flushLock.Lock()
 	defer d.flushLock.Unlock()
 	batch := d.GetMetricSamplePool().GetBatch()
+	sample.Source = 336 // FORCE METRIC ORIGIN LambdaSource
 	batch[0] = sample
 	d.statsdWorker.samplesChan <- batch[:1]
 }
