@@ -159,7 +159,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil/logging"
 	"github.com/DataDog/datadog-agent/pkg/util/hostname"
 	"github.com/DataDog/datadog-agent/pkg/util/installinfo"
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver/leaderelection"
 	pkglog "github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/option"
 	"github.com/DataDog/datadog-agent/pkg/version"
@@ -572,11 +571,12 @@ func startAgent(
 			return log.Errorf("Error while starting clc runner api server, exiting: %v", err)
 		}
 	}
-
-	// Create the Leader election engine without initializing it
-	if pkgconfigsetup.Datadog().GetBool("leader_election") {
-		leaderelection.CreateGlobalLeaderEngine(ctx)
-	}
+	/*
+		// Create the Leader election engine without initializing it
+		if pkgconfigsetup.Datadog().GetBool("leader_election") {
+			leaderelection.CreateGlobalLeaderEngine(ctx)
+		}
+	*/
 
 	// Setup stats telemetry handler
 	if sender, err := demultiplexer.GetDefaultSender(); err == nil {
