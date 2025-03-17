@@ -66,6 +66,9 @@ func NewProbe(cfg *ddebpf.Config) (*Probe, error) {
 		perf.UseRingBuffers(ringbufSize, chanSize),
 		perf.SendTelemetry(cfg.InternalTelemetryEnabled),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new event handler: %v", err)
+	}
 
 	filename := "noisy-neighbor.o"
 	if cfg.BPFDebug {
