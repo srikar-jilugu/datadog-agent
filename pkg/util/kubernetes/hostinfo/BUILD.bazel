@@ -11,6 +11,12 @@ go_library(
         "node_labels.go",
         "tags.go",
         "tags_utils.go",
+        # keep
+        "no_apiserver.go",
+        # keep
+        "no_node_labels.go",
+        # keep
+        "no_tags.go",
     ],
     importpath = "github.com/DataDog/datadog-agent/pkg/util/kubernetes/hostinfo",
     visibility = ["//visibility:public"],
