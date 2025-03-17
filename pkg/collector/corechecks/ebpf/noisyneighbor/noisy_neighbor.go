@@ -16,7 +16,7 @@ import (
 	sysprobeclient "github.com/DataDog/datadog-agent/cmd/system-probe/api/client"
 	sysconfig "github.com/DataDog/datadog-agent/cmd/system-probe/config"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
-	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	//tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/sender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
@@ -33,8 +33,8 @@ type NoisyNeighborConfig struct{}
 // NoisyNeighborCheck grabs noisy neighbor metrics
 type NoisyNeighborCheck struct {
 	core.CheckBase
-	config         *NoisyNeighborConfig
-	tagger         tagger.Component
+	config *NoisyNeighborConfig
+	//tagger         tagger.Component
 	sysProbeClient *http.Client
 }
 

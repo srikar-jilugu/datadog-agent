@@ -5,6 +5,7 @@
 
 //go:build !linux_bpf
 
+// Package noisyneighbor is for the noisy neighbor module
 package noisyneighbor
 
 import (

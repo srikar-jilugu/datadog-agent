@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025-present Datadog, Inc.
 
+// Package model contains the model for the noisy neighbor check
 package model
 
 // NoisyNeighborStats contains the statistics from the noisy neighbor check
