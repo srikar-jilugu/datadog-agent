@@ -6,6 +6,8 @@ go_library(
         "file_querier.go",
         "package.go",
         "resolver.go",
+        # keep
+        "resolver_unsupported.go",
     ],
     importpath = "github.com/DataDog/datadog-agent/pkg/security/resolvers/sbom",
     visibility = ["//visibility:public"],
