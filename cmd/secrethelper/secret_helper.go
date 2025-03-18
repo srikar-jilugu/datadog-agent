@@ -39,7 +39,6 @@ import (
 	"github.com/DataDog/datadog-agent/cmd/secrethelper/providers"
 	"github.com/DataDog/datadog-agent/comp/core/secrets"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
-	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
 )
 
 const (
@@ -95,7 +94,7 @@ func readCmd(cliParams *cliParams) error {
 		dir = cliParams.args[0]
 	}
 
-	return readSecrets(os.Stdin, os.Stdout, dir, cliParams.usePrefixes, apiserver.GetKubeSecret)
+	return readSecrets(os.Stdin, os.Stdout, dir, cliParams.usePrefixes, func(namespace string, name string) (map[string][]byte, error) { return nil, nil })
 }
 
 func readSecrets(r io.Reader, w io.Writer, dir string, usePrefixes bool, kubeSecretGetter providers.KubeSecretGetter) error {
