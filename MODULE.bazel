@@ -16,6 +16,7 @@ bazel_dep(name = "protobuf", version = "29.3", repo_name = "com_google_protobuf"
 ## dev/debug purposes ##
 ########################
 # local_path_override(module_name = "rules_foreign_cc", path = "/home/hugo.beauzee/dev/rules_foreign_cc")
+git_override(module_name = "rules_foreign_cc", remote = "https://github.com/bazel-contrib/rules_foreign_cc", branch = "main")
 
 #########################
 ## Native dependencies ##
