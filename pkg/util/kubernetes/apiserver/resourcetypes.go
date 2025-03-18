@@ -11,10 +11,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-
-	"k8s.io/client-go/discovery"
 )
 
 var (
@@ -31,16 +27,17 @@ type ResourceTypeCache struct {
 	// typeGroupToKind is a reverse map of kindGroupToType
 	typeGroupToKind map[string]string
 	lock            sync.RWMutex
-	discoveryClient discovery.DiscoveryInterface
+	//discoveryClient discovery.DiscoveryInterface
 }
 
+/*
 // InitializeGlobalResourceTypeCache initializes the global cache if it hasn't been already.
 func InitializeGlobalResourceTypeCache(discoveryClient discovery.DiscoveryInterface) error {
 	cacheOnce.Do(func() {
 		resourceCache = &ResourceTypeCache{
 			kindGroupToType: make(map[string]string),
 			typeGroupToKind: make(map[string]string),
-			discoveryClient: discoveryClient,
+			//discoveryClient: discoveryClient,
 		}
 
 		err := resourceCache.prepopulateCache()
@@ -58,6 +55,7 @@ func GetResourceType(kind, group string) (string, error) {
 	}
 	return resourceCache.getResourceType(kind, group)
 }
+*/
 
 // GetResourceKind retrieves the kind given the resource plural name and group.
 func GetResourceKind(resource, apiGroup string) (string, error) {
@@ -65,9 +63,11 @@ func GetResourceKind(resource, apiGroup string) (string, error) {
 		return "", fmt.Errorf("resource type cache is not initialized")
 	}
 
-	return resourceCache.getResourceKind(resource, apiGroup)
+	//return resourceCache.getResourceKind(resource, apiGroup)
+	return "", nil
 }
 
+/*
 // GetAPIGroup extracts the API group from an API version string (e.g., "apps/v1" → "apps").
 // Returns an empty string if no group is present.
 func GetAPIGroup(apiVersion string) string {
@@ -206,6 +206,7 @@ func (r *ResourceTypeCache) prepopulateCache() error {
 
 	return nil
 }
+*/
 
 func trimSubResource(resourceType string) string {
 	if index := strings.Index(resourceType, "/"); index > 0 {
