@@ -274,9 +274,11 @@ func GetSelectorsPerEventType(fentry bool) map[eval.EventType][]manager.ProbesSe
 			}},
 
 			// Link
+			// source dentry
 			&manager.AllOf{Selectors: []manager.ProbesSelector{
 				kprobeOrFentry("complete_walk"),
 			}},
+			// target dentry
 			&manager.OneOf{Selectors: []manager.ProbesSelector{
 				kretprobeOrFexit("filename_create"),
 				kretprobeOrFexit("__lookup_hash"),

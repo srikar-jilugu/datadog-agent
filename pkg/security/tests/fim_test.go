@@ -9,7 +9,6 @@
 package tests
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"syscall"
@@ -153,12 +152,6 @@ func TestFIMPermError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	fi, err := os.Stat(testFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("Created test file %s with inode: %d\n", testFile, fi.Sys().(*syscall.Stat_t).Ino)
 
 	syscallTester, err := loadSyscallTester(t, test, "syscall_tester")
 	if err != nil {
