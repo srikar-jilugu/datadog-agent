@@ -16,7 +16,9 @@ import (
 	sysprobeclient "github.com/DataDog/datadog-agent/cmd/system-probe/api/client"
 	sysconfig "github.com/DataDog/datadog-agent/cmd/system-probe/config"
 	"github.com/DataDog/datadog-agent/comp/core/autodiscovery/integration"
-	//tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
+	"github.com/DataDog/datadog-agent/comp/core/tagger/types"
+
+	tagger "github.com/DataDog/datadog-agent/comp/core/tagger/def"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/sender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
@@ -33,8 +35,8 @@ type NoisyNeighborConfig struct{}
 // NoisyNeighborCheck grabs noisy neighbor metrics
 type NoisyNeighborCheck struct {
 	core.CheckBase
-	config *NoisyNeighborConfig
-	//tagger         tagger.Component
+	config         *NoisyNeighborConfig
+	tagger         tagger.Component
 	sysProbeClient *http.Client
 }
 
@@ -82,20 +84,39 @@ func (n *NoisyNeighborCheck) Run() error {
 
 	// TODO noisy: emit your metrics here using `sender`
 	for _, stat := range stats {
-		containerID, err := cgroups.ContainerFilter("", stat.CgroupName)
-		if err != nil {
-			log.Debugf("Unable to extract containerID from cgroup name: %s, err: %v", stat.CgroupName, err)
+		containerID := getContainerID(stat.CgroupName)
+		prevContainerID := getContainerID(stat.CgroupName)
+
+		var tags []string
+		if containerID != "host" {
+			entityID := types.NewEntityID(types.ContainerID, containerID)
+			if !entityID.Empty() {
+				tags, err = n.tagger.Tag(entityID, n.tagger.ChecksCardinality())
+				if err != nil {
+					log.Errorf("Error collecting tags for container %s: %s", containerID, err)
+				}
+			}
 		}
 
-		prevContainerID, err := cgroups.ContainerFilter("", stat.PrevCgroupName)
-		if err != nil {
-			log.Debugf("Unable to extract prevContainerID from cgroup name: %s, err: %v", stat.PrevCgroupName, err)
-		}
-
-		sender.Distribution("noisy_neighbor.runq.latency", float64(stat.RunqLatencyNs), "", []string{"container_id:" + containerID, "pid:" + fmt.Sprintf("%d", stat.Pid)})
-		sender.Count("noisy_neighbor.sched.switch.out", 1, "", []string{"next_container_id:" + containerID, "prev_container_id:" + prevContainerID})
+		tags = append(tags, "container_id:"+containerID)
+		sender.Distribution("noisy_neighbor.runq.latency", float64(stat.RunqLatencyNs), "", tags)
+		tags = append(tags, "prev_container_id:"+prevContainerID)
+		sender.Count("noisy_neighbor.sched.switch.out", 1, "", tags)
 	}
 
 	sender.Commit()
 	return nil
+}
+
+// getContainerID attempts to get container id using the cgroup name.
+// If no match is found, container id is set to `host`.
+func getContainerID(cgroupName string) string {
+	containerID, err := cgroups.ContainerFilter("", cgroupName)
+	if err != nil {
+		log.Debugf("Unable to extract containerID from cgroup name: %s, err: %v", cgroupName, err)
+	}
+	if containerID == "" {
+		containerID = "host"
+	}
+	return containerID
 }
