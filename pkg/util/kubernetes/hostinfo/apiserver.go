@@ -7,6 +7,7 @@
 
 package hostinfo
 
+/*
 import (
 	"context"
 
@@ -28,3 +29,4 @@ func apiserverNodeAnnotations(ctx context.Context, nodeName string) (map[string]
 	}
 	return client.NodeAnnotations(nodeName)
 }
+*/

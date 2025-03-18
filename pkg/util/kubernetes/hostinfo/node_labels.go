@@ -22,7 +22,7 @@ type NodeInfo struct {
 	// getClusterAgentFunc get Cluster-Agent client to get Node Labels with the Cluster-Agent api.
 	getClusterAgentFunc func() (clusteragent.DCAClientInterface, error)
 	// apiserverNodeLabelsFunc get Node Labels from the API server directly
-	apiserverNodeLabelsFunc func(ctx context.Context, nodeName string) (map[string]string, error)
+	//apiserverNodeLabelsFunc func(ctx context.Context, nodeName string) (map[string]string, error)
 }
 
 // NewNodeInfo return a new NodeInfo instance
@@ -34,9 +34,9 @@ func NewNodeInfo() (*NodeInfo, error) {
 	}
 
 	nodeInfo := &NodeInfo{
-		client:                  ku,
-		getClusterAgentFunc:     clusteragent.GetClusterAgentClient,
-		apiserverNodeLabelsFunc: apiserverNodeLabels,
+		client:              ku,
+		getClusterAgentFunc: clusteragent.GetClusterAgentClient,
+		//apiserverNodeLabelsFunc: apiserverNodeLabels,
 	}
 
 	return nodeInfo, nil
@@ -56,7 +56,8 @@ func (n *NodeInfo) GetNodeLabels(ctx context.Context) (map[string]string, error)
 		}
 		return cl.GetNodeLabels(nodeName)
 	}
-	return n.apiserverNodeLabelsFunc(ctx, nodeName)
+	return nil, nil
+	//return n.apiserverNodeLabelsFunc(ctx, nodeName)
 }
 
 // GetNodeName returns the node name for this host
