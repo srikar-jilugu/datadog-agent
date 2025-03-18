@@ -377,9 +377,7 @@ def ninja_corecheck_ebpf_programs(nw: NinjaWriter, co_re_build_dir):
         outfile = os.path.join(co_re_build_dir, f"{prog}.o")
         ninja_ebpf_co_re_program(nw, infile, outfile, {"flags": corecheck_co_re_flags})
         root, ext = os.path.splitext(outfile)
-        ninja_ebpf_co_re_program(
-            nw, infile, f"{root}-debug{ext}", {"flags": corecheck_co_re_flags + " -DDEBUG=1"}
-        )
+        ninja_ebpf_co_re_program(nw, infile, f"{root}-debug{ext}", {"flags": corecheck_co_re_flags + " -DDEBUG=1"})
 
 
 def ninja_discovery_ebpf_programs(nw: NinjaWriter, co_re_build_dir):
