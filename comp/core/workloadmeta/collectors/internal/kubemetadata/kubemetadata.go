@@ -137,13 +137,15 @@ func (c *collector) Pull(ctx context.Context) error {
 		return err
 	}
 
-	if !c.isDCAEnabled() {
-		// If the DCA is not used, each agent stores a local cache of the MetadataMap.
-		err = c.addToCacheMetadataMapping(pods)
-		if err != nil {
-			log.Debugf("Cannot add the metadataMapping to cache: %v", err)
+	/*
+		if !c.isDCAEnabled() {
+			// If the DCA is not used, each agent stores a local cache of the MetadataMap.
+			err = c.addToCacheMetadataMapping(pods)
+			if err != nil {
+				log.Debugf("Cannot add the metadataMapping to cache: %v", err)
+			}
 		}
-	}
+	*/
 
 	seen := make(map[workloadmeta.EntityID]struct{})
 	events, err := c.parsePods(ctx, pods, seen)
@@ -371,6 +373,7 @@ func (c *collector) isDCAEnabled() bool {
 	return false
 }
 
+/*
 // addToCacheMetadataMapping is acting like the DCA at the node level.
 func (c *collector) addToCacheMetadataMapping(kubeletPodList []*kubelet.Pod) error {
 	if len(kubeletPodList) == 0 {
@@ -392,3 +395,4 @@ func (c *collector) addToCacheMetadataMapping(kubeletPodList []*kubelet.Pod) err
 
 	return c.apiClient.NodeMetadataMapping(nodeName, reachablePods)
 }
+*/
