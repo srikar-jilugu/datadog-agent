@@ -13,7 +13,6 @@ import (
 	workloadmeta "github.com/DataDog/datadog-agent/comp/core/workloadmeta/def"
 	"github.com/DataDog/datadog-agent/comp/remote-config/rcclient"
 	corecheckLoader "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/cluster/ksm"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/containerimage"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/containerlifecycle"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/containers/containerd"
@@ -73,7 +72,7 @@ func RegisterChecks(store workloadmeta.Component, tagger tagger.Component, cfg c
 	// Flavor specific checks
 	corecheckLoader.RegisterCheck(load.CheckName, load.Factory())
 	//corecheckLoader.RegisterCheck(kubernetesapiserver.CheckName, kubernetesapiserver.Factory(tagger))
-	corecheckLoader.RegisterCheck(ksm.CheckName, ksm.Factory())
+	//corecheckLoader.RegisterCheck(ksm.CheckName, ksm.Factory())
 	//corecheckLoader.RegisterCheck(helm.CheckName, helm.Factory())
 	corecheckLoader.RegisterCheck(pod.CheckName, pod.Factory(store, cfg, tagger))
 	corecheckLoader.RegisterCheck(ebpf.CheckName, ebpf.Factory())
