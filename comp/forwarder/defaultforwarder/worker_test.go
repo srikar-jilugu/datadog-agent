@@ -14,8 +14,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"runtime/trace"
+	"os"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	tmock "github.com/stretchr/testify/mock"
 	"go.uber.org/atomic"
 
@@ -233,6 +236,11 @@ func TestWorkerCancelsInFlight(t *testing.T) {
 }
 
 func TestWorkerCancelsWaitingTransactions(t *testing.T) {
+	f, err := os.Create("trace")
+	require.NoError(t, err)
+	trace.Start(f)
+	defer trace.Stop()
+	
 	highPrio := make(chan transaction.Transaction, 10)
 	lowPrio := make(chan transaction.Transaction, 10)
 	requeue := make(chan transaction.Transaction, 10)
