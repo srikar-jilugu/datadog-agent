@@ -41,14 +41,17 @@ type NoisyNeighborCheck struct {
 }
 
 // Factory creates a new check factory
-func Factory() option.Option[func() check.Check] {
-	return option.New(newCheck)
+func Factory(tagger tagger.Component) option.Option[func() check.Check] {
+	return option.New(func() check.Check {
+		return newCheck(tagger)
+	})
 }
 
-func newCheck() check.Check {
+func newCheck(tagger tagger.Component) check.Check {
 	return &NoisyNeighborCheck{
 		CheckBase: core.NewCheckBase(CheckName),
 		config:    &NoisyNeighborConfig{},
+		tagger:    tagger,
 	}
 }
 
