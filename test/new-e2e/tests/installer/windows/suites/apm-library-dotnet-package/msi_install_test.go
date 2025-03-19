@@ -52,7 +52,6 @@ func (s *testAgentMSIInstallsDotnetLibrary) AfterTest(suiteName, testName string
 // TestInstallFromMSI tests the Agent MSI can install the dotnet library OCI package
 func (s *testAgentMSIInstallsDotnetLibrary) TestInstallFromMSI() {
 	// Arrange
-	s.setAgentConfig()
 	version := s.currentDotnetLibraryVersion
 
 	// Act
@@ -76,7 +75,9 @@ func (s *testAgentMSIInstallsDotnetLibrary) TestInstallFromMSI() {
 
 // TestMSIThenRemoteUpgrade tests the dotnet library can be remotely upgraded from an Agent MSI installed version
 func (s *testAgentMSIInstallsDotnetLibrary) TestMSIThenRemoteUpgrade() {
+	defer s.cleanupAgentConfig()
 	s.setAgentConfig()
+
 	oldVersion := s.previousDotnetLibraryVersion
 	newVersion := s.currentDotnetLibraryVersion
 
@@ -125,7 +126,6 @@ func (s *testAgentMSIInstallsDotnetLibrary) TestMSIThenRemoteUpgrade() {
 
 // TestUpgradeWithMSI tests the dotnet library can be upgraded from the MSI
 func (s *testAgentMSIInstallsDotnetLibrary) TestUpgradeWithMSI() {
-	s.setAgentConfig()
 	oldVersion := s.previousDotnetLibraryVersion
 	newVersion := s.currentDotnetLibraryVersion
 
@@ -178,7 +178,6 @@ func (s *testAgentMSIInstallsDotnetLibrary) TestUpgradeWithMSI() {
 // TestMSIRollbackRemovesLibrary tests that the dotnet library is removed when the MSI installation fails
 func (s *testAgentMSIInstallsDotnetLibrary) TestMSIRollbackRemovesLibrary() {
 	// Arrange
-	s.setAgentConfig()
 	version := s.currentDotnetLibraryVersion
 
 	// Act
@@ -203,7 +202,6 @@ func (s *testAgentMSIInstallsDotnetLibrary) TestMSIRollbackRemovesLibrary() {
 // if another version of the library was already installed.
 func (s *testAgentMSIInstallsDotnetLibrary) TestMSISkipRollbackIfInstalled() {
 	// Arrange
-	s.setAgentConfig()
 	oldVersion := s.previousDotnetLibraryVersion
 	newVersion := s.currentDotnetLibraryVersion
 
@@ -239,7 +237,6 @@ func (s *testAgentMSIInstallsDotnetLibrary) TestMSISkipRollbackIfInstalled() {
 
 // TestUninstallKeepsLibrary tests that the dotnet library is not removed when the Agent MSI is uninstalled
 func (s *testAgentMSIInstallsDotnetLibrary) TestUninstallKeepsLibrary() {
-	s.setAgentConfig()
 	version := s.currentDotnetLibraryVersion
 
 	// Install the dotnet library with the Agent MSI
@@ -267,11 +264,18 @@ func (s *testAgentMSIInstallsDotnetLibrary) TestUninstallKeepsLibrary() {
 }
 
 func (s *testAgentMSIInstallsDotnetLibrary) setAgentConfig() {
-	s.Env().RemoteHost.MkdirAll("C:\\ProgramData\\Datadog")
-	s.Env().RemoteHost.WriteFile(consts.ConfigPath, []byte(`
+	err := s.Env().RemoteHost.MkdirAll("C:\\ProgramData\\Datadog")
+	s.Require().NoError(err)
+	_, err = s.Env().RemoteHost.WriteFile(consts.ConfigPath, []byte(`
 api_key: aaaaaaaaa
 remote_updates: true
 `))
+	s.Require().NoError(err)
+}
+
+func (s *testAgentMSIInstallsDotnetLibrary) cleanupAgentConfig() {
+	err := s.Env().RemoteHost.Remove(consts.ConfigPath)
+	s.Require().NoError(err)
 }
 
 func (s *testAgentMSIInstallsDotnetLibrary) assertSuccessfulStartExperiment(version string) {
