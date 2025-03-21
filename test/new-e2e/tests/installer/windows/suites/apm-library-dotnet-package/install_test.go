@@ -43,7 +43,7 @@ func (s *testDotnetLibraryInstallSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (s *testDotnetLibraryInstallSuite) AfterTest(suiteName, testName string) {
-	s.Installer().Purge()
+	// s.Installer().Purge()
 	s.baseIISSuite.AfterTest(suiteName, testName)
 }
 
@@ -105,6 +105,7 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 	output, err = s.Installer().GarbageCollect()
 	s.Require().NoErrorf(err, "failed to garbage collect: %s", output)
 	s.Require().Host(s.Env().RemoteHost).NoDirExists(oldLibraryPath, "the old library path:%s should no longer exist after garbage collection", oldLibraryPath)
+	s.Installer().Purge()
 
 }
 
