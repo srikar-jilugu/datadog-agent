@@ -71,7 +71,7 @@ datadog-agent-7-x64-bazel:
   extends: [.agent_build_common, .agent_build_x86, .agent_7_build]
   needs: []
   script:
-    - bazelisk build --config=ci //cmd/security-agent
+    - bazelisk build --config=ci //cmd/security-agent --execution_log_compact_file=$OMNIBUS_PACKAGE_DIR/exec.log
     - bazelisk run --config=ci //cmd/security-agent -- version -c $(pwd)/pkg/flare/common/test/datadog-agent.yaml
 
 # build Agent 7 binaries for arm64
