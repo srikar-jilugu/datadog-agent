@@ -5,11 +5,7 @@ bazel_dep(name = "rules_pkg", version = "1.0.1")
 bazel_dep(name = "rules_python", version = "1.1.0")
 bazel_dep(name = "rules_foreign_cc", version = "0.13.0")
 bazel_dep(name = "protobuf", version = "29.3", repo_name = "com_google_protobuf")
-# Temporarily disable the hermetic zig-cc toolchain as it causes unsolved troubles
-# bazel_dep(
-#     name = "hermetic_cc_toolchain",
-#     version = "3.1.0",
-# )
+bazel_dep(name = "hermetic_cc_toolchain", version = "3.2.0")
 
 ########################
 ## Local overiddes    ##
@@ -17,18 +13,19 @@ bazel_dep(name = "protobuf", version = "29.3", repo_name = "com_google_protobuf"
 ########################
 # local_path_override(module_name = "rules_foreign_cc", path = "/home/hugo.beauzee/dev/rules_foreign_cc")
 git_override(module_name = "rules_foreign_cc", remote = "https://github.com/bazel-contrib/rules_foreign_cc", branch = "main")
+git_override(module_name = "hermetic_cc_toolchain", remote = "https://github.com/chouquette/hermetic_cc_toolchain", branch = "chouquette/zig_0.14")
 
 #########################
 ## Native dependencies ##
 #########################
 
-# toolchains = use_extension("@hermetic_cc_toolchain//toolchain:ext.bzl", "toolchains")
-# use_repo(toolchains, "zig_sdk")
+toolchains = use_extension("@hermetic_cc_toolchain//toolchain:ext.bzl", "toolchains")
+use_repo(toolchains, "zig_sdk")
 
-# register_toolchains(
-#     "@zig_sdk//libc_aware/toolchain:linux_amd64_gnu.2.17",
-#     "@zig_sdk//libc_aware/toolchain:linux_arm64_gnu.2.23",
-# )
+register_toolchains(
+    "@zig_sdk//toolchain:linux_amd64_gnu.2.17",
+    "@zig_sdk//toolchain:linux_arm64_gnu.2.23",
+)
 
 # Make our 3rd parties depencency repositories known
 include("//deps:repos.MODULE.bazel")
