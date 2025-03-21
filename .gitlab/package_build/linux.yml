@@ -69,6 +69,7 @@ datadog-agent-7-x64:
 
 datadog-agent-7-x64-bazel:
   extends: [.agent_build_common, .agent_build_x86, .agent_7_build]
+  needs: []
   script:
     - bazel build --config=ci //cmd/security-agent
 
