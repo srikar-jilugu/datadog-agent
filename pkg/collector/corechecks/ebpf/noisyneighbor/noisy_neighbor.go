@@ -88,7 +88,7 @@ func (n *NoisyNeighborCheck) Run() error {
 	// TODO noisy: emit your metrics here using `sender`
 	for _, stat := range stats {
 		containerID := getContainerID(stat.CgroupName)
-		prevContainerID := getContainerID(stat.CgroupName)
+		prevContainerID := getContainerID(stat.PrevCgroupName)
 
 		var tags []string
 		if containerID != "host" {
