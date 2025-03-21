@@ -72,6 +72,7 @@ datadog-agent-7-x64-bazel:
   needs: []
   script:
     - bazelisk build --config=ci //cmd/security-agent
+    - bazelisk run --config=ci //cmd/security-agent -- version -c $(pwd)/pkg/flare/common/test/datadog-agent.yaml
 
 # build Agent 7 binaries for arm64
 datadog-agent-7-arm64:
