@@ -10,6 +10,7 @@ package noisyneighbor
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -53,6 +54,11 @@ func newCheck(tagger tagger.Component) check.Check {
 		config:    &NoisyNeighborConfig{},
 		tagger:    tagger,
 	}
+}
+
+// Interval returns the interval time for the check
+func (n *NoisyNeighborCheck) Interval() time.Duration {
+	return 5 * time.Second
 }
 
 // Parse parses the check configuration
