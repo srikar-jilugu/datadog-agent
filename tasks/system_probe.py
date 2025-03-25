@@ -660,6 +660,7 @@ def build_libpcap(ctx):
         ctx.run(f"curl -L https://www.tcpdump.org/release/libpcap-{LIBPCAP_VERSION}.tar.xz | tar xJ")
     with ctx.cd(lib_dir):
         env = {}
+        # TODO cross-compile?
         if os.getenv('DD_CC'):
             env['CC'] = os.getenv('DD_CC')
         if os.getenv('DD_CXX'):

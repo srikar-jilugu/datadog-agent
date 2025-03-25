@@ -478,8 +478,8 @@ def update_resources(
 
 
 @task
-def start_compiler(ctx: Context, arch: Arch | str = "local",):
-    cc = get_compiler(ctx, Arch.from_str(arch))
+def start_compiler(ctx: Context):
+    cc = get_compiler(ctx)
     info(f"[+] Starting compiler {cc.name}")
     try:
         cc.start()
@@ -522,9 +522,14 @@ def download_gotestsum(ctx: Context, arch: Arch, fgotestsum: PathOrStr):
     paths = KMTPaths(None, arch)
     paths.tools.mkdir(parents=True, exist_ok=True)
 
-    cc = get_compiler(ctx, arch)
+    cc = get_compiler(ctx)
     target_path = CONTAINER_AGENT_PATH / paths.tools.relative_to(paths.repo_root) / "gotestsum"
-    env = {"GOARCH": arch.go_arch, "CC": "\\$DD_CC", "CXX": "\\$DD_CXX"}
+    env = {
+        "GOARCH": arch.go_arch,
+        "CC": "\\$DD_CC_CROSS" if arch.is_cross_compiling() else "\\$DD_CC",
+        "CXX": "\\$DD_CXX_CROSS" if arch.is_cross_compiling() else "\\$DD_CXX",
+    }
+
     env_str = " ".join(f"{key}={value}" for key, value in env.items())
     cc.exec(
         f"cd {TOOLS_PATH} && {env_str} go build -o {target_path} {GOTESTSUM}",
@@ -768,7 +773,7 @@ def _prepare(
     domains: list[LibvirtDomain] | None = None,
 ):
     if not ci:
-        cc = get_compiler(ctx, arch_obj)
+        cc = get_compiler(ctx)
 
     pkgs = ""
     if packages:
@@ -1273,9 +1278,9 @@ def get_kmt_or_alien_stack(ctx, stack, vms, alien_vms):
         return stack
 
     stack = check_and_get_stack(stack)
-    assert stacks.stack_exists(
-        stack
-    ), f"Stack {stack} does not exist. Please create with 'dda inv kmt.create-stack --stack=<name>'"
+    assert stacks.stack_exists(stack), (
+        f"Stack {stack} does not exist. Please create with 'dda inv kmt.create-stack --stack=<name>'"
+    )
     return stack
 
 
@@ -1312,7 +1317,7 @@ def build(
     paths = KMTPaths(stack, arch_obj)
     paths.arch_dir.mkdir(parents=True, exist_ok=True)
 
-    cc = get_compiler(ctx, arch_obj)
+    cc = get_compiler(ctx)
 
     inv_echo = "-e" if ctx.config.run["echo"] else ""
     cc.exec(
@@ -1359,9 +1364,9 @@ def build(
 @task
 def clean(ctx: Context, stack: str | None = None, container=False, image=False):
     stack = check_and_get_stack(stack)
-    assert stacks.stack_exists(
-        stack
-    ), f"Stack {stack} does not exist. Please create with 'dda inv kmt.create-stack --stack=<name>'"
+    assert stacks.stack_exists(stack), (
+        f"Stack {stack} does not exist. Please create with 'dda inv kmt.create-stack --stack=<name>'"
+    )
 
     ctx.run("rm -rf ./test/new-e2e/tests/sysprobe-functional/artifacts/pkg")
     ctx.run(f"rm -rf kmt-deps/{stack}", warn=True)
@@ -1954,9 +1959,9 @@ def selftest(ctx: Context, allow_infra_changes=False, filter: str | None = None)
 @task
 def show_last_test_results(ctx: Context, stack: str | None = None):
     stack = check_and_get_stack(stack)
-    assert stacks.stack_exists(
-        stack
-    ), f"Stack {stack} does not exist. Please create with 'dda inv kmt.create-stack --stack=<name>'"
+    assert stacks.stack_exists(stack), (
+        f"Stack {stack} does not exist. Please create with 'dda inv kmt.create-stack --stack=<name>'"
+    )
     assert tabulate is not None, "tabulate module is not installed, please install it to continue"
 
     paths = KMTPaths(stack, Arch.local())

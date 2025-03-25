@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -20,13 +21,12 @@ if TYPE_CHECKING:
 
 CONTAINER_AGENT_PATH = "/tmp/datadog-agent"
 
-AMD64_DEBIAN_KERNEL_HEADERS_URL = "http://deb.debian.org/debian-security/pool/updates/main/l/linux-5.10/linux-headers-5.10.0-0.deb10.28-amd64_5.10.209-2~deb10u1_amd64.deb"
-ARM64_DEBIAN_KERNEL_HEADERS_URL = "http://deb.debian.org/debian-security/pool/updates/main/l/linux-5.10/linux-headers-5.10.0-0.deb10.28-arm64_5.10.209-2~deb10u1_arm64.deb"
-
 DOCKER_BASE_IMAGES = {
-    "x64": f"registry.ddbuild.io/ci/datadog-agent-buildimages/linux-glibc-2-17-x64",
-    "arm64": f"registry.ddbuild.io/ci/datadog-agent-buildimages/linux-glibc-2-23-arm64",
+    "x64": "registry.ddbuild.io/ci/datadog-agent-buildimages/linux-glibc-2-17-x64",
+    "arm64": "registry.ddbuild.io/ci/datadog-agent-buildimages/linux-glibc-2-23-arm64",
 }
+
+APT_URIS = {"amd64": "http://archive.ubuntu.com/ubuntu/", "arm64": "http://ports.ubuntu.com/ubuntu-ports/"}
 
 
 def get_build_image_suffix_and_version() -> tuple[str, str]:
@@ -99,7 +99,15 @@ class CompilerImage:
             warn(f"[!] Running compiler image {image_used} is different from the expected {self.image}, will restart")
             self.start()
 
-    def exec(self, cmd: str, user="compiler", verbose=True, run_dir: PathOrStr | None = None, allow_fail=False, force_color=True):
+    def exec(
+        self,
+        cmd: str,
+        user="compiler",
+        verbose=True,
+        run_dir: PathOrStr | None = None,
+        allow_fail=False,
+        force_color=True,
+    ):
         if run_dir:
             cmd = f"cd {run_dir} && {cmd}"
 
@@ -160,19 +168,87 @@ class CompilerImage:
                 f"chown {uid}:{gid} {CONTAINER_AGENT_PATH} && chown -R {uid}:{gid} {CONTAINER_AGENT_PATH}", user="root"
             )
 
+        cross_arch = ARCH_ARM64 if self.arch == ARCH_AMD64 else ARCH_AMD64
         self.exec("chmod a+rx /root", user="root")  # Some binaries will be in /root and need to be readable
+        self.exec(f"dpkg --add-architecture {cross_arch.go_arch}", user="root")
+        with tempfile.NamedTemporaryFile(mode='w') as sources:
+            sources.write(get_apt_sources(self.arch))
+            sources.write(get_apt_sources(cross_arch))
+            sources.flush()
+            self.ctx.run(f"docker cp {sources.name} {self.name}:/etc/apt/sources.list.d/ubuntu.sources")
+
+        self.exec("apt-get update", user="root")
+        res = self.exec(f"dpkg-query -l | grep linux-headers-.*-generic | awk '{{ print \\$2 }}'", user="root")
+        headers_package = res.stdout.strip()
+        self.exec(
+            f"mv /usr/src/{headers_package}/include/generated/*.h /usr/src/{headers_package}/arch/{self.arch.kernel_arch}/include/generated/",
+            user="root",
+        )
+
+        res = self.exec(
+            f"apt-get download {headers_package}:{cross_arch.go_arch} --print-uris | awk '{{ print \\$2 }}'",
+            user="root",
+        )
+        headers_package_filename = res.stdout.strip()
+        self.exec(f"apt-get download {headers_package}:{cross_arch.go_arch}", user="root")
+
+        # Uncompress the package in the root directory, so that we have access to the headers
+        # We cannot install because the architecture will not match
+        # Extract into a .tar file and then use tar to extract the contents to avoid issues
+        # with dpkg-deb not respecting symlinks.
+        self.exec(f"dpkg-deb --fsys-tarfile {headers_package_filename} > {headers_package_filename}.tar", user="root")
+        self.exec(f"tar --skip-old-files -xf {headers_package_filename}.tar -C /", user="root")
+        self.exec(
+            f"mv /usr/src/{headers_package}/include/generated/*.h /usr/src/{headers_package}/arch/{cross_arch.kernel_arch}/include/generated/",
+            user="root",
+        )
+
         self.exec("apt-get install -y --no-install-recommends sudo", user="root")
         self.exec("usermod -aG sudo compiler && echo 'compiler ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers", user="root")
         self.exec(f"cp /root/.bashrc /home/compiler/.bashrc && chown {uid}:{gid} /home/compiler/.bashrc", user="root")
         self.exec("mkdir ~/.cargo && touch ~/.cargo/env", user="compiler")
         self.exec("dda self telemetry disable", user="compiler", force_color=False)
         self.exec(f"install -d -m 0777 -o {uid} -g {uid} /go", user="root")
-        self.exec(f"echo export DD_CC={self.arch.gcc_arch}-unknown-linux-gnu-gcc >> /home/compiler/.bashrc", user="compiler")
-        self.exec(f"echo export DD_CXX={self.arch.gcc_arch}-unknown-linux-gnu-g++ >> /home/compiler/.bashrc", user="compiler")
+        self.exec(
+            f"echo export DD_CC=/opt/toolchains/bin/{self.arch.gcc_arch}-unknown-linux-gnu-gcc >> /home/compiler/.bashrc",
+            user="compiler",
+        )
+        self.exec(
+            f"echo export DD_CXX=/opt/toolchains/bin/{self.arch.gcc_arch}-unknown-linux-gnu-g++ >> /home/compiler/.bashrc",
+            user="compiler",
+        )
+        self.exec(
+            f"echo export DD_CC_CROSS=/opt/toolchains/{cross_arch.gcc_arch}/bin/{cross_arch.gcc_arch}-unknown-linux-gnu-gcc >> /home/compiler/.bashrc",
+            user="compiler",
+        )
+        self.exec(
+            f"echo export DD_CXX_CROSS=/opt/toolchains/{cross_arch.gcc_arch}/bin/{cross_arch.gcc_arch}-unknown-linux-gnu-g++ >> /home/compiler/.bashrc",
+            user="compiler",
+        )
 
 
-def get_compiler(ctx: Context, arch_obj: Arch):
-    cc = CompilerImage(ctx, arch_obj)
+def get_apt_sources(arch: Arch) -> str:
+    apt_uri = APT_URIS[arch.go_arch]
+    return f"""
+Types: deb
+URIs: {apt_uri}
+Suites: noble noble-updates noble-backports
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+Architectures: {arch.go_arch}
+
+Types: deb
+URIs: {apt_uri}
+Suites: noble-security
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+Architectures: {arch.go_arch}
+
+"""
+
+
+def get_compiler(ctx: Context):
+    cc = CompilerImage(ctx, Arch.local())
     cc.ensure_version()
     cc.ensure_running()
 
