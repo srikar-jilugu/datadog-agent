@@ -7,7 +7,7 @@
 #include "bpf_metadata.h"
 
 // TODO noisy: determine what values you want for these constants
-#define MAX_TASK_ENTRIES 1024
+#define MAX_TASK_ENTRIES 4096
 #define RATE_LIMIT_NS 100000
 
 BPF_RINGBUF_MAP(runq_events, 0)
