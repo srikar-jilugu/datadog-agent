@@ -178,7 +178,7 @@ class CompilerImage:
             self.ctx.run(f"docker cp {sources.name} {self.name}:/etc/apt/sources.list.d/ubuntu.sources")
 
         self.exec("apt-get update", user="root")
-        res = self.exec(f"dpkg-query -l | grep linux-headers-.*-generic | awk '{{ print \\$2 }}'", user="root")
+        res = self.exec("dpkg-query -l | grep linux-headers-.*-generic | awk '{ print \\$2 }'", user="root")
         headers_package = res.stdout.strip()
         self.exec(
             f"mv /usr/src/{headers_package}/include/generated/*.h /usr/src/{headers_package}/arch/{self.arch.kernel_arch}/include/generated/",

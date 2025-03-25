@@ -209,7 +209,7 @@ def get_build_flags(
     python_home_3=None,
     major_version='7',
     headless_mode=False,
-    arch: Arch = Arch.local(),
+    arch: Arch | None = None,
 ):
     """
     Build the common value for both ldflags and gcflags, and return an env accordingly.
@@ -217,6 +217,9 @@ def get_build_flags(
     We need to invoke external processes here so this function need the
     Context object.
     """
+    if arch is None:
+        arch = Arch.local()
+
     gcflags = ""
     ldflags = get_version_ldflags(ctx, major_version=major_version, install_path=install_path)
     # External linker flags; needs to be handled separately to avoid overrides
