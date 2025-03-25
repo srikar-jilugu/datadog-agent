@@ -146,7 +146,7 @@ func (_ *Model) GetEvaluator(field eval.Field, regID eval.RegisterID) (eval.Eval
 			EvalFnc: func(ctx *eval.Context) string {
 				ctx.AppendResolvedField(field)
 				ev := ctx.Event.(*Event)
-				return ev.FieldHandlers.ResolveFimFilePath(ev, &ev.CreateNewFile.File)
+				return ev.FieldHandlers.ResolveFimFilePath(ev, &ev.CreateFile.File)
 			},
 			Field:  field,
 			Weight: eval.HandlerWeight,
@@ -157,7 +157,7 @@ func (_ *Model) GetEvaluator(field eval.Field, regID eval.RegisterID) (eval.Eval
 			EvalFnc: func(ctx *eval.Context) int {
 				ctx.AppendResolvedField(field)
 				ev := ctx.Event.(*Event)
-				return len(ev.FieldHandlers.ResolveFimFilePath(ev, &ev.CreateNewFile.File))
+				return len(ev.FieldHandlers.ResolveFimFilePath(ev, &ev.CreateFile.File))
 			},
 			Field:  field,
 			Weight: eval.HandlerWeight,
@@ -168,7 +168,7 @@ func (_ *Model) GetEvaluator(field eval.Field, regID eval.RegisterID) (eval.Eval
 			EvalFnc: func(ctx *eval.Context) string {
 				ctx.AppendResolvedField(field)
 				ev := ctx.Event.(*Event)
-				return ev.FieldHandlers.ResolveFimFileBasename(ev, &ev.CreateNewFile.File)
+				return ev.FieldHandlers.ResolveFimFileBasename(ev, &ev.CreateFile.File)
 			},
 			Field:  field,
 			Weight: eval.HandlerWeight,
@@ -179,7 +179,7 @@ func (_ *Model) GetEvaluator(field eval.Field, regID eval.RegisterID) (eval.Eval
 			EvalFnc: func(ctx *eval.Context) int {
 				ctx.AppendResolvedField(field)
 				ev := ctx.Event.(*Event)
-				return len(ev.FieldHandlers.ResolveFimFileBasename(ev, &ev.CreateNewFile.File))
+				return len(ev.FieldHandlers.ResolveFimFileBasename(ev, &ev.CreateFile.File))
 			},
 			Field:  field,
 			Weight: eval.HandlerWeight,
@@ -190,7 +190,7 @@ func (_ *Model) GetEvaluator(field eval.Field, regID eval.RegisterID) (eval.Eval
 			EvalFnc: func(ctx *eval.Context) string {
 				ctx.AppendResolvedField(field)
 				ev := ctx.Event.(*Event)
-				return ev.FieldHandlers.ResolveFileUserPath(ev, &ev.CreateNewFile.File)
+				return ev.FieldHandlers.ResolveFileUserPath(ev, &ev.CreateFile.File)
 			},
 			Field:  field,
 			Weight: eval.HandlerWeight,
@@ -201,7 +201,7 @@ func (_ *Model) GetEvaluator(field eval.Field, regID eval.RegisterID) (eval.Eval
 			EvalFnc: func(ctx *eval.Context) int {
 				ctx.AppendResolvedField(field)
 				ev := ctx.Event.(*Event)
-				return len(ev.FieldHandlers.ResolveFileUserPath(ev, &ev.CreateNewFile.File))
+				return len(ev.FieldHandlers.ResolveFileUserPath(ev, &ev.CreateFile.File))
 			},
 			Field:  field,
 			Weight: eval.HandlerWeight,
@@ -2416,7 +2416,7 @@ func (ev *Event) SetFieldValue(field eval.Field, value interface{}) error {
 		if !ok {
 			return &eval.ErrValueTypeMismatch{Field: "create.file.device_path"}
 		}
-		ev.CreateNewFile.File.PathnameStr = rv
+		ev.CreateFile.File.PathnameStr = rv
 		return nil
 	case "create.file.device_path.length":
 		return &eval.ErrFieldReadOnly{Field: "create.file.device_path.length"}
@@ -2425,7 +2425,7 @@ func (ev *Event) SetFieldValue(field eval.Field, value interface{}) error {
 		if !ok {
 			return &eval.ErrValueTypeMismatch{Field: "create.file.name"}
 		}
-		ev.CreateNewFile.File.BasenameStr = rv
+		ev.CreateFile.File.BasenameStr = rv
 		return nil
 	case "create.file.name.length":
 		return &eval.ErrFieldReadOnly{Field: "create.file.name.length"}
@@ -2434,7 +2434,7 @@ func (ev *Event) SetFieldValue(field eval.Field, value interface{}) error {
 		if !ok {
 			return &eval.ErrValueTypeMismatch{Field: "create.file.path"}
 		}
-		ev.CreateNewFile.File.UserPathnameStr = rv
+		ev.CreateFile.File.UserPathnameStr = rv
 		return nil
 	case "create.file.path.length":
 		return &eval.ErrFieldReadOnly{Field: "create.file.path.length"}
