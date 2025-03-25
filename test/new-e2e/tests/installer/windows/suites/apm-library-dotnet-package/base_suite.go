@@ -44,15 +44,29 @@ func (s *baseIISSuite) startIISApp(webConfigFile, aspxFile []byte) {
 	_, err = host.WriteFile("C:\\inetpub\\wwwroot\\DummyApp\\index.aspx", aspxFile)
 	s.Require().NoError(err, "failed to write index.aspx file")
 	script := `
+# Configure application pool settings
+Import-Module WebAdministration
+$appPool = Get-Item "IIS:\AppPools\DefaultAppPool"
+$appPool.processModel.idleTimeout = [TimeSpan]::FromMinutes(0)
+$appPool.processModel.pingingEnabled = $false
+$appPool.recycling.periodicRestart.time = [TimeSpan]::FromMinutes(0)
+$appPool.recycling.disallowOverlappingRotation = $true
+$appPool | Set-Item
+
+# Create and configure the website
 $SitePath = "C:\inetpub\wwwroot\DummyApp"
 New-WebSite -Name DummyApp -PhysicalPath $SitePath -Port 8080 -ApplicationPool "DefaultAppPool" -Force
 Stop-WebSite -Name "DummyApp"
 Start-WebSite -Name "DummyApp"
+
+# Ensure application pool is running
 $state = (Get-WebAppPoolState -Name "DefaultAppPool").Value
 if ($state -eq "Stopped") {
     Start-WebAppPool -Name "DefaultAppPool"
+} else {
+    Restart-WebAppPool -Name "DefaultAppPool"
 }
-Restart-WebAppPool -Name "DefaultAppPool"
+
 Invoke-WebRequest -Uri "http://localhost:8080/index.aspx" -UseBasicParsing
 	`
 	output, err := host.Execute(script)
@@ -64,16 +78,16 @@ func (s *baseIISSuite) stopIISApp() {
 Stop-WebSite -Name "DummyApp"
 $state = (Get-WebAppPoolState -Name "DefaultAppPool").Value
 if ($state -ne "Stopped") {
-	Stop-WebAppPool -Name "DefaultAppPool"
-	$retryCount = 0
-	do {
-		Start-Sleep -Seconds 1
-		$status = (Get-WebAppPoolState -Name DefaultAppPool).Value
-		$retryCount++
-	} while ($status -ne "Stopped" -and $retryCount -lt 60)
-	if ($status -ne "Stopped") {
-		exit -1
-	}
+    Stop-WebAppPool -Name "DefaultAppPool"
+    $retryCount = 0
+    do {
+        Start-Sleep -Seconds 1
+        $status = (Get-WebAppPoolState -Name DefaultAppPool).Value
+        $retryCount++
+    } while ($status -ne "Stopped" -and $retryCount -lt 30)
+    if ($status -ne "Stopped") {
+        exit -1
+    }
 }
 	`
 	host := s.Env().RemoteHost
