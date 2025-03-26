@@ -505,17 +505,18 @@ func (p *WindowsProbe) startTracingFrim(ecb etwCallback) error {
 					log.Tracef("Unable to parse idNameDelete event %d %s", e.EventHeader.EventDescriptor.ID, err)
 				}
 			case idCreate:
-				if ca, err := p.parsekfCreateArgs(e); err == nil {
+			/*	if ca, err := p.parsekfCreateArgs(e); err == nil {
 					log.Tracef("Received idCreate event %d %s", e.EventHeader.EventDescriptor.ID, ca)
 
 					p.stats.fpnLock.Lock()
 					p.stats.fileProcessedNotifications[e.EventHeader.EventDescriptor.ID]++
 					p.stats.fpnLock.Unlock()
 
-					ecb(ca, e.EventHeader.ProcessID, e.EventHeader.EventDescriptor.ID)
+					//ecb(ca, e.EventHeader.ProcessID, e.EventHeader.EventDescriptor.ID)
 				} else {
 					log.Tracef("Unable to parse idCreate event %d %s", e.EventHeader.EventDescriptor.ID, err)
 				}
+			*/
 			case idCreateNewFile:
 				if ca, err := p.parsekfCreateNewFileArgs(e); err == nil {
 					log.Tracef("Received idCreateNewFile event %d %s", e.EventHeader.EventDescriptor.ID, ca)
