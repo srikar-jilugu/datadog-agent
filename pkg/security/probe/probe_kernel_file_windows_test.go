@@ -202,7 +202,7 @@ func testSimpleCreate(t *testing.T, et *etwTester, testfilename string) {
 
 	go func() {
 		defer wg.Done()
-		processUntil(t, et, &closeArgs{}, 1)
+		processUntil(t, et, &kfCloseArgs{}, 1)
 	}()
 	// wait till we're sure the listening loop is running
 	<-et.loopStarted
@@ -276,10 +276,10 @@ func testSimpleFileWrite(t *testing.T, et *etwTester, testfilename string) {
 			file (above, in the simple create test, it closes immediately).
 
 			the IRP_MJ_CLEANUP docs say that this is sent when the refcount on the handle has reached zero
-			(all handles closed).  So for this test it works fine, waiting for the close notification fails the
+			(all handles closed). So for this test it works fine, waiting for the close notification fails the
 			test
 		*/
-		processUntil(t, et, &cleanupArgs{}, 1)
+		processUntil(t, et, &kfCleanupArgs{}, 1)
 	}()
 	// wait till we're sure the listening loop is running
 	<-et.loopStarted
@@ -315,20 +315,20 @@ func testSimpleFileWrite(t *testing.T, et *etwTester, testfilename string) {
 
 	assert.Equal(t, 3, len(et.notifications), "expected 3 notifications, got %d", len(et.notifications))
 
-	if c, ok := et.notifications[0].(*createHandleArgs); ok {
+	if c, ok := et.notifications[0].(*kfCreateArgs); ok {
 		assert.True(t, isSameFile(testfilename, c.fileName), "expected %s, got %s", testfilename, c.fileName)
 	} else {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
 	}
 
-	if wa, ok := et.notifications[1].(*writeArgs); ok {
+	if wa, ok := et.notifications[1].(*kfWriteArgs); ok {
 		assert.True(t, isSameFile(testfilename, wa.fileName), "expected %s, got %s", testfilename, wa.fileName)
 		assert.Equal(t, uint32(5), wa.IOSize, "expected 5, got %d", wa.IOSize)
 	} else {
 		t.Errorf("expected writeArgs, got %T", et.notifications[1])
 	}
 
-	if cl, ok := et.notifications[2].(*cleanupArgs); ok {
+	if cl, ok := et.notifications[2].(*kfCleanupArgs); ok {
 		assert.True(t, isSameFile(testfilename, cl.fileName), "expected %s, got %s", testfilename, cl.fileName)
 	} else {
 		t.Errorf("expected cleanup, got %T", et.notifications[2])
@@ -343,7 +343,7 @@ func testSimpleFileDelete(t *testing.T, et *etwTester, testfilename string) {
 
 	go func() {
 		defer wg.Done()
-		processUntil(t, et, &closeArgs{}, 1)
+		processUntil(t, et, &kfCloseArgs{}, 1)
 	}()
 	// wait till we're sure the listening loop is running
 	<-et.loopStarted
@@ -379,13 +379,13 @@ func testSimpleFileDelete(t *testing.T, et *etwTester, testfilename string) {
 			return
 		}
 	*/
-	if c, ok := et.notifications[0].(*createHandleArgs); ok {
+	if c, ok := et.notifications[0].(*kfCreateArgs); ok {
 		assert.True(t, isSameFile(testfilename, c.fileName), "expected %s, got %s", testfilename, c.fileName)
 	} else {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
 	}
 
-	if wa, ok := et.notifications[1].(*setDeleteArgs); ok {
+	if wa, ok := et.notifications[1].(*kfSetDeleteArgs); ok {
 		assert.True(t, isSameFile(testfilename, wa.fileName), "expected %s, got %s", testfilename, wa.fileName)
 	} else {
 		t.Errorf("expected setDelete, got %T", et.notifications[1])
@@ -437,7 +437,7 @@ func testSimpleFileRename(t *testing.T, et *etwTester, testfilename, testfileren
 
 	//assert.Equal(t, 4, len(et.notifications), "expected 4 notifications, got %d", len(et.notifications))
 
-	if c, ok := et.notifications[0].(*createHandleArgs); ok {
+	if c, ok := et.notifications[0].(*kfCreateArgs); ok {
 		assert.True(t, isSameFile(testfilename, c.fileName), "expected %s, got %s", testfilename, c.fileName)
 	} else {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
@@ -448,7 +448,7 @@ func testSimpleFileRename(t *testing.T, et *etwTester, testfilename, testfileren
 
 	var ndx int
 	for ndx = 1; ndx < len(et.notifications); ndx++ {
-		if ra, ok := et.notifications[ndx].(*renameArgs); ok {
+		if ra, ok := et.notifications[ndx].(*kfRenameArgs); ok {
 			assert.True(t, isSameFile(testfilename, ra.fileName), "expected %s, got %s", testfilename, ra.fileName)
 			break
 		}
@@ -458,7 +458,7 @@ func testSimpleFileRename(t *testing.T, et *etwTester, testfilename, testfileren
 	require.Less(t, ndx+1, len(et.notifications), "expected renamePath, got nothing")
 	ndx++
 	// now expecte two creates on the new file name.  IDK why two
-	if c, ok := et.notifications[ndx].(*renamePath); ok {
+	if c, ok := et.notifications[ndx].(*kfRenamePath); ok {
 		assert.True(t, isSameFile(testfilerename, c.filePath), "expected %s, got %s", testfilerename, c.filePath)
 		assert.True(t, isSameFile(testfilename, c.oldPath), "expected %s, got %s", testfilename, c.oldPath)
 	} else {
@@ -473,7 +473,7 @@ func testFileOpen(t *testing.T, et *etwTester, testfilename string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processUntil(t, et, &closeArgs{}, 1)
+		processUntil(t, et, &kfCloseArgs{}, 1)
 	}()
 	// wait till we're sure the listening loop is running
 	<-et.loopStarted
@@ -507,7 +507,7 @@ func testFileOpen(t *testing.T, et *etwTester, testfilename string) {
 	// we expect a handle create (12), a cleanup and a close.
 	assert.Equal(t, 3, len(et.notifications), "expected 3 notifications, got %d", len(et.notifications))
 
-	if c, ok := et.notifications[0].(*createHandleArgs); ok {
+	if c, ok := et.notifications[0].(*kfCreateArgs); ok {
 		assert.True(t, isSameFile(testfilename, c.fileName), "expected %s, got %s", testfilename, c.fileName)
 		// this should be same as sharing argument to Createfile
 		assert.Equal(t, uint32(windows.FILE_SHARE_READ), c.shareAccess, "Sharing mode did not match")
@@ -517,13 +517,13 @@ func testFileOpen(t *testing.T, et *etwTester, testfilename string) {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
 	}
 
-	if cu, ok := et.notifications[1].(*cleanupArgs); ok {
+	if cu, ok := et.notifications[1].(*kfCleanupArgs); ok {
 		assert.True(t, isSameFile(testfilename, cu.fileName), "expected %s, got %s", testfilename, cu.fileName)
 	} else {
 		t.Errorf("expected cleanupArgs, got %T", et.notifications[2])
 	}
 
-	if cl, ok := et.notifications[2].(*closeArgs); ok {
+	if cl, ok := et.notifications[2].(*kfCloseArgs); ok {
 		assert.True(t, isSameFile(testfilename, cl.fileName), "expected %s, got %s", testfilename, cl.fileName)
 	} else {
 		t.Errorf("expected closeArgs, got %T", et.notifications[3])
@@ -550,14 +550,14 @@ func TestETWFileNotifications(t *testing.T) {
 
 	et := createEtwTester(wp)
 
-	wp.fimwg.Add(1)
+	wp.tracingWg.Add(1)
 	go func() {
-		defer wp.fimwg.Done()
+		defer wp.tracingWg.Done()
 
 		var once sync.Once
 		mypid := os.Getpid()
 
-		err := et.p.setupEtw(func(n interface{}, pid uint32) {
+		err := et.p.startTracingFrim(func(n interface{}, pid uint32, id uint16) {
 			once.Do(func() {
 				close(et.etwStarted)
 			})

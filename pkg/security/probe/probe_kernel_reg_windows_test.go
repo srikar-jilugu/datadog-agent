@@ -39,14 +39,14 @@ func processUntilRegOpen(t *testing.T, et *etwTester) {
 		case n := <-et.notify:
 
 			switch n.(type) {
-			case *openKeyArgs:
-				if strings.HasPrefix(n.(*openKeyArgs).computedFullPath, "HKEY_USERS\\") {
+			case *regOpenKeyArgs:
+				if strings.HasPrefix(n.(*regOpenKeyArgs).computedFullPath, "HKEY_USERS\\") {
 					et.notifications = append(et.notifications, n)
 				}
 				continue
 
-			case *createKeyArgs:
-				if strings.HasPrefix(n.(*createKeyArgs).computedFullPath, "HKEY_USERS\\") {
+			case *regCreateKeyArgs:
+				if strings.HasPrefix(n.(*regCreateKeyArgs).computedFullPath, "HKEY_USERS\\") {
 					et.notifications = append(et.notifications, n)
 					return
 				}
@@ -74,13 +74,13 @@ func TestETWRegistryNotifications(t *testing.T) {
 
 	et := createEtwTester(wp)
 
-	wp.fimwg.Add(1)
+	wp.tracingWg.Add(1)
 	go func() {
-		defer wp.fimwg.Done()
+		defer wp.tracingWg.Done()
 		var once sync.Once
 		mypid := os.Getpid()
 
-		err := et.p.setupEtw(func(n interface{}, pid uint32) {
+		err := et.p.startTracingFrim(func(n interface{}, pid uint32, id uint16) {
 			once.Do(func() {
 				close(et.etwStarted)
 			})
@@ -132,12 +132,12 @@ func TestETWRegistryNotifications(t *testing.T) {
 
 	assert.Equal(t, 2, len(et.notifications), "expected 2 notifications, got %d", len(et.notifications))
 
-	if c, ok := et.notifications[0].(*openKeyArgs); ok {
+	if c, ok := et.notifications[0].(*regOpenKeyArgs); ok {
 		assert.Equal(t, expectedBase, c.computedFullPath, "expected %s, got %s", expectedBase, c.computedFullPath)
 	} else {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
 	}
-	if c, ok := et.notifications[1].(*createKeyArgs); ok {
+	if c, ok := et.notifications[1].(*regCreateKeyArgs); ok {
 		assert.Equal(t, expected, c.computedFullPath, "expected %s, got %s", expected, c.computedFullPath)
 	} else {
 		t.Errorf("expected createKeyArgs, got %T", et.notifications[1])
