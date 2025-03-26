@@ -35,7 +35,9 @@ type Telemetry struct {
 	// metricGroup is used here mostly for building the log message below
 	metricGroup *libtelemetry.MetricGroup
 
-	hits1XX, hits2XX, hits3XX, hits4XX, hits5XX *TLSCounter
+	hits1XX, hits2XX, hits3XX, hits4XX, hits5XX                     *TLSCounter
+	hits1XXPost, hits2XXPost, hits3XXPost, hits4XXPost, hits5XXPost *TLSCounter
+	totalPostPost                                                   *libtelemetry.Counter
 
 	dropped                                                          *libtelemetry.Counter // this happens when statKeeper reaches capacity
 	rejected                                                         *libtelemetry.Counter // this happens when an user-defined reject-filter matches a request
@@ -56,11 +58,17 @@ func NewTelemetry(protocol string) *Telemetry {
 		aggregations: metricGroup.NewCounter("aggregations", libtelemetry.OptPrometheus),
 
 		// these metrics are also exported as statsd metrics
+		totalPostPost:          metricGroup.NewCounter("total_post_post", libtelemetry.OptStatsd),
 		hits1XX:                NewTLSCounter(metricGroup, "total_hits", "status:1xx", libtelemetry.OptStatsd),
 		hits2XX:                NewTLSCounter(metricGroup, "total_hits", "status:2xx", libtelemetry.OptStatsd),
 		hits3XX:                NewTLSCounter(metricGroup, "total_hits", "status:3xx", libtelemetry.OptStatsd),
 		hits4XX:                NewTLSCounter(metricGroup, "total_hits", "status:4xx", libtelemetry.OptStatsd),
 		hits5XX:                NewTLSCounter(metricGroup, "total_hits", "status:5xx", libtelemetry.OptStatsd),
+		hits1XXPost:            NewTLSCounter(metricGroup, "total_hits_post_process", "status:1xx", libtelemetry.OptStatsd),
+		hits2XXPost:            NewTLSCounter(metricGroup, "total_hits_post_process", "status:2xx", libtelemetry.OptStatsd),
+		hits3XXPost:            NewTLSCounter(metricGroup, "total_hits_post_process", "status:3xx", libtelemetry.OptStatsd),
+		hits4XXPost:            NewTLSCounter(metricGroup, "total_hits_post_process", "status:4xx", libtelemetry.OptStatsd),
+		hits5XXPost:            NewTLSCounter(metricGroup, "total_hits_post_process", "status:5xx", libtelemetry.OptStatsd),
 		dropped:                metricGroup.NewCounter("dropped", libtelemetry.OptStatsd),
 		rejected:               metricGroup.NewCounter("rejected", libtelemetry.OptStatsd),
 		emptyPath:              metricGroup.NewCounter("malformed", "type:empty-path", libtelemetry.OptStatsd),
@@ -92,6 +100,22 @@ func (t *Telemetry) Count(tx Transaction) {
 		t.hits4XX.Add(tx)
 	case 500:
 		t.hits5XX.Add(tx)
+	}
+}
+
+func (t *Telemetry) CountPost(tx Transaction) {
+	statusClass := (tx.StatusCode() / 100) * 100
+	switch statusClass {
+	case 100:
+		t.hits1XXPost.Add(tx)
+	case 200:
+		t.hits2XXPost.Add(tx)
+	case 300:
+		t.hits3XXPost.Add(tx)
+	case 400:
+		t.hits4XXPost.Add(tx)
+	case 500:
+		t.hits5XXPost.Add(tx)
 	}
 }
 

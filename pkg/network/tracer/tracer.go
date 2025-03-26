@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
@@ -105,6 +106,8 @@ type Tracer struct {
 
 	// Used for connection_protocol data expiration
 	connectionProtocolMapCleaner *ddebpf.MapCleaner[netebpf.ConnTuple, netebpf.ProtocolStackWrapper]
+
+	statsdClient statsd.ClientInterface
 }
 
 // NewTracer creates a Tracer
@@ -157,6 +160,7 @@ func newTracer(cfg *config.Config, telemetryComponent telemetryComponent.Compone
 		sysctlUDPConnTimeout:       sysctl.NewInt(cfg.ProcRoot, "net/netfilter/nf_conntrack_udp_timeout", time.Minute),
 		sysctlUDPConnStreamTimeout: sysctl.NewInt(cfg.ProcRoot, "net/netfilter/nf_conntrack_udp_timeout_stream", time.Minute),
 		telemetryComp:              telemetryComponent,
+		statsdClient:               statsd,
 	}
 	defer func() {
 		if reterr != nil {
@@ -458,6 +462,13 @@ func (t *Tracer) GetActiveConnections(clientID string) (*network.Connections, fu
 	conns := network.NewConnections(buffer)
 	conns.DNS = t.reverseDNS.Resolve(ips)
 	conns.HTTP = delta.HTTP
+	for key, reqs := range delta.HTTP {
+		for statusCode, req := range reqs.Data {
+			t.statsdClient.Count("usm.http.requests", int64(req.Count),
+				[]string{"resource_name:" + key.Method.String() + "_" + key.Path.Content.Get(), "http.status_code:" + strconv.Itoa(int(statusCode))}, 1)
+		}
+	}
+
 	conns.HTTP2 = delta.HTTP2
 	conns.Kafka = delta.Kafka
 	conns.Postgres = delta.Postgres

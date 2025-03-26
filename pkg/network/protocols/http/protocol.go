@@ -248,6 +248,11 @@ func (p *protocol) GetStats() (*protocols.ProtocolStats, func()) {
 	p.eventsConsumer.Sync()
 	p.telemetry.Log()
 	stats := p.statkeeper.GetAndResetAllStats()
+	for _, elem := range stats {
+		for _, r := range elem.Data {
+			p.telemetry.totalPostPost.Add(int64(r.Count))
+		}
+	}
 	return &protocols.ProtocolStats{
 			Type:  protocols.HTTP,
 			Stats: stats,

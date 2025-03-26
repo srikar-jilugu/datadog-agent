@@ -160,6 +160,7 @@ func (h *StatKeeper) add(tx Transaction) {
 		h.stats[key] = stats
 	}
 
+	h.telemetry.CountPost(tx)
 	stats.AddRequest(tx.StatusCode(), latency, tx.StaticTags(), tx.DynamicTags())
 }
 

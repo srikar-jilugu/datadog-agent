@@ -8,9 +8,12 @@ package checks
 import (
 	"context"
 	"fmt"
+	"github.com/DataDog/datadog-go/v5/statsd"
+	"github.com/golang/protobuf/proto"
 	"net/http"
 	"runtime"
 	"sort"
+	"strconv"
 	"time"
 
 	model "github.com/DataDog/agent-payload/v5/process"
@@ -45,13 +48,14 @@ var (
 )
 
 // NewConnectionsCheck returns an instance of the ConnectionsCheck.
-func NewConnectionsCheck(config, sysprobeYamlConfig pkgconfigmodel.Reader, syscfg *sysconfigtypes.Config, wmeta workloadmeta.Component, npCollector npcollector.Component) *ConnectionsCheck {
+func NewConnectionsCheck(config, sysprobeYamlConfig pkgconfigmodel.Reader, syscfg *sysconfigtypes.Config, wmeta workloadmeta.Component, npCollector npcollector.Component, statsdClient statsd.ClientInterface) *ConnectionsCheck {
 	return &ConnectionsCheck{
 		config:             config,
 		syscfg:             syscfg,
 		sysprobeYamlConfig: sysprobeYamlConfig,
 		wmeta:              wmeta,
 		npCollector:        npCollector,
+		statsdClient:       statsdClient,
 	}
 }
 
@@ -76,6 +80,7 @@ type ConnectionsCheck struct {
 	npCollector npcollector.Component
 
 	sysprobeClient *http.Client
+	statsdClient   statsd.ClientInterface
 }
 
 // Init initializes a ConnectionsCheck instance.
@@ -175,7 +180,7 @@ func (c *ConnectionsCheck) Run(nextGroupID func() int32, _ *RunOptions) (RunResu
 	c.npCollector.ScheduleConns(conns.Conns, conns.Dns)
 
 	groupID := nextGroupID()
-	messages := batchConnections(c.hostInfo, c.maxConnsPerMessage, groupID, conns.Conns, conns.Dns, c.networkID, conns.ConnTelemetryMap, conns.CompilationTelemetryByAsset, conns.KernelHeaderFetchResult, conns.CORETelemetryByAsset, conns.PrebuiltEBPFAssets, conns.Domains, conns.Routes, conns.Tags, conns.AgentConfiguration, c.serviceExtractor)
+	messages := batchConnections(c.hostInfo, c.maxConnsPerMessage, groupID, conns.Conns, conns.Dns, c.networkID, conns.ConnTelemetryMap, conns.CompilationTelemetryByAsset, conns.KernelHeaderFetchResult, conns.CORETelemetryByAsset, conns.PrebuiltEBPFAssets, conns.Domains, conns.Routes, conns.Tags, conns.AgentConfiguration, c.serviceExtractor, c.statsdClient)
 	return StandardRunResult(messages), nil
 }
 
@@ -327,6 +332,7 @@ func batchConnections(
 	tags []string,
 	agentCfg *model.AgentConfiguration,
 	serviceExtractor *parser.ServiceExtractor,
+	clientInterface statsd.ClientInterface,
 ) []model.MessageBody {
 	groupSize := groupSize(len(cxs), maxConnsPerMessage)
 	batches := make([]model.MessageBody, 0, groupSize)
@@ -462,6 +468,27 @@ func batchConnections(
 			cc.PrebuiltEBPFAssets = prebuiltAssets
 		}
 		batches = append(batches, cc)
+
+		for _, connection := range batchConns {
+			if len(connection.HttpAggregations) == 0 {
+				continue
+			}
+			var aggrs model.HTTPAggregations
+			if err := proto.Unmarshal(connection.HttpAggregations, &aggrs); err != nil {
+				continue
+			}
+			if len(aggrs.EndpointAggregations) == 0 {
+				continue
+			}
+
+			// iterate over each HTTP request and generate stats
+			for _, endpoint := range aggrs.EndpointAggregations {
+				for statusCode, stats := range endpoint.StatsByStatusCode {
+					clientInterface.Count("usm.http.process_agent", int64(stats.Count),
+						[]string{"resource_name:" + endpoint.Method.String() + "_" + endpoint.Path, "http.status_code:" + strconv.Itoa(int(statusCode))}, 1)
+				}
+			}
+		}
 
 		cxs = cxs[batchSize:]
 	}

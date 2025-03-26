@@ -114,7 +114,7 @@ func All(config, sysprobeYamlCfg pkgconfigmodel.ReaderWriter, syscfg *sysconfigt
 		NewProcessCheck(config, sysprobeYamlCfg, wmeta, gpuSubscriber, statsd),
 		NewContainerCheck(config, wmeta, statsd),
 		NewRTContainerCheck(config, wmeta),
-		NewConnectionsCheck(config, sysprobeYamlCfg, syscfg, wmeta, npCollector),
+		NewConnectionsCheck(config, sysprobeYamlCfg, syscfg, wmeta, npCollector, statsd),
 		NewProcessDiscoveryCheck(config),
 		NewProcessEventsCheck(config, statsd),
 	}
