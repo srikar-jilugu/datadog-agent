@@ -34,19 +34,16 @@ type mockConfig struct {
 func New(t testing.TB) model.Config {
 	m.Lock()
 	defer m.Unlock()
-	if isConfigMocked {
-		// The configuration is already mocked.
-		return &mockConfig{setup.Datadog()}
+	if !isConfigMocked {
+		isConfigMocked = true
+		originalDatadogConfig := setup.Datadog()
+		t.Cleanup(func() {
+			m.Lock()
+			defer m.Unlock()
+			isConfigMocked = false
+			setup.SetDatadog(originalDatadogConfig) // nolint: forbidigo // legitimate use of SetDatadog
+		})
 	}
-
-	isConfigMocked = true
-	originalDatadogConfig := setup.Datadog()
-	t.Cleanup(func() {
-		m.Lock()
-		defer m.Unlock()
-		isConfigMocked = false
-		setup.SetDatadog(originalDatadogConfig) // nolint: forbidigo // legitimate use of SetDatadog
-	})
 
 	// Configure Datadog global configuration
 	newCfg := nodetreemodel.NewConfig("datadog", "DD", strings.NewReplacer(".", "_")) // nolint: forbidigo // legitimate use of NewConfig
