@@ -57,3 +57,34 @@ network_devices:
 	require.Len(t, configListeners, 1)
 	assert.Equal(t, "snmp", configListeners[0].Name)
 }
+
+func TestConfigConstructor(t *testing.T) {
+	// case 1, passes
+	configmock.NewFromYAML(t, `
+snmp_listener:
+  configs:
+    - network: 127.0.0.1/30
+`)
+	ddcfg := pkgconfigsetup.Datadog()
+	autodisc := ddcfg.Get("network_devices.autodiscovery")
+	// autodisc is nil because it does not appear in the yaml
+	assert.Equal(t, nil, autodisc)
+
+	// case 2, construct but don't use
+	configmock.NewFromYAML(t, `
+network_devices:
+  autodiscovery:
+    configs:
+`)
+
+	// case 3, fails because data from the case 2 config influences this one
+	configmock.NewFromYAML(t, `
+snmp_listener:
+  configs:
+    - network: 127.0.0.1/30
+`)
+	ddcfg = pkgconfigsetup.Datadog()
+	autodisc = ddcfg.Get("network_devices.autodiscovery")
+	// NOTE: this fails, even though autodisc should be nil
+	assert.Equal(t, nil, autodisc)
+}
