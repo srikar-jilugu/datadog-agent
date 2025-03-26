@@ -19,14 +19,14 @@ type Blacklister struct {
 	list []*regexp.Regexp
 }
 
-// Allows returns true if the Blacklister permits this span. False and the denying rule otherwise.
-func (f *Blacklister) Allows(span *pb.Span) (bool, *regexp.Regexp) {
+// Allows returns true if the Blacklister permits this span.
+func (f *Blacklister) Allows(span *pb.Span) bool {
 	for _, entry := range f.list {
 		if entry.MatchString(span.Resource) {
-			return false, entry
+			return false
 		}
 	}
-	return true, nil
+	return true
 }
 
 // AllowsStat returns true if the Blacklister permits this stat
