@@ -125,6 +125,8 @@ const (
 	kernelCreateOpts_FILE_NO_COMPRESSION         = uint32(0x00008000) // nolint:unused,revive
 )
 
+type kfCreateNewFileArgs kfCreateArgs
+
 /*
 The Parameters.Create.Options member is a ULONG value that describes the options that are used
 
@@ -211,8 +213,12 @@ func (wp *WindowsProbe) parsekfCreateArgs(e *etw.DDEventRecord) (*kfCreateArgs, 
 	return ca, nil
 }
 
-func (wp *WindowsProbe) parseKfCreateNewFileArgs(e *etw.DDEventRecord) (*kfCreateArgs, error) {
-	return wp.parsekfCreateArgs(e)
+func (wp *WindowsProbe) parsekfCreateNewFileArgs(e *etw.DDEventRecord) (*kfCreateNewFileArgs, error) {
+	ca, err := wp.parsekfCreateArgs(e)
+	if err != nil {
+		return nil, err
+	}
+	return (*kfCreateNewFileArgs)(ca), nil
 }
 
 // nolint: unused
@@ -230,6 +236,11 @@ func (ca *kfCreateArgs) string(t string) string {
 // nolint: unused
 func (ca *kfCreateArgs) String() string {
 	return ca.string("CREATE")
+}
+
+// nolint: unused
+func (ca *kfCreateNewFileArgs) String() string {
+	return (*kfCreateArgs)(ca).string("CREATE_NEW_FILE")
 }
 
 /*

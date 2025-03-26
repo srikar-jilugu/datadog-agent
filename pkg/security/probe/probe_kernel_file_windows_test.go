@@ -117,7 +117,7 @@ func processUntil(t *testing.T, et *etwTester, target interface{}, count int) {
 
 		case n := <-et.notify:
 			switch n.(type) {
-			case *createHandleArgs, *createNewFileArgs, *cleanupArgs, *closeArgs, *writeArgs, *setDeleteArgs, *deletePathArgs, *renameArgs, *renamePath:
+			case *kfCreateArgs, *kfCleanupArgs, *kfCloseArgs, *kfWriteArgs, *kfSetDeleteArgs, *kfDeletePathArgs, *kfRenameArgs, *kfRenamePath:
 				et.notifications = append(et.notifications, n)
 				if reflect.TypeOf(n) == reflect.TypeOf(target) {
 					targetcount++
@@ -148,15 +148,15 @@ func processUntilAllClosed(t *testing.T, et *etwTester) {
 		case n := <-et.notify:
 			notify := false
 			switch n.(type) {
-			case *createHandleArgs, *createNewFileArgs:
+			case *kfCreateArgs:
 				opencount++
 				notify = true
 
-			case *closeArgs:
+			case *kfCloseArgs:
 				closecount++
 				notify = true
 
-			case *cleanupArgs, *writeArgs, *setDeleteArgs, *deletePathArgs, *renameArgs, *renamePath:
+			case *kfCleanupArgs, *kfWriteArgs, *kfSetDeleteArgs, *kfDeletePathArgs, *kfRenameArgs, *kfRenamePath:
 				notify = true
 
 			default:
@@ -235,25 +235,25 @@ func testSimpleCreate(t *testing.T, et *etwTester, testfilename string) {
 
 	assert.Equal(t, 4, len(et.notifications), "expected 4 notifications, got %d", len(et.notifications))
 
-	if c, ok := et.notifications[0].(*createHandleArgs); ok {
+	if c, ok := et.notifications[0].(*kfCreateArgs); ok {
 		assert.True(t, isSameFile(testfilename, c.fileName), "expected %s, got %s", testfilename, c.fileName)
 	} else {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
 	}
 
-	if cf, ok := et.notifications[1].(*createNewFileArgs); ok {
+	if cf, ok := et.notifications[1].(*kfCreateNewFileArgs); ok {
 		assert.True(t, isSameFile(testfilename, cf.fileName), "expected %s, got %s", testfilename, cf.fileName)
 	} else {
 		t.Errorf("expected createNewFileArgs, got %T", et.notifications[1])
 	}
 
-	if cu, ok := et.notifications[2].(*cleanupArgs); ok {
+	if cu, ok := et.notifications[2].(*kfCleanupArgs); ok {
 		assert.True(t, isSameFile(testfilename, cu.fileName), "expected %s, got %s", testfilename, cu.fileName)
 	} else {
 		t.Errorf("expected cleanupArgs, got %T", et.notifications[2])
 	}
 
-	if cl, ok := et.notifications[3].(*closeArgs); ok {
+	if cl, ok := et.notifications[3].(*kfCloseArgs); ok {
 		assert.True(t, isSameFile(testfilename, cl.fileName), "expected %s, got %s", testfilename, cl.fileName)
 	} else {
 		t.Errorf("expected closeArgs, got %T", et.notifications[3])
@@ -369,30 +369,27 @@ func testSimpleFileDelete(t *testing.T, et *etwTester, testfilename string) {
 	// (idCreate)
 	// (set_delete)
 	// (cleanup)
-	/*
-		assert.Equal(t, 2, len(et.notifications), "expected 2 notifications, got %d", len(et.notifications))
-		if len(et.notifications) < 3 {
-			for _, n := range et.notifications {
-				t.Logf("notification: %s\n", n)
-			}
-			t.Errorf("expected 3 notifications, got %d", len(et.notifications))
-			return
+
+	assert.Equal(t, 2, len(et.notifications), "expected 2 notifications, got %d", len(et.notifications))
+	if len(et.notifications) < 3 {
+		for _, n := range et.notifications {
+			t.Logf("notification: %s\n", n)
 		}
-	*/
+		t.Errorf("expected 3 notifications, got %d", len(et.notifications))
+		return
+	}
 	if c, ok := et.notifications[0].(*kfCreateArgs); ok {
 		assert.True(t, isSameFile(testfilename, c.fileName), "expected %s, got %s", testfilename, c.fileName)
 	} else {
 		t.Errorf("expected createHandleArgs, got %T", et.notifications[0])
 	}
-
 	if wa, ok := et.notifications[1].(*kfSetDeleteArgs); ok {
 		assert.True(t, isSameFile(testfilename, wa.fileName), "expected %s, got %s", testfilename, wa.fileName)
 	} else {
 		t.Errorf("expected setDelete, got %T", et.notifications[1])
 	}
-
 	/*
-		if cl, ok := et.notifications[2].(*cleanupArgs); ok {
+		 cl, ok := et.notifications[2].(*kfCleanupArgs); ok {
 			assert.True(t, isSameFile(testfilename, cl.fileName), "expected %s, got %s", testfilename, cl.fileName)
 		} else {
 			t.Errorf("expected cleanup, got %T", et.notifications[2])
