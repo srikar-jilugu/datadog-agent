@@ -210,11 +210,11 @@ class CompilerImage:
         self.exec("dda self telemetry disable", user="compiler", force_color=False)
         self.exec(f"install -d -m 0777 -o {uid} -g {uid} /go", user="root")
         self.exec(
-            f"echo export DD_CC=/opt/toolchains/bin/{self.arch.gcc_arch}-unknown-linux-gnu-gcc >> /home/compiler/.bashrc",
+            f"echo export DD_CC=/opt/toolchains/{self.arch.gcc_arch}/bin/{self.arch.gcc_arch}-unknown-linux-gnu-gcc >> /home/compiler/.bashrc",
             user="compiler",
         )
         self.exec(
-            f"echo export DD_CXX=/opt/toolchains/bin/{self.arch.gcc_arch}-unknown-linux-gnu-g++ >> /home/compiler/.bashrc",
+            f"echo export DD_CXX=/opt/toolchains/{self.arch.gcc_arch}/bin/{self.arch.gcc_arch}-unknown-linux-gnu-g++ >> /home/compiler/.bashrc",
             user="compiler",
         )
         self.exec(
