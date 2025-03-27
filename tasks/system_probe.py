@@ -1390,14 +1390,14 @@ def run_ninja(
         ctx.run(f"ninja {explain_opt} -f {nf_path} {target}")
 
 
-def get_clang_version_and_suffix() -> tuple[str, str]:
+def get_clang_version_and_build_version() -> tuple[str, str]:
     gitlab_ci_file = Path(__file__).parent.parent / ".gitlab-ci.yml"
     yaml.SafeLoader.add_constructor(ReferenceTag.yaml_tag, ReferenceTag.from_yaml)
     with open(gitlab_ci_file) as f:
         ci_config = yaml.safe_load(f)
 
     ci_vars = ci_config['variables']
-    return ci_vars['CLANG_LLVM_VER'], ci_vars['CLANG_TEST_SUFFIX']
+    return ci_vars['CLANG_LLVM_VER'], ci_vars['CLANG_BUILD_VERSION']
 
 
 def setup_runtime_clang(
@@ -1410,7 +1410,7 @@ def setup_runtime_clang(
     if arch is None:
         arch = Arch.local()
 
-    clang_version, clang_suffix = get_clang_version_and_suffix()
+    clang_version, clang_build_version = get_clang_version_and_build_version()
 
     runtime_binaries = {
         "clang-bpf": {"url_prefix": "clang", "version_line": 0, "needs_download": False},
@@ -1448,7 +1448,7 @@ def setup_runtime_clang(
             continue
 
         # download correct version from dd-agent-omnibus S3 bucket
-        binary_url = f"https://dd-agent-omnibus.s3.amazonaws.com/llvm/{meta['url_prefix']}-{clang_version}.{arch.name}{clang_suffix}"
+        binary_url = f"https://dd-agent-omnibus.s3.amazonaws.com/llvm/{meta['url_prefix']}-{clang_version}.{arch.name}{clang_build_version}"
         binary_path = target_dir / binary
         print(f"'{binary}' downloading...")
         ctx.run(f"{sudo} wget -nv {binary_url} -O {binary_path}")
