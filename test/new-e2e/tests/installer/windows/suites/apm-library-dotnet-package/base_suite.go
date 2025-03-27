@@ -7,6 +7,9 @@
 package dotnettests
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	installerwindows "github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/windows"
@@ -100,4 +103,64 @@ func (s *baseIISSuite) getLibraryPathFromInstrumentedIIS() string {
 	output, err := host.Execute(`(Invoke-WebRequest -Uri "http://localhost:8080/index.aspx" -UseBasicParsing).Content`)
 	s.Require().NoErrorf(err, "failed to get content from site: %s", output)
 	return strings.TrimSpace(output)
+}
+
+func (s *baseIISSuite) TestName() string {
+	fullName := s.T().Name()
+	parts := strings.Split(fullName, "/")
+	return parts[len(parts)-1]
+}
+
+func (s *baseIISSuite) WriteWASEventLogs(filename string) error {
+	output, err := s.Env().RemoteHost.Execute("Get-EventLog -LogName System -Source WAS | Format-List")
+	if err != nil {
+		return fmt.Errorf("failed to get WAS event logs: %w", err)
+	}
+
+	outputPath := filepath.Join(s.TestOutputDir(s.TestName()), filename)
+
+	return os.WriteFile(outputPath, []byte(output), 0644)
+}
+
+func (s *baseIISSuite) EnableProcessAudit() {
+	script := `
+AuditPol /Set /Category:"Detailed Tracking" /Subcategory:"Process Creation" /Success:Enable /Failure:Enable
+AuditPol /Set /Category:"Detailed Tracking" /Subcategory:"Process Termination" /Success:Enable /Failure:Enable
+`
+	host := s.Env().RemoteHost
+	output, err := host.Execute(script)
+	s.Require().NoErrorf(err, "failed to enable process audit: %s", output)
+}
+
+func (s *baseIISSuite) WriteProcessAuditLogs(filename string) error {
+	output, err := s.Env().RemoteHost.Execute(`Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4688, 4689} | ForEach-Object {
+    $_ | Select-Object TimeCreated, ProviderName, Id, @{Name="Message"; Expression = {
+        $_.Message -replace '(?s)Token Elevation Type:.*', ''
+    }}
+} | Format-List`)
+	if err != nil {
+		return fmt.Errorf("failed to get Security event logs: %w", err)
+	}
+
+	outputPath := filepath.Join(s.TestOutputDir(s.TestName()), filename)
+
+	return os.WriteFile(outputPath, []byte(output), 0644)
+}
+
+func (s *baseIISSuite) EnableIISConfigurationLog() {
+	script := `wevtutil sl Microsoft-IIS-Configuration/Operational /e:true`
+	host := s.Env().RemoteHost
+	output, err := host.Execute(script)
+	s.Require().NoErrorf(err, "failed to enable IIS Configuration log: %s", output)
+}
+
+func (s *baseIISSuite) WriteIISConfigurationLogs(filename string) error {
+	output, err := s.Env().RemoteHost.Execute("Get-WinEvent -LogName Microsoft-IIS-Configuration/Operational -ErrorAction SilentlyContinue | Format-List")
+	if err != nil && !strings.Contains(err.Error(), "NoMatchingEventsFound") {
+		return fmt.Errorf("failed to get IIS Configuration logs: %w", err)
+	}
+
+	outputPath := filepath.Join(s.TestOutputDir(s.TestName()), filename)
+
+	return os.WriteFile(outputPath, []byte(output), 0644)
 }
