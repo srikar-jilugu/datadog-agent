@@ -117,7 +117,7 @@ func (s *baseIISSuite) WriteWASEventLogs(filename string) error {
 		return fmt.Errorf("failed to get WAS event logs: %w", err)
 	}
 
-	outputPath := filepath.Join(s.TestOutputDir(s.TestName()), filename)
+	outputPath := filepath.Join(s.GetTestOutputDir(s.TestName()), filename)
 
 	return os.WriteFile(outputPath, []byte(output), 0644)
 }
@@ -142,7 +142,7 @@ func (s *baseIISSuite) WriteProcessAuditLogs(filename string) error {
 		return fmt.Errorf("failed to get Security event logs: %w", err)
 	}
 
-	outputPath := filepath.Join(s.TestOutputDir(s.TestName()), filename)
+	outputPath := filepath.Join(s.GetTestOutputDir(s.TestName()), filename)
 
 	return os.WriteFile(outputPath, []byte(output), 0644)
 }
@@ -160,7 +160,7 @@ func (s *baseIISSuite) WriteIISConfigurationLogs(filename string) error {
 		return fmt.Errorf("failed to get IIS Configuration logs: %w", err)
 	}
 
-	outputPath := filepath.Join(s.TestOutputDir(s.TestName()), filename)
+	outputPath := filepath.Join(s.GetTestOutputDir(s.TestName()), filename)
 
 	return os.WriteFile(outputPath, []byte(output), 0644)
 }

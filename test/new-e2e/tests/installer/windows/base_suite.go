@@ -97,8 +97,8 @@ func (s *BaseSuite) SetupSuite() {
 	}
 }
 
-// TestOutputDir returns the output directory for the test
-func (s *BaseSuite) TestOutputDir(testName string) string {
+// GetTestOutputDir returns the output directory for the test
+func (s *BaseSuite) GetTestOutputDir(testName string) string {
 	testPart := common.SanitizeDirectoryName(testName)
 	return filepath.Join(s.SessionOutputDir(), testPart)
 }
@@ -108,9 +108,9 @@ func (s *BaseSuite) BeforeTest(suiteName, testName string) {
 	s.BaseSuite.BeforeTest(suiteName, testName)
 
 	// Create a new subdir per test since these suites often have multiple tests
-	s.Require().NoError(os.MkdirAll(s.TestOutputDir(testName), 0755))
+	s.Require().NoError(os.MkdirAll(s.GetTestOutputDir(testName), 0755))
 
-	s.installer = NewDatadogInstaller(s.Env(), s.TestOutputDir(testName))
+	s.installer = NewDatadogInstaller(s.Env(), s.GetTestOutputDir(testName))
 	s.installScript = NewDatadogInstallScript(s.Env())
 }
 
