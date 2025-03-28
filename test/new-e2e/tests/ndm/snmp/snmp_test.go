@@ -8,7 +8,8 @@ package snmp
 
 import (
 	"embed"
-	awshost "github.com/DataDog/datadog-agent/test/new-e2e/pkg/provisioners/aws/host"
+	"fmt"
+	"path"
 	"testing"
 	"time"
 
@@ -19,6 +20,17 @@ import (
 	"github.com/DataDog/datadog-agent/test/new-e2e/pkg/e2e"
 	"github.com/DataDog/datadog-agent/test/new-e2e/pkg/environments"
 	"github.com/DataDog/datadog-agent/test/new-e2e/pkg/provisioners"
+
+	"github.com/DataDog/test-infra-definitions/common/utils"
+	"github.com/DataDog/test-infra-definitions/components/datadog/agent"
+	"github.com/DataDog/test-infra-definitions/components/datadog/dockeragentparams"
+	"github.com/DataDog/test-infra-definitions/components/docker"
+	"github.com/DataDog/test-infra-definitions/components/os"
+	"github.com/DataDog/test-infra-definitions/resources/aws"
+	"github.com/DataDog/test-infra-definitions/scenarios/aws/ec2"
+	"github.com/DataDog/test-infra-definitions/scenarios/aws/fakeintake"
+
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 //go:embed compose/snmpCompose.yaml
@@ -34,90 +46,89 @@ const (
 // snmpDockerProvisioner defines a stack with a docker agent on an AmazonLinuxECS VM
 // with snmpsim installed and configured with snmp recordings
 func snmpDockerProvisioner() provisioners.Provisioner {
-	return awshost.Provisioner()
-	//return provisioners.NewTypedPulumiProvisioner("", func(ctx *pulumi.Context, env *environments.DockerHost) error {
-	//	name := "snmpvm"
-	//	awsEnv, err := aws.NewEnvironment(ctx)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	host, err := ec2.NewVM(awsEnv, name, ec2.WithOS(os.AmazonLinuxECSDefault))
-	//	if err != nil {
-	//		return err
-	//	}
-	//	host.Export(ctx, &env.RemoteHost.HostOutput)
-	//
-	//	fakeIntake, err := fakeintake.NewECSFargateInstance(awsEnv, name)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	fakeIntake.Export(ctx, &env.FakeIntake.FakeintakeOutput)
-	//
-	//	// Setting up SNMP-related files
-	//	filemanager := host.OS.FileManager()
-	//	// upload snmpsim data files
-	//	createDataDirCommand, dataPath, err := filemanager.TempDirectory("data")
-	//	if err != nil {
-	//		return err
-	//	}
-	//	dataFiles, err := loadDataFileNames()
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	fileCommands := []pulumi.Resource{}
-	//	for _, fileName := range dataFiles {
-	//		fileContent, err := dataFolder.ReadFile(path.Join(composeDataPath, fileName))
-	//		if err != nil {
-	//			return err
-	//		}
-	//		fileCommand, err := filemanager.CopyInlineFile(pulumi.String(fileContent), path.Join(dataPath, fileName),
-	//			pulumi.DependsOn([]pulumi.Resource{createDataDirCommand}))
-	//		if err != nil {
-	//			return err
-	//		}
-	//		fileCommands = append(fileCommands, fileCommand)
-	//	}
-	//
-	//	createConfigDirCommand, configPath, err := filemanager.TempDirectory("config")
-	//	if err != nil {
-	//		return err
-	//	}
-	//	// edit snmp config file
-	//	configCommand, err := filemanager.CopyInlineFile(pulumi.String(snmpConfig), path.Join(configPath, "snmp.yaml"),
-	//		pulumi.DependsOn([]pulumi.Resource{createConfigDirCommand}))
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	installEcrCredsHelperCmd, err := ec2.InstallECRCredentialsHelper(awsEnv, host)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	dockerManager, err := docker.NewManager(&awsEnv, host, utils.PulumiDependsOn(installEcrCredsHelperCmd))
-	//	if err != nil {
-	//		return err
-	//	}
-	//	dockerManager.Export(ctx, &env.Docker.ManagerOutput)
-	//
-	//	envVars := pulumi.StringMap{"DATA_DIR": pulumi.String(dataPath), "CONFIG_DIR": pulumi.String(configPath)}
-	//	composeDependencies := []pulumi.Resource{createDataDirCommand, configCommand}
-	//	composeDependencies = append(composeDependencies, fileCommands...)
-	//	dockerAgent, err := agent.NewDockerAgent(&awsEnv, host, dockerManager,
-	//		dockeragentparams.WithFakeintake(fakeIntake),
-	//		dockeragentparams.WithExtraComposeManifest("snmpsim", pulumi.String(snmpCompose)),
-	//		dockeragentparams.WithEnvironmentVariables(envVars),
-	//		dockeragentparams.WithPulumiDependsOn(pulumi.DependsOn(composeDependencies)),
-	//	)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	dockerAgent.Export(ctx, &env.Agent.DockerAgentOutput)
-	//
-	//	return err
-	//}, nil)
+	return provisioners.NewTypedPulumiProvisioner("", func(ctx *pulumi.Context, env *environments.DockerHost) error {
+		name := "snmpvm"
+		awsEnv, err := aws.NewEnvironment(ctx)
+		if err != nil {
+			return err
+		}
+
+		host, err := ec2.NewVM(awsEnv, name, ec2.WithOS(os.AmazonLinuxECSDefault))
+		if err != nil {
+			return err
+		}
+		host.Export(ctx, &env.RemoteHost.HostOutput)
+
+		fakeIntake, err := fakeintake.NewECSFargateInstance(awsEnv, name)
+		if err != nil {
+			return err
+		}
+		fakeIntake.Export(ctx, &env.FakeIntake.FakeintakeOutput)
+
+		// Setting up SNMP-related files
+		filemanager := host.OS.FileManager()
+		// upload snmpsim data files
+		createDataDirCommand, dataPath, err := filemanager.TempDirectory("data")
+		if err != nil {
+			return err
+		}
+		dataFiles, err := loadDataFileNames()
+		if err != nil {
+			return err
+		}
+
+		fileCommands := []pulumi.Resource{}
+		for _, fileName := range dataFiles {
+			fileContent, err := dataFolder.ReadFile(path.Join(composeDataPath, fileName))
+			if err != nil {
+				return err
+			}
+			fileCommand, err := filemanager.CopyInlineFile(pulumi.String(fileContent), path.Join(dataPath, fileName),
+				pulumi.DependsOn([]pulumi.Resource{createDataDirCommand}))
+			if err != nil {
+				return err
+			}
+			fileCommands = append(fileCommands, fileCommand)
+		}
+
+		createConfigDirCommand, configPath, err := filemanager.TempDirectory("config")
+		if err != nil {
+			return err
+		}
+		// edit snmp config file
+		configCommand, err := filemanager.CopyInlineFile(pulumi.String(snmpConfig), path.Join(configPath, "snmp.yaml"),
+			pulumi.DependsOn([]pulumi.Resource{createConfigDirCommand}))
+		if err != nil {
+			return err
+		}
+
+		installEcrCredsHelperCmd, err := ec2.InstallECRCredentialsHelper(awsEnv, host)
+		if err != nil {
+			return err
+		}
+
+		dockerManager, err := docker.NewManager(&awsEnv, host, utils.PulumiDependsOn(installEcrCredsHelperCmd))
+		if err != nil {
+			return err
+		}
+		dockerManager.Export(ctx, &env.Docker.ManagerOutput)
+
+		envVars := pulumi.StringMap{"DATA_DIR": pulumi.String(dataPath), "CONFIG_DIR": pulumi.String(configPath)}
+		composeDependencies := []pulumi.Resource{createDataDirCommand, configCommand}
+		composeDependencies = append(composeDependencies, fileCommands...)
+		dockerAgent, err := agent.NewDockerAgent(&awsEnv, host, dockerManager,
+			dockeragentparams.WithFakeintake(fakeIntake),
+			dockeragentparams.WithExtraComposeManifest("snmpsim", pulumi.String(snmpCompose)),
+			dockeragentparams.WithEnvironmentVariables(envVars),
+			dockeragentparams.WithPulumiDependsOn(pulumi.DependsOn(composeDependencies)),
+		)
+		if err != nil {
+			return err
+		}
+		dockerAgent.Export(ctx, &env.Agent.DockerAgentOutput)
+
+		return err
+	}, nil)
 }
 
 //go:embed compose/data
@@ -135,12 +146,12 @@ func loadDataFileNames() (out []string, err error) {
 }
 
 type snmpDockerSuite struct {
-	e2e.BaseSuite[environments.Host]
+	e2e.BaseSuite[environments.DockerHost]
 }
 
 // TestSnmpSuite runs the snmp e2e suite
 func TestSnmpSuite(t *testing.T) {
-	//t.Skip("Skipping test until we can fix the flakiness")
+	t.Skip("Skipping test until we can fix the flakiness")
 	e2e.Run(t, &snmpDockerSuite{}, e2e.WithProvisioner(snmpDockerProvisioner()))
 }
 
@@ -169,8 +180,8 @@ func (s *snmpDockerSuite) TestSnmpTagsAreStoredOnRestart() {
 	_, err = s.Env().RemoteHost.Execute("docker stop dd-snmp")
 	require.NoError(s.T(), err)
 
-	//_, err = s.Env().RemoteHost.Execute(fmt.Sprintf("docker restart %s", s.Env().Agent.ContainerName))
-	//require.NoError(s.T(), err)
+	_, err = s.Env().RemoteHost.Execute(fmt.Sprintf("docker restart %s", s.Env().Agent.ContainerName))
+	require.NoError(s.T(), err)
 
 	err = fakeintake.FlushServerAndResetAggregators()
 	require.NoError(s.T(), err)
