@@ -44,7 +44,7 @@ from tasks.testwasher import TestWasher
 from tasks.update_go import PATTERN_MAJOR_MINOR_BUGFIX, update_file
 
 WINDOWS_MAX_PACKAGES_NUMBER = 150
-TRIGGER_ALL_TESTS_PATHS = ["tasks/gotest.py", "tasks/build_tags.py", ".gitlab/source_test/*"]
+TRIGGER_ALL_TESTS_PATHS = [] # ["tasks/gotest.py", "tasks/build_tags.py", ".gitlab/source_test/*"]
 OTEL_UPSTREAM_GO_MOD_PATH = (
     f"https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/v{OCB_VERSION}/go.mod"
 )

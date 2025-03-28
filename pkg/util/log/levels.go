@@ -43,5 +43,5 @@ func (level LogLevel) String() string {
 //nolint:revive // keeping the original function name from seelog
 func LogLevelFromString(levelStr string) (LogLevel, bool) {
 	level, ok := seelog.LogLevelFromString(levelStr)
-	return LogLevel(level), ok
+	return LogLevel(level), ok 
 }
