@@ -103,6 +103,17 @@ func (t *tcpResponse) Match(localIP net.IP, localPort uint16, remoteIP net.IP, r
 	sourcePort := t.SrcPort
 	destPort := t.DstPort
 
+	if !flagsCheck {
+		return false
+	}
+	// log.Tracef("match? %s=%s is %s, %d=%d is %v, %s=%s is %v, %d=%d is %v, %d=%d is %v",
+	// 	remoteIP, t.SrcIP, remoteIP.Equal(t.SrcIP),
+	// 	remotePort, sourcePort, remotePort == sourcePort,
+	// 	localIP, t.DstIP, localIP.Equal(t.DstIP),
+	// 	localPort, destPort, localPort == destPort,
+	// 	seqNum, t.AckNum-1, seqNum == t.AckNum-1,
+	// )
+
 	return remoteIP.Equal(t.SrcIP) &&
 		remotePort == sourcePort &&
 		localIP.Equal(t.DstIP) &&

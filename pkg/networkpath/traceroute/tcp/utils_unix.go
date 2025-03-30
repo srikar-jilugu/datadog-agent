@@ -10,6 +10,7 @@ package tcp
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net"
 	"time"
 
@@ -50,11 +51,34 @@ func listenPackets(icmpConn rawConnWrapper, tcpConn rawConnWrapper, timeout time
 	respChan := make(chan packetResponse, 2)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+	nonce := rand.Uint32()
+	start := time.Now()
+	log.Tracef("%d begin with timeout %s", nonce, timeout)
+	defer func() {
+		log.Tracef("%d end after %s", nonce, time.Since(start))
+	}()
 	go func() {
-		respChan <- handlePackets(ctx, tcpConn, localIP, localPort, remoteIP, remotePort, seqNum)
+		resp := handlePackets(ctx, tcpConn, localIP, localPort, remoteIP, remotePort, seqNum)
+		if resp.Err == nil {
+			log.Tracef("writing %+v", resp)
+		}
+		respChan <- resp
+		if resp.Err == nil {
+			log.Tracef("finished write to channel")
+		}
 	}()
 	go func() {
 		respChan <- handlePackets(ctx, icmpConn, localIP, localPort, remoteIP, remotePort, seqNum)
+	}()
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(100 * time.Millisecond):
+				log.Tracef("%d channel size: %d", nonce, len(respChan))
+			}
+		}
 	}()
 
 	// wait for both responses to return
@@ -62,6 +86,7 @@ func listenPackets(icmpConn rawConnWrapper, tcpConn rawConnWrapper, timeout time
 	// succeeds
 	var err error
 	for i := 0; i < 2; i++ {
+		log.Tracef("%d loop %d, have respChan: %v", nonce, i, respChan != nil)
 		select {
 		case <-ctx.Done():
 			log.Trace("timed out waiting for responses")
@@ -69,6 +94,7 @@ func listenPackets(icmpConn rawConnWrapper, tcpConn rawConnWrapper, timeout time
 				Err: err,
 			}
 		case resp := <-respChan:
+			log.Tracef("read out of channel %+v", resp)
 			if resp.Err == nil {
 				return resp
 			}

@@ -78,7 +78,7 @@ func (t *TCPv4) TracerouteSequential() (*common.Results, error) {
 		return nil, fmt.Errorf("failed to create TCP listener: %w", err)
 	}
 	defer tcpConn.Close()
-	log.Tracef("Listening for TCP on: %s\n", addr.IP.String()+":"+addr.AddrPort().String())
+	log.Tracef("Listening for TCP on: %s:%d\n", addr.IP.String(), port)
 	// RawConn is necessary to set the TTL and ID fields
 	rawTCPConn, err := ipv4.NewRawConn(tcpConn)
 	if err != nil {
@@ -88,8 +88,8 @@ func (t *TCPv4) TracerouteSequential() (*common.Results, error) {
 	// hops should be of length # of hops
 	hops := make([]*common.Hop, 0, t.MaxTTL-t.MinTTL)
 
+	seqNumber := rand.Uint32()
 	for i := int(t.MinTTL); i <= int(t.MaxTTL); i++ {
-		seqNumber := rand.Uint32()
 		hop, err := t.sendAndReceive(rawIcmpConn, rawTCPConn, i, seqNumber, t.Timeout)
 		if err != nil {
 			return nil, fmt.Errorf("failed to run traceroute: %w", err)

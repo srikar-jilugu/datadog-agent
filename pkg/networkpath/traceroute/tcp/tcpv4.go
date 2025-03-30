@@ -8,6 +8,7 @@ package tcp
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"time"
 
@@ -73,7 +74,7 @@ func (t *TCPv4) createRawTCPSynBuffer(seqNum uint32, ttl int) (*ipv4.Header, []b
 		Version:  4,
 		Length:   20,
 		TTL:      uint8(ttl),
-		Id:       uint16(41821),
+		Id:       uint16(rand.Uint32()),
 		Protocol: 6,
 		DstIP:    t.Target,
 		SrcIP:    t.srcIP,
