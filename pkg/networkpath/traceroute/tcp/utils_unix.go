@@ -47,14 +47,15 @@ func sendPacket(rawConn rawConnWrapper, header *ipv4.Header, payload []byte) err
 // Once a matching packet is received by a listener, it will cause the other listener
 // to be canceled, and data from the matching packet will be returned to the caller
 func listenPackets(icmpConn rawConnWrapper, tcpConn rawConnWrapper, timeout time.Duration, localIP net.IP, localPort uint16, remoteIP net.IP, remotePort uint16, seqNum uint32) packetResponse {
-	respChan := make(chan packetResponse, 2)
+	tcpChan := make(chan packetResponse, 1)
+	icmpChan := make(chan packetResponse, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	go func() {
-		respChan <- handlePackets(ctx, tcpConn, localIP, localPort, remoteIP, remotePort, seqNum)
+		tcpChan <- handlePackets(ctx, tcpConn, localIP, localPort, remoteIP, remotePort, seqNum)
 	}()
 	go func() {
-		respChan <- handlePackets(ctx, icmpConn, localIP, localPort, remoteIP, remotePort, seqNum)
+		icmpChan <- handlePackets(ctx, icmpConn, localIP, localPort, remoteIP, remotePort, seqNum)
 	}()
 
 	// wait for both responses to return
@@ -62,22 +63,26 @@ func listenPackets(icmpConn rawConnWrapper, tcpConn rawConnWrapper, timeout time
 	// succeeds
 	var err error
 	for i := 0; i < 2; i++ {
+		var resp packetResponse
 		select {
 		case <-ctx.Done():
 			log.Trace("timed out waiting for responses")
 			return packetResponse{
 				Err: err,
 			}
-		case resp := <-respChan:
-			if resp.Err == nil {
-				return resp
-			}
+		// pull from both tcp and icmp channels
+		case resp = <-tcpChan:
+		case resp = <-icmpChan:
+		}
 
-			// avoid adding canceled errors to the error list
-			// TODO: maybe just return nil on timeout?
-			if _, isCanceled := resp.Err.(common.CanceledError); !isCanceled {
-				err = multierr.Append(err, resp.Err)
-			}
+		if resp.Err == nil {
+			return resp
+		}
+
+		// avoid adding canceled errors to the error list
+		// TODO: maybe just return nil on timeout?
+		if _, isCanceled := resp.Err.(common.CanceledError); !isCanceled {
+			err = multierr.Append(err, resp.Err)
 		}
 	}
 
