@@ -11,6 +11,10 @@ bazel_dep(name = "protobuf", version = "29.3", repo_name = "com_google_protobuf"
 #     version = "3.1.0",
 # )
 
+register_toolchains(
+    "//bazel/toolchains/config:glibc_cc_toolchain"
+)
+
 ########################
 ## Local overiddes    ##
 ## dev/debug purposes ##
