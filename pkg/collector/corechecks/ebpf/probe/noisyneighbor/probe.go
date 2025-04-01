@@ -29,10 +29,11 @@ var minimumKernelVersion = kernel.VersionCode(6, 2, 0)
 
 // Probe is the eBPF side of the noisy neighbor check
 type Probe struct {
-	mgr *ddebpf.Manager
+	mgr      *ddebpf.Manager
+	runqPool *ddsync.TypedPool[runqEvent]
 
 	// cgroupID -> latest event
-	cgIDMap map[uint64]*runqEvent
+	cgIDMap map[uint64]runqEvent
 }
 
 // NewProbe creates a [Probe]
@@ -46,16 +47,16 @@ func NewProbe(cfg *ddebpf.Config) (*Probe, error) {
 	}
 
 	p := &Probe{
-		cgIDMap: make(map[uint64]*runqEvent),
+		cgIDMap:  make(map[uint64]runqEvent),
+		runqPool: ddsync.NewDefaultTypedPool[runqEvent](),
 	}
 	// TODO noisy: figure out what you want these sizes to be. ringbuf size must be power of 2
 	ringbufSize := 2 * os.Getpagesize()
 	chanSize := 100
-	runqPool := ddsync.NewDefaultTypedPool[runqEvent]()
-	handler := encoding.BinaryUnmarshalCallback(runqPool.Get, func(e *runqEvent, err error) {
+	handler := encoding.BinaryUnmarshalCallback(p.runqPool.Get, func(e *runqEvent, err error) {
 		if err != nil {
 			if e != nil {
-				runqPool.Put(e)
+				p.runqPool.Put(e)
 			}
 			log.Debug(err.Error())
 			return
@@ -133,6 +134,7 @@ func (p *Probe) GetAndFlush() []model.NoisyNeighborStats {
 }
 
 func (p *Probe) handleEvent(e *runqEvent) {
+	defer p.runqPool.Put(e)
 	// TODO noisy: handle ebpf data here, this is just an example
-	p.cgIDMap[e.CgroupID] = e
+	p.cgIDMap[e.CgroupID] = *e
 }
