@@ -103,12 +103,14 @@ func NewProbe(cfg *ddebpf.Config) (*Probe, error) {
 	if err != nil {
 		return nil, err
 	}
+	ddebpf.AddNameMappings(p.mgr.Manager, "noisy_neighbor")
 	return p, nil
 }
 
 // Close releases all associated resources
 func (p *Probe) Close() {
 	if p.mgr != nil {
+		ddebpf.RemoveNameMappings(p.mgr.Manager)
 		if err := p.mgr.Stop(manager.CleanAll); err != nil {
 			log.Warnf("error stopping ebpf manager: %s", err)
 		}
