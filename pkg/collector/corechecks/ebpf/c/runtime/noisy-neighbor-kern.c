@@ -5,6 +5,7 @@
 #include "map-defs.h"
 #include "noisy-neighbor-kern-user.h"
 #include "bpf_metadata.h"
+#include "bpf_telemetry.h"
 
 // TODO noisy: determine what values you want for these constants
 #define MAX_TASK_ENTRIES 4096
@@ -33,7 +34,7 @@ int tp_sched_wakeup(u64 *ctx) {
     u32 pid = task->pid;
     u64 ts = bpf_ktime_get_ns();
 
-    bpf_map_update_elem(&runq_enqueued, &pid, &ts, BPF_NOEXIST);
+    bpf_map_update_with_telemetry(runq_enqueued, &pid, &ts, BPF_NOEXIST, -EEXIST);
     return 0;
 }
 
@@ -91,7 +92,7 @@ int tp_sched_switch(u64 *ctx) {
 
         bpf_ringbuf_submit(event, 0);
         // Update the last event timestamp for the current cgroup_id
-        bpf_map_update_elem(&cgroup_id_to_last_event_ts, &cgroup_id, &now, BPF_ANY);
+        bpf_map_update_with_telemetry(cgroup_id_to_last_event_ts, &cgroup_id, &now, BPF_ANY);
     }
 
     return 0;
