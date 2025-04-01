@@ -10,6 +10,7 @@ package noisyneighbor
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	manager "github.com/DataDog/ebpf-manager"
 
@@ -33,6 +34,7 @@ type Probe struct {
 	runqPool *ddsync.TypedPool[runqEvent]
 
 	// cgroupID -> latest event
+	mtx     sync.Mutex
 	cgIDMap map[uint64]runqEvent
 }
 
@@ -49,6 +51,7 @@ func NewProbe(cfg *ddebpf.Config) (*Probe, error) {
 	p := &Probe{
 		cgIDMap:  make(map[uint64]runqEvent),
 		runqPool: ddsync.NewDefaultTypedPool[runqEvent](),
+		mtx:      sync.Mutex{},
 	}
 	// TODO noisy: figure out what you want these sizes to be. ringbuf size must be power of 2
 	ringbufSize := 2 * os.Getpagesize()
@@ -113,6 +116,8 @@ func (p *Probe) Close() {
 
 // GetAndFlush gets the stats
 func (p *Probe) GetAndFlush() []model.NoisyNeighborStats {
+	p.mtx.Lock()
+	defer p.mtx.Unlock()
 	// TODO noisy: populate stats you want to return to the core check here
 	// this is just an example
 	log.Infof("flushing noisy neighbor stats for %d cgroups", len(p.cgIDMap))
@@ -134,6 +139,8 @@ func (p *Probe) GetAndFlush() []model.NoisyNeighborStats {
 }
 
 func (p *Probe) handleEvent(e *runqEvent) {
+	p.mtx.Lock()
+	defer p.mtx.Unlock()
 	defer p.runqPool.Put(e)
 	// TODO noisy: handle ebpf data here, this is just an example
 	p.cgIDMap[e.CgroupID] = *e
