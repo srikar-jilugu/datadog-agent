@@ -12,10 +12,14 @@
 # other languages or figure out how to select toolchains for custom CPU types,
 # OSes, etc., the BUILD file is much more interesting.
 
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "artifact_name_pattern",
     "tool_path",
+    "feature",
+    "flag_set",
+    "flag_group",
 )
 
 def _impl(ctx):
@@ -25,59 +29,59 @@ def _impl(ctx):
     GCC_VERSION = ctx.attr.gcc_version
     TOOLCHAIN_ARCH = ctx.attr.arch
     TOOLCHAIN_PATH = ctx.attr.path
+    TRIPLET = TOOLCHAIN_ARCH + "-unknown-linux-gnu"
+
+    all_compile_actions = [
+        ACTION_NAMES.c_compile,
+        ACTION_NAMES.cpp_compile,
+        ACTION_NAMES.cpp_module_codegen,
+        ACTION_NAMES.cpp_module_compile,
+    ]
+
+    all_link_actions = [
+        ACTION_NAMES.cpp_link_executable,
+        ACTION_NAMES.cpp_link_dynamic_library,
+        ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+    ]
+
+    pic_flags = feature(
+        name = "pic",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = all_compile_actions + all_link_actions,
+                flag_groups = [
+                    flag_group(
+                        flags = ["-fPIC"],
+                    ),
+                ],
+            ),
+        ],
+    )
+
+    tools = ["ar", "cpp", "gcc", "g++", "gcov", "ld", "nm", "objdump", "strip"]
+    tools_path = [tool_path(name = t, path = "{}/bin/{}-{}".format(TOOLCHAIN_PATH, TRIPLET, t)) for t in tools]
 
     return [
         cc_common.create_cc_toolchain_config_info(
             ctx = ctx,
             toolchain_identifier = "glibc-toolchain",
-            host_system_name = "nothing",
-            target_system_name = "nothing",
             target_cpu = TOOLCHAIN_ARCH,
-            target_libc = "nothing",
             cc_target_os = "linux",
             compiler = "gcc",
             abi_version = "gcc-" + GCC_VERSION,
             abi_libc_version = "nothing",
-            tool_paths = [
-                tool_path(
-                    name = "ar",
-                    path = TOOLCHAIN_PATH + "/bin/ar",
-                ),
-                tool_path(
-                    name = "cpp",
-                    path = TOOLCHAIN_PATH + "/bin/cpp",
-                ),
-                tool_path(
-                    name = "gcc",
-                    path = TOOLCHAIN_PATH + "/bin/g++",
-                ),
-                tool_path(
-                    name = "gcov",
-                    path = TOOLCHAIN_PATH + "/bin/gcov",
-                ),
-                tool_path(
-                    name = "ld",
-                    path = TOOLCHAIN_PATH + "/bin/ld",
-                ),
-                tool_path(
-                    name = "nm",
-                    path = TOOLCHAIN_PATH + "/bin/nm",
-                ),
-                tool_path(
-                    name = "objdump",
-                    path = TOOLCHAIN_PATH + "/bin/objdump",
-                ),
-                tool_path(
-                    name = "strip",
-                    path = TOOLCHAIN_PATH + "/bin/strip",
-                ),
+            features = [
+                pic_flags,
             ],
+            tool_paths = tools_path,
             cxx_builtin_include_directories = [
                 TOOLCHAIN_PATH + "/include",
                 TOOLCHAIN_PATH + "/lib/gcc/" + TOOLCHAIN_ARCH + "-unknown-linux-gnu/" + GCC_VERSION + "/include-fixed",
                 TOOLCHAIN_PATH + "/lib/gcc/" + TOOLCHAIN_ARCH + "-unknown-linux-gnu/" + GCC_VERSION + "/include",
                 TOOLCHAIN_PATH + "/lib/gcc/" + TOOLCHAIN_ARCH + "-unknown-linux-gnu/" + GCC_VERSION + "/install-tools/include",
                 TOOLCHAIN_PATH + "/" + TOOLCHAIN_ARCH + "-unknown-linux-gnu/include",
+                "{}/{}/sysroot/usr/include/".format(TOOLCHAIN_PATH, TRIPLET),
             ],
         ),
         DefaultInfo(
