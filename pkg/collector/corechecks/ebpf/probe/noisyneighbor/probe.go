@@ -84,6 +84,7 @@ func NewProbe(cfg *ddebpf.Config) (*Probe, error) {
 		const uid = "noisy"
 		p.mgr.Probes = []*manager.Probe{
 			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "tp_sched_wakeup", UID: uid}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "tp_sched_wakeup_new", UID: uid}},
 			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "tp_sched_switch", UID: uid}},
 		}
 		p.mgr.Maps = []*manager.Map{

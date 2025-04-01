@@ -38,6 +38,16 @@ int tp_sched_wakeup(u64 *ctx) {
     return 0;
 }
 
+SEC("tp_btf/sched_wakeup_new")
+int tp_sched_wakeup_new(u64 *ctx) {
+    struct task_struct *task = (void *)ctx[0];
+    u32 pid = task->pid;
+    u64 ts = bpf_ktime_get_ns();
+
+    bpf_map_update_with_telemetry(runq_enqueued, &pid, &ts, BPF_NOEXIST, -EEXIST);
+    return 0;
+}
+
 SEC("tp_btf/sched_switch")
 int tp_sched_switch(u64 *ctx) {
     struct task_struct *prev = (struct task_struct *)ctx[1];
