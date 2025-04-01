@@ -110,6 +110,21 @@ func (n *NoisyNeighborCheck) Run() error {
 		tags = append(tags, "container_id:"+containerID)
 		sender.Distribution("noisy_neighbor.runq.latency", float64(stat.RunqLatencyNs), "", tags)
 		tags = append(tags, "prev_container_id:"+prevContainerID)
+
+		if prevContainerID != "host" {
+			entityID := types.NewEntityID(types.ContainerID, containerID)
+			if !entityID.Empty() {
+				prevTags, err := n.tagger.Tag(entityID, n.tagger.ChecksCardinality())
+				if err != nil {
+					log.Errorf("Error collecting tags for prev container %s: %s", containerID, err)
+				} else {
+					for _, tag := range prevTags {
+						tags = append(tags, "prev_"+tag)
+					}
+				}
+			}
+		}
+
 		sender.Count("noisy_neighbor.sched.switch.out", 1, "", tags)
 	}
 
