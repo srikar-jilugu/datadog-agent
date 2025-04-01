@@ -12,8 +12,7 @@ glibc_cc_toolchain_config(
     name = "glibc-cc-toolchain-config_x86",
     arch = "x86_64",
     gcc_version = "11.4.0",
-    path = "/opt/toolchains/",
-    # path = "/opt/toolchains/x86_64",
+    path = "/opt/toolchains/x86_64",
 )
 
 filegroup(
