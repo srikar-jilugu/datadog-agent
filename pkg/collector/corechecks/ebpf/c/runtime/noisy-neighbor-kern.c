@@ -11,8 +11,16 @@
 #define MAX_TASK_ENTRIES 4096
 #define RATE_LIMIT_NS 100000
 
+#define TASK_RUNNING 0
+
+struct {
+    __uint(type, BPF_MAP_TYPE_TASK_STORAGE);
+    __uint(map_flags, BPF_F_NO_PREALLOC);
+    __type(key, int);
+    __type(value, u64);
+} runq_enqueued SEC(".maps");
+
 BPF_RINGBUF_MAP(runq_events, 0)
-BPF_HASH_MAP(runq_enqueued, __u32, __u64, MAX_TASK_ENTRIES)
 BPF_PERCPU_HASH_MAP(cgroup_id_to_last_event_ts, __u64, __u64, MAX_TASK_ENTRIES)
 
 void bpf_rcu_read_lock(void) __ksym;
@@ -28,35 +36,48 @@ u64 get_task_cgroup_id(struct task_struct *task) {
     return cgroup_id;
 }
 
+static __always_inline int enqueue_timestamp(struct task_struct *task) {
+    u32 pid = task->pid;
+    if (!pid) {
+        return 0;
+    }
+
+    u64 *ptr = bpf_task_storage_get(&runq_enqueued, task, 0, BPF_LOCAL_STORAGE_GET_F_CREATE);
+    if (!ptr) {
+        return 0;
+    }
+    *ptr = bpf_ktime_get_ns();
+    return 0;
+}
+
 SEC("tp_btf/sched_wakeup")
 int tp_sched_wakeup(u64 *ctx) {
     struct task_struct *task = (void *)ctx[0];
-    u32 pid = task->pid;
-    u64 ts = bpf_ktime_get_ns();
-
-    bpf_map_update_with_telemetry(runq_enqueued, &pid, &ts, BPF_NOEXIST, -EEXIST);
-    return 0;
+    return enqueue_timestamp(task);
 }
 
 SEC("tp_btf/sched_wakeup_new")
 int tp_sched_wakeup_new(u64 *ctx) {
     struct task_struct *task = (void *)ctx[0];
-    u32 pid = task->pid;
-    u64 ts = bpf_ktime_get_ns();
-
-    bpf_map_update_with_telemetry(runq_enqueued, &pid, &ts, BPF_NOEXIST, -EEXIST);
-    return 0;
+    return enqueue_timestamp(task);
 }
 
 SEC("tp_btf/sched_switch")
 int tp_sched_switch(u64 *ctx) {
     struct task_struct *prev = (struct task_struct *)ctx[1];
     struct task_struct *next = (struct task_struct *)ctx[2];
+    if (prev->__state == TASK_RUNNING) {
+        enqueue_timestamp(prev);
+    }
+
     u32 prev_pid = prev->pid;
     u32 next_pid = next->pid;
+    if (!next_pid) {
+        return 0;
+    }
 
     // fetch timestamp of when the next task was enqueued
-    u64 *tsp = bpf_map_lookup_elem(&runq_enqueued, &next_pid);
+    u64 *tsp = bpf_task_storage_get(&runq_enqueued, next, 0, 0);
     if (tsp == NULL) {
         return 0; // missed enqueue
     }
@@ -66,7 +87,7 @@ int tp_sched_switch(u64 *ctx) {
     u64 runq_lat = now - *tsp;
 
     // delete pid from enqueued map
-    bpf_map_delete_elem(&runq_enqueued, &next_pid);
+    bpf_task_storage_delete(&runq_enqueued, next);
 
     u64 prev_cgroup_id = get_task_cgroup_id(prev);
     u64 cgroup_id = get_task_cgroup_id(next);
@@ -83,27 +104,27 @@ int tp_sched_switch(u64 *ctx) {
         return 0;
     }
 
-    runq_event_t *event;
-    event = bpf_ringbuf_reserve(&runq_events, sizeof(*event), 0);
-
-    if (event) {
-        event->prev_cgroup_id = prev_cgroup_id;
-        event->cgroup_id = cgroup_id;
-        event->runq_lat = runq_lat;
-        event->ts = now;
-        event->pid = next_pid;
-        event->prev_pid = prev_pid;
-
-        // read cgroup names
-        bpf_rcu_read_lock();
-        bpf_probe_read_kernel_str(event->prev_cgroup_name, sizeof(event->prev_cgroup_name), prev->cgroups->dfl_cgrp->kn->name);
-        bpf_probe_read_kernel_str(event->cgroup_name, sizeof(event->cgroup_name), next->cgroups->dfl_cgrp->kn->name);
-        bpf_rcu_read_unlock();
-
-        bpf_ringbuf_submit(event, 0);
-        // Update the last event timestamp for the current cgroup_id
-        bpf_map_update_with_telemetry(cgroup_id_to_last_event_ts, &cgroup_id, &now, BPF_ANY);
+    runq_event_t *event = bpf_ringbuf_reserve(&runq_events, sizeof(*event), 0);
+    if (!event) {
+        return 0;
     }
+
+    event->prev_cgroup_id = prev_cgroup_id;
+    event->cgroup_id = cgroup_id;
+    event->runq_lat = runq_lat;
+    event->ts = now;
+    event->pid = next_pid;
+    event->prev_pid = prev_pid;
+
+    // read cgroup names
+    bpf_rcu_read_lock();
+    bpf_probe_read_kernel_str(event->prev_cgroup_name, sizeof(event->prev_cgroup_name), prev->cgroups->dfl_cgrp->kn->name);
+    bpf_probe_read_kernel_str(event->cgroup_name, sizeof(event->cgroup_name), next->cgroups->dfl_cgrp->kn->name);
+    bpf_rcu_read_unlock();
+
+    bpf_ringbuf_submit(event, 0);
+    // Update the last event timestamp for the current cgroup_id
+    bpf_map_update_with_telemetry(cgroup_id_to_last_event_ts, &cgroup_id, &now, BPF_ANY);
 
     return 0;
 }
