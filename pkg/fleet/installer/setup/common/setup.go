@@ -170,13 +170,13 @@ var ExecuteCommandWithTimeout = func(s *Setup, command string, args ...string) (
 
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeoutDuration)
 	defer cancel()
-
+	s.Out.WriteString(fmt.Sprintf("Executing: %s \n", command))
 	cmd := exec.CommandContext(ctx, command, args...)
 	output, err = cmd.Output()
 	if output != nil {
 		span.SetTag("command_output", string(output))
 	}
-
+	s.Out.WriteString(fmt.Sprintf("command output: %s \n", string(output)))
 	if err != nil {
 		span.SetTag("command_error", err.Error())
 		span.Finish(err)
