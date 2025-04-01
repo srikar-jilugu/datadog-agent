@@ -112,11 +112,11 @@ func (n *NoisyNeighborCheck) Run() error {
 		tags = append(tags, "prev_container_id:"+prevContainerID)
 
 		if prevContainerID != "host" {
-			entityID := types.NewEntityID(types.ContainerID, containerID)
+			entityID := types.NewEntityID(types.ContainerID, prevContainerID)
 			if !entityID.Empty() {
 				prevTags, err := n.tagger.Tag(entityID, n.tagger.ChecksCardinality())
 				if err != nil {
-					log.Errorf("Error collecting tags for prev container %s: %s", containerID, err)
+					log.Errorf("Error collecting tags for prev container %s: %s", prevContainerID, err)
 				} else {
 					for _, tag := range prevTags {
 						tags = append(tags, "prev_"+tag)
