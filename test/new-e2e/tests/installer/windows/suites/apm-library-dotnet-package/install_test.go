@@ -111,11 +111,11 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 	s.Require().Contains(output, newVersion[:len(newVersion)-2], "the new library path should contain the new version")
 
 	// Check that garbage collection removes the old version of the library
+
 	output, err = s.Installer().GarbageCollect()
 	s.Require().NoErrorf(err, "failed to garbage collect: %s", output)
 	s.Require().Host(s.Env().RemoteHost).NoDirExists(oldLibraryPath, "the old library path:%s should no longer exist after garbage collection", oldLibraryPath)
 	s.Installer().Purge()
-
 }
 
 func (s *testDotnetLibraryInstallSuite) TestRemovePackageFailsIfInUse() {

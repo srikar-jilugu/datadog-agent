@@ -791,8 +791,6 @@ new-e2e-installer-windows:
         TEST_SUFFIX: "98"
       - EXTRA_PARAMS: "--run TestDotnetLibraryInstalls/TestUpdate$"
         TEST_SUFFIX: "99"
-      - EXTRA_PARAMS: "--run TestDotnetLibraryInstalls/TestUpdate$"
-        TEST_SUFFIX: "100"
 
 new-e2e-installer-ansible:
   extends: .new_e2e_template
