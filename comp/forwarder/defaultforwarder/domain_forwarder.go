@@ -357,6 +357,11 @@ func (f *domainForwarder) sendHTTPTransactions(t transaction.Transaction) {
 		return
 	}
 
+	f.m.Lock()
+	defer f.m.Unlock()
+	if f.internalState == Stopped {
+		return
+	}
 	// We don't want to block the collector if the highPrio queue is full
 	select {
 	case f.highPrio <- t:

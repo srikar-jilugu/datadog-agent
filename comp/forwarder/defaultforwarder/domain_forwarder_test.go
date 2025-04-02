@@ -20,6 +20,7 @@ import (
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder/internal/retry"
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder/transaction"
 	mock "github.com/DataDog/datadog-agent/pkg/config/mock"
+	testifymock "github.com/stretchr/testify/mock"
 )
 
 func TestNewDomainForwarder(t *testing.T) {
@@ -451,4 +452,30 @@ func newTestTransactionWithKindDomainForwarder(kind transaction.Kind) *testTrans
 	tr.On("GetPayloadSize").Return(1)
 	tr.On("GetTarget").Return("foo.ddhq.com")
 	return tr
+}
+
+func TestDomainForwarderStopAndSendRace(t *testing.T) {
+	mockConfig := mock.New(t)
+	log := logmock.New(t)
+	forwarder := newDomainForwarderForTest(mockConfig, log, 0, false)
+	tr := newTestTransactionDomainForwarder()
+	tr.On("GetTarget").Return("foo.com")
+	tr.On("Process", testifymock.Anything).Return(nil)
+	tr.On("GetPayloadSize").Return(1)
+
+	err := forwarder.Start()
+	require.NoError(t, err)
+
+	done := make(chan struct{})
+
+	go func() {
+		forwarder.Stop(false)
+		close(done)
+	}()
+
+	// Check there is no race
+	for i := 0; i < 100; i++ {
+		forwarder.sendHTTPTransactions(tr)
+	}
+	<-done
 }
