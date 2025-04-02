@@ -673,7 +673,7 @@ int hook_setup_arg_pages(ctx_t *ctx) {
 }
 
 int __attribute__((always_inline)) send_exec_event(ctx_t *ctx) {
-    struct syscall_cache_t *syscall = pop_current_or_impersonated_exec_syscall();
+    struct syscall_cache_t *syscall = pop_syscall(EVENT_EXEC);
     if (!syscall) {
         return 0;
     }
