@@ -104,7 +104,7 @@ int tp_sched_switch(u64 *ctx) {
         return 0;
     }
 
-    runq_event_t *event = bpf_ringbuf_reserve(&runq_events, sizeof(*event), 0);
+    runq_event_t *event = bpf_ringbuf_reserve_with_telemetry(&runq_events, sizeof(*event), 0);
     if (!event) {
         return 0;
     }
