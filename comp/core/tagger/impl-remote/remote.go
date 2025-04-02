@@ -477,7 +477,7 @@ func (t *remoteTagger) run() {
 			continue
 		}
 
-		t.log.Info("tagger stream successfully initialized")
+		t.log.Debug("tagger stream successfully initialized")
 
 		t.telemetryStore.Receives.Inc()
 
