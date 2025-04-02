@@ -27,9 +27,9 @@ func ccmNS(k ...string) string {
 	return NSkey("ccm_network_config", k...)
 }
 
-// diNS adds `dynamic_instrumentation` namespace to configuration key
+// diNS adds `dynamic_instrumentation_module` namespace to configuration key
 func diNS(k ...string) string {
-	return NSkey("dynamic_instrumentation", k...)
+	return NSkey("dynamic_instrumentation_module", k...)
 }
 
 // secNS adds `runtime_security_config` namespace to configuration key

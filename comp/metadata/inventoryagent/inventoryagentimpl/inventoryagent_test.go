@@ -110,7 +110,7 @@ func TestInitDataErrorInstallInfo(t *testing.T) {
 
 func TestInitData(t *testing.T) {
 	sysprobeOverrides := map[string]any{
-		"dynamic_instrumentation.enabled":                      true,
+		"dynamic_instrumentation_module.enabled":               true,
 		"remote_configuration.enabled":                         true,
 		"runtime_security_config.enabled":                      true,
 		"event_monitoring_config.network.enabled":              true,
@@ -205,40 +205,40 @@ func TestInitData(t *testing.T) {
 		"feature_process_enabled":                    true,
 		"feature_container_images_enabled":           true,
 
-		"feature_dynamic_instrumentation_enabled":      true,
-		"feature_cws_enabled":                          true,
-		"feature_cws_network_enabled":                  true,
-		"feature_cws_security_profiles_enabled":        true,
-		"feature_cws_remote_config_enabled":            true,
-		"feature_csm_vm_containers_enabled":            true,
-		"feature_csm_vm_hosts_enabled":                 true,
-		"feature_networks_enabled":                     true,
-		"feature_networks_http_enabled":                true,
-		"feature_networks_https_enabled":               true,
-		"feature_usm_enabled":                          true,
-		"feature_usm_kafka_enabled":                    true,
-		"feature_usm_postgres_enabled":                 true,
-		"feature_usm_redis_enabled":                    true,
-		"feature_usm_http2_enabled":                    true,
-		"feature_usm_istio_enabled":                    true,
-		"feature_usm_go_tls_enabled":                   true,
-		"feature_discovery_enabled":                    true,
-		"feature_tcp_queue_length_enabled":             true,
-		"feature_oom_kill_enabled":                     true,
-		"feature_windows_crash_detection_enabled":      true,
-		"system_probe_core_enabled":                    true,
-		"system_probe_runtime_compilation_enabled":     true,
-		"system_probe_kernel_headers_download_enabled": true,
-		"system_probe_prebuilt_fallback_enabled":       true,
-		"system_probe_telemetry_enabled":               true,
-		"system_probe_track_tcp_4_connections":         true,
-		"system_probe_track_tcp_6_connections":         true,
-		"system_probe_track_udp_4_connections":         true,
-		"system_probe_track_udp_6_connections":         true,
-		"system_probe_protocol_classification_enabled": true,
-		"system_probe_gateway_lookup_enabled":          true,
-		"system_probe_root_namespace_enabled":          true,
-		"system_probe_max_connections_per_message":     10,
+		"feature_dynamic_instrumentation_module_enabled": true,
+		"feature_cws_enabled":                            true,
+		"feature_cws_network_enabled":                    true,
+		"feature_cws_security_profiles_enabled":          true,
+		"feature_cws_remote_config_enabled":              true,
+		"feature_csm_vm_containers_enabled":              true,
+		"feature_csm_vm_hosts_enabled":                   true,
+		"feature_networks_enabled":                       true,
+		"feature_networks_http_enabled":                  true,
+		"feature_networks_https_enabled":                 true,
+		"feature_usm_enabled":                            true,
+		"feature_usm_kafka_enabled":                      true,
+		"feature_usm_postgres_enabled":                   true,
+		"feature_usm_redis_enabled":                      true,
+		"feature_usm_http2_enabled":                      true,
+		"feature_usm_istio_enabled":                      true,
+		"feature_usm_go_tls_enabled":                     true,
+		"feature_discovery_enabled":                      true,
+		"feature_tcp_queue_length_enabled":               true,
+		"feature_oom_kill_enabled":                       true,
+		"feature_windows_crash_detection_enabled":        true,
+		"system_probe_core_enabled":                      true,
+		"system_probe_runtime_compilation_enabled":       true,
+		"system_probe_kernel_headers_download_enabled":   true,
+		"system_probe_prebuilt_fallback_enabled":         true,
+		"system_probe_telemetry_enabled":                 true,
+		"system_probe_track_tcp_4_connections":           true,
+		"system_probe_track_tcp_6_connections":           true,
+		"system_probe_track_udp_4_connections":           true,
+		"system_probe_track_udp_6_connections":           true,
+		"system_probe_protocol_classification_enabled":   true,
+		"system_probe_gateway_lookup_enabled":            true,
+		"system_probe_root_namespace_enabled":            true,
+		"system_probe_max_connections_per_message":       10,
 	}
 
 	if !kernel.IsIPv6Enabled() {
@@ -520,7 +520,7 @@ func TestFetchSystemProbeAgent(t *testing.T) {
 	assert.True(t, ia.data["system_probe_protocol_classification_enabled"].(bool))
 	assert.True(t, ia.data["system_probe_gateway_lookup_enabled"].(bool))
 	assert.True(t, ia.data["system_probe_root_namespace_enabled"].(bool))
-	assert.False(t, ia.data["feature_dynamic_instrumentation_enabled"].(bool))
+	assert.False(t, ia.data["feature_dynamic_instrumentation_module_enabled"].(bool))
 
 	// Testing an inventoryagent without system-probe object
 	p := newInventoryAgentProvider(
@@ -566,7 +566,7 @@ func TestFetchSystemProbeAgent(t *testing.T) {
 	assert.False(t, ia.data["system_probe_protocol_classification_enabled"].(bool))
 	assert.False(t, ia.data["system_probe_gateway_lookup_enabled"].(bool))
 	assert.False(t, ia.data["system_probe_root_namespace_enabled"].(bool))
-	assert.False(t, ia.data["feature_dynamic_instrumentation_enabled"].(bool))
+	assert.False(t, ia.data["feature_dynamic_instrumentation_module_enabled"].(bool))
 
 	// Testing an inventoryagent where we can contact the system-probe process
 	fetchSystemProbeConfig = func(_ pkgconfigmodel.Reader) (string, error) {
@@ -626,7 +626,7 @@ system_probe_config:
   telemetry_enabled: true
   max_conns_per_message: 123
 
-dynamic_instrumentation:
+dynamic_instrumentation_module:
   enabled: true
 `, nil
 	}
@@ -665,7 +665,7 @@ dynamic_instrumentation:
 	assert.True(t, ia.data["system_probe_protocol_classification_enabled"].(bool))
 	assert.True(t, ia.data["system_probe_gateway_lookup_enabled"].(bool))
 	assert.True(t, ia.data["system_probe_root_namespace_enabled"].(bool))
-	assert.True(t, ia.data["feature_dynamic_instrumentation_enabled"].(bool))
+	assert.True(t, ia.data["feature_dynamic_instrumentation_module_enabled"].(bool))
 }
 
 func TestFetchFleet(t *testing.T) {

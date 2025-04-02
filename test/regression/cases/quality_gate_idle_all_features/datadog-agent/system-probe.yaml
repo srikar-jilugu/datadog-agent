@@ -12,7 +12,7 @@ system_probe_config:
   process_config:
     enabled: true
 
-dynamic_instrumentation:
+dynamic_instrumentation_module:
   enabled: true
 
 service_monitoring_config:

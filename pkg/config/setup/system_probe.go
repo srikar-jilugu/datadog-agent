@@ -26,7 +26,7 @@ const (
 	evNS                         = "event_monitoring_config"
 	ccmNS                        = "ccm_network_config"
 	smjtNS                       = smNS + ".tls.java"
-	diNS                         = "dynamic_instrumentation"
+	diNS                         = "dynamic_instrumentation_module"
 	wcdNS                        = "windows_crash_detection"
 	pngNS                        = "ping"
 	tracerouteNS                 = "traceroute"
@@ -175,7 +175,7 @@ func InitSystemProbeConfig(cfg pkgconfigmodel.Config) {
 	cfg.BindEnvAndSetDefault(join(spNS, "attach_kprobes_with_kprobe_events_abi"), false, "DD_ATTACH_KPROBES_WITH_KPROBE_EVENTS_ABI")
 
 	// User Tracer
-	cfg.BindEnvAndSetDefault(join(diNS, "enabled"), false, "DD_DYNAMIC_INSTRUMENTATION_ENABLED")
+	cfg.BindEnvAndSetDefault(join(diNS, "enabled"), false, "DD_DYNAMIC_INSTRUMENTATION_MODULE_ENABLED")
 	cfg.BindEnvAndSetDefault(join(diNS, "offline_mode"), false, "DD_DYNAMIC_INSTRUMENTATION_OFFLINE_MODE")
 	cfg.BindEnvAndSetDefault(join(diNS, "probes_file_path"), false, "DD_DYNAMIC_INSTRUMENTATION_PROBES_FILE_PATH")
 	cfg.BindEnvAndSetDefault(join(diNS, "snapshot_output_file_path"), false, "DD_DYNAMIC_INSTRUMENTATION_SNAPSHOT_FILE_PATH")

@@ -33,7 +33,7 @@ const (
 	TCPQueueLengthTracerModule   types.ModuleName = "tcp_queue_length_tracer"
 	ProcessModule                types.ModuleName = "process"
 	EventMonitorModule           types.ModuleName = "event_monitor"
-	DynamicInstrumentationModule types.ModuleName = "dynamic_instrumentation"
+	DynamicInstrumentationModule types.ModuleName = "dynamic_instrumentation_module"
 	EBPFModule                   types.ModuleName = "ebpf"
 	LanguageDetectionModule      types.ModuleName = "language_detection"
 	WindowsCrashDetectModule     types.ModuleName = "windows_crash_detection"

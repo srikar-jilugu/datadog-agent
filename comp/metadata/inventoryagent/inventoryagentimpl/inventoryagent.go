@@ -327,7 +327,7 @@ func (ia *inventoryagent) fetchSystemProbeMetadata() {
 	ia.data["feature_tcp_queue_length_enabled"] = sysProbeConf.GetBool("system_probe_config.enable_tcp_queue_length")
 	ia.data["feature_oom_kill_enabled"] = sysProbeConf.GetBool("system_probe_config.enable_oom_kill")
 	ia.data["feature_windows_crash_detection_enabled"] = sysProbeConf.GetBool("windows_crash_detection.enabled")
-	ia.data["feature_dynamic_instrumentation_enabled"] = sysProbeConf.GetBool("dynamic_instrumentation.enabled")
+	ia.data["feature_dynamic_instrumentation_module_enabled"] = sysProbeConf.GetBool("dynamic_instrumentation_module.enabled")
 
 	ia.data["system_probe_core_enabled"] = sysProbeConf.GetBool("system_probe_config.enable_co_re")
 	ia.data["system_probe_runtime_compilation_enabled"] = sysProbeConf.GetBool("system_probe_config.enable_runtime_compiler")
@@ -343,7 +343,7 @@ func (ia *inventoryagent) fetchSystemProbeMetadata() {
 	ia.data["system_probe_gateway_lookup_enabled"] = sysProbeConf.GetBool("network_config.enable_gateway_lookup")
 	ia.data["system_probe_root_namespace_enabled"] = sysProbeConf.GetBool("network_config.enable_root_netns")
 
-	ia.data["feature_dynamic_instrumentation_enabled"] = sysProbeConf.GetBool("dynamic_instrumentation.enabled")
+	ia.data["feature_dynamic_instrumentation_module_enabled"] = sysProbeConf.GetBool("dynamic_instrumentation_module.enabled")
 }
 
 // fetchECSFargateAgentMetadata fetches ECS Fargate agent metadata from the ECS metadata V2 service.
