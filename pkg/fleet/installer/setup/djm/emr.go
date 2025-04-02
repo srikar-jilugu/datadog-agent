@@ -44,10 +44,6 @@ var (
 			Key:   "DD_SPARK_APP_NAME_AS_SERVICE",
 			Value: "true",
 		},
-		{
-			Key:   "DD_INJECT_FORCE",
-			Value: "true",
-		},
 	}
 )
 

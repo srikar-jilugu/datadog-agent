@@ -126,7 +126,7 @@ func (s *Setup) Run() (err error) {
 		}
 		_, err = ExecuteCommandWithTimeout(s, "usermod", "-aG", group, "dd-agent")
 		if err != nil {
-			s.Out.WriteString("Failed to add dd-agent to group" + group + ": " + err.Error())
+			s.Out.WriteString("Failed to add dd-agent to group " + group + ": " + err.Error())
 			log.Warnf("failed to add dd-agent to group %s:  %v", group, err)
 		}
 	}
@@ -170,7 +170,7 @@ var ExecuteCommandWithTimeout = func(s *Setup, command string, args ...string) (
 
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeoutDuration)
 	defer cancel()
-	s.Out.WriteString(fmt.Sprintf("Executing: %s \n", command))
+	s.Out.WriteString(fmt.Sprintf("Executing: %s %s \n", command, args))
 	cmd := exec.CommandContext(ctx, command, args...)
 	output, err = cmd.Output()
 	if output != nil {
