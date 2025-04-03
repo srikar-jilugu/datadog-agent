@@ -44,6 +44,10 @@ var (
 			Key:   "DD_SPARK_APP_NAME_AS_SERVICE",
 			Value: "true",
 		},
+		{
+			Key:   "DD_INJECT_FORCE",
+			Value: "true",
+		},
 	}
 )
 
@@ -208,6 +212,7 @@ func enableEmrLogs(s *common.Setup) {
 	s.Span.SetTag("host_tag_set.logs_enabled", "true")
 	// Add dd-agent user to yarn group so that it gets read permission to the hadoop-yarn logs folder
 	s.DdAgentAdditionalGroups = append(s.DdAgentAdditionalGroups, "yarn")
+	s.Out.WriteString(fmt.Sprintf("elems in additional groups: %v\n", s.DdAgentAdditionalGroups))
 	// Load the existing integration config and add logs section to it
 	sparkIntegration := s.Config.IntegrationConfigs["spark.d/conf.yaml"]
 	emrLogs := []common.IntegrationConfigLogs{

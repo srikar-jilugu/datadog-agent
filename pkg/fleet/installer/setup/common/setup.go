@@ -118,10 +118,14 @@ func (s *Setup) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to write install info: %w", err)
 	}
+	s.Out.WriteString(fmt.Sprintf("elems in additional groups from setup: %v\n", s.DdAgentAdditionalGroups))
 	for _, group := range s.DdAgentAdditionalGroups {
+		s.Out.WriteString(fmt.Sprintf("working on group %s\n", group))
+
 		// Add dd-agent user to additional group for permission reason, in particular to enable reading log files not world readable
 		if _, err := user.LookupGroup(group); err != nil {
 			log.Infof("Skipping group %s as it does not exist", group)
+			s.Out.WriteString(fmt.Sprintf("Skipping group %s as it does not exist", group))
 			continue
 		}
 		_, err = ExecuteCommandWithTimeout(s, "usermod", "-aG", group, "dd-agent")
