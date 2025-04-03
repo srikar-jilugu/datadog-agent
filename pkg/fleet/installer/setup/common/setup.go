@@ -127,7 +127,7 @@ func (s *Setup) Run() (err error) {
 
 			log.Infof("Skipping group %s as it does not exist", group)
 			s.Out.WriteString(fmt.Sprintf("Skipping group %s as it does not exist", group))
-			_, err = ExecuteCommandWithTimeout(s, "useradd", group)
+			_, err = ExecuteCommandWithTimeout(s, "groupadd", group)
 			if err != nil {
 				s.Out.WriteString("Failed to add dd-agent to group " + group + ": " + err.Error())
 				log.Warnf("failed to add dd-agent to group %s:  %v", group, err)
