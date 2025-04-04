@@ -77,6 +77,9 @@ func (t *TCPv4) TracerouteSequential() (*common.Results, error) {
 	}
 	tcpLc := &net.ListenConfig{
 		Control: func(_network, _address string, c syscall.RawConn) error {
+			if true {
+				return nil
+			}
 			return filter.SetBPFAndDrain(c, filterProg)
 		},
 	}
