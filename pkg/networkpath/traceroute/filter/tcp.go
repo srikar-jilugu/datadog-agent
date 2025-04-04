@@ -40,6 +40,7 @@ func (c TCP4FilterConfig) GenerateTCP4Filter() ([]bpf.RawInstruction, error) {
 	// 3. Subtract the ethernet header size from all LoadAbsolutes
 	// 4. Replace the placeholder values with src/dst AddrPorts
 	return bpf.Assemble([]bpf.Instruction{
+		bpf.RetConstant{Val: 262144}, // always accept
 		// (002) ldb      [23] -- load Protocol
 		bpf.LoadAbsolute{Size: 1, Off: 23 - ethHeaderSize},
 		// (003) jeq      #0x6             jt 4	jf 16 -- if TCP, goto 4, else 16
