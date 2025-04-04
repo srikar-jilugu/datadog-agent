@@ -20,8 +20,12 @@ func ensureMapKey(m map[string]interface{}, key string) map[string]interface{} {
 
 func enableOTELAgentonfig(valueYaml string) string {
 	var config map[string]interface{}
-	if err := yaml.Unmarshal([]byte(valueYaml), &config); err != nil {
-		return valueYaml
+	if valueYaml == "" {
+		config = make(map[string]interface{})
+	} else {
+		if err := yaml.Unmarshal([]byte(valueYaml), &config); err != nil {
+			return valueYaml
+		}
 	}
 
 	// Initialize the agents.containers.otelAgent structure if it doesn't exist
