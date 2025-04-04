@@ -134,7 +134,7 @@ def ninja_define_ebpf_compiler(
         command="/opt/datadog-agent/embedded/bin/clang-bpf -MD -MF $out.d $target $ebpfflags $kheaders $flags -c $in -o $out",
         depfile="$out.d",
     )
-    strip = "&& /opt/datadog-agent/embedded/bin/llvm-strip -g $out" if strip_object_files else ""
+    strip = "&& /opt/datadog-agent/embedded/bin/llvm-strip -g -R .text $out" if strip_object_files else ""
     nw.rule(
         name="llc",
         command=f"/opt/datadog-agent/embedded/bin/llc-bpf -march=bpf -filetype=obj -o $out $in {strip}",
