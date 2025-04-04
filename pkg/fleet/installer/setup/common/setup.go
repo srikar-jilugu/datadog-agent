@@ -132,7 +132,12 @@ func (s *Setup) Run() (err error) {
 				s.Out.WriteString("Failed to add group " + group + ": " + err.Error())
 			}
 			g, err := user.LookupGroup(group)
-			s.Out.WriteString("Checking if group exists " + g.Name + " error " + err.Error())
+			if err != nil {
+				s.Out.WriteString("error ? " + err.Error())
+			}
+			if g != nil {
+				s.Out.WriteString(fmt.Sprintf("group: ", g))
+			}
 		}
 		_, err = ExecuteCommandWithTimeout(s, "usermod", "-aG", group, "dd-agent")
 		if err != nil {
