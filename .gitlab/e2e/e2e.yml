@@ -661,7 +661,7 @@ new-e2e-otel:
     - !reference [.needs_new_e2e_template]
     - qa_dca
     - qa_agent
-    - qa_agent_ot
+#    - qa_agent_ot
   variables:
     TARGETS: ./tests/otel
     EXTRA_PARAMS: --skip "TestOTelAgentIA(EKS|USTEKS)"
@@ -737,7 +737,7 @@ generate-flakes-finder-pipeline:
     - qa_dca
     - qa_dogstatsd
     - qa_agent
-    - qa_agent_ot
+#    - qa_agent_ot
     - tests_windows_sysprobe_x64
   tags: ["arch:amd64"]
   script:
