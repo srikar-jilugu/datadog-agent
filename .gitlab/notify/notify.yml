@@ -129,7 +129,6 @@ notify_failure_summary_daily:
   rules:
     - if: $CI_COMMIT_BRANCH != "main" || $CI_PIPELINE_SOURCE != "schedule"
       when: never
-    - !reference [.on_deploy_nightly_repo_branch_always]
   script:
     - !reference [.notify_setup]
     - weekday="$(date --utc '+%A')"
@@ -154,7 +153,6 @@ close_failing_tests_stale_issues:
     # Daily
     - if: $CI_COMMIT_BRANCH != "main" || $CI_PIPELINE_SOURCE != "schedule"
       when: never
-    - !reference [.on_deploy_nightly_repo_branch_always]
   needs: []
   tags: ["arch:arm64"]
   script:
