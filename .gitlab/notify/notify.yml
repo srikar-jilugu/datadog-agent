@@ -128,7 +128,8 @@ notify_failure_summary_on_pipeline:
 notify_failure_summary_daily:
   extends: [.failure_summary_job, .notify-job]
   rules:
-    - !reference [.on_scheduled_main]
+    - if: $CI_COMMIT_BRANCH != "main" || $CI_PIPELINE_SOURCE != "schedule"
+      when: never
   script:
     - !reference [.notify_setup]
     - weekday="$(date --utc '+%A')"
@@ -150,7 +151,9 @@ close_failing_tests_stale_issues:
   extends: .notify-job
   image: registry.ddbuild.io/ci/datadog-agent-buildimages/deb_arm64$DATADOG_AGENT_BUILDIMAGES_SUFFIX:$DATADOG_AGENT_BUILDIMAGES
   rules:
-    - !reference [.on_scheduled_main]
+    # Daily
+    - if: $CI_COMMIT_BRANCH != "main" || $CI_PIPELINE_SOURCE != "schedule"
+      when: never
   needs: []
   tags: ["arch:arm64"]
   script:
