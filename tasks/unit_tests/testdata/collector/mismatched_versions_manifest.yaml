@@ -1,7 +1,7 @@
 ---
 dist:
   description: Manifest that has mismatched otelcol and component versions (should fail collector_tests.py)
-  otelcol_version: 0.122.1
+  otelcol_version: 0.123.0
 
 extensions:
   - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.99.0
