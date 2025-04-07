@@ -47,7 +47,7 @@ func (c TCP4FilterConfig) GenerateTCP4Filter() ([]bpf.RawInstruction, error) {
 		// (004) ld       [26] -- load source IP
 		bpf.LoadAbsolute{Size: 4, Off: 26 - ethHeaderSize},
 		// (005) jeq      #0x2040608       jt 6	jf 16 -- if srcAddr matches, goto 6, else 16
-		bpf.JumpIf{Cond: bpf.JumpEqual, Val: srcAddr, SkipTrue: 0, SkipFalse: 10},
+		bpf.JumpIf{Cond: bpf.JumpEqual, Val: srcAddr, SkipTrue: 0, SkipFalse: 0}, // tmp disable
 		// (006) ld       [30] -- load destination IP
 		bpf.LoadAbsolute{Size: 4, Off: 30 - ethHeaderSize},
 		// (007) jeq      #0x1030507       jt 8	jf 16 -- if dstAddr matches, goto 8, else 16
@@ -61,7 +61,7 @@ func (c TCP4FilterConfig) GenerateTCP4Filter() ([]bpf.RawInstruction, error) {
 		// (011) ldh      [x + 14] -- load source port
 		bpf.LoadIndirect{Size: 2, Off: 14 - ethHeaderSize},
 		// (012) jeq      #0x4d2           jt 13	jf 16 -- if srcPort matches, goto 13, else 16
-		bpf.JumpIf{Cond: bpf.JumpEqual, Val: srcPort, SkipTrue: 0, SkipFalse: 3},
+		bpf.JumpIf{Cond: bpf.JumpEqual, Val: srcPort, SkipTrue: 0, SkipFalse: 0}, // tmp disable
 		// (013) ldh      [x + 16] -- load destination port
 		bpf.LoadIndirect{Size: 2, Off: 16 - ethHeaderSize},
 		// (014) jeq      #0x162e          jt 15	jf 16 -- if dstPort matches, goto 15, else 16
