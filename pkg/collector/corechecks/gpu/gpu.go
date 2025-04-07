@@ -10,6 +10,7 @@ package gpu
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 
@@ -195,7 +196,21 @@ func addToActiveEntitiesPerDevice(activeEntitiesPerDevice map[string]common.Stri
 	}
 
 	for _, t := range processTags {
-		activeEntitiesPerDevice[key.DeviceUUID].Add(t)
+		// Skip PID tags, as the metrics platform doesn't correctly match usage
+		// + limit metrics when limit metrics have multiple PIDs. Utilization
+		// calculations will need to at least group by gpu_uuid.
+		//
+		// Why only remove PID tags and not container_id or other
+		// container-related tags? In most cases and unlike PIDs, the container
+		// tags will be unique per device. That is, each GPU is usually only
+		// used by one container. But the most important reason is that, without
+		// these tags, we cannot easily get utilization per container if the
+		// container doesn't have any active processes in a given time period.
+		// In order to get that utilization, at least one of the "usage" or
+		// "limit" metrics should have the container tags.
+		if !strings.HasPrefix(t, "pid:") {
+			activeEntitiesPerDevice[key.DeviceUUID].Add(t)
+		}
 	}
 }
 
