@@ -55,7 +55,7 @@ func NewProbe(cfg *ddebpf.Config) (*Probe, error) {
 		mtx:      sync.Mutex{},
 	}
 	// TODO noisy: figure out what you want these sizes to be. ringbuf size must be power of 2
-	ringbufSize := 4 * os.Getpagesize()
+	ringbufSize := 8 * os.Getpagesize()
 	chanSize := 100
 	handler := encoding.BinaryUnmarshalCallback(p.runqPool.Get, func(e *runqEvent, err error) {
 		if err != nil {
