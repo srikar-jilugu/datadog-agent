@@ -211,7 +211,7 @@ func (f *factory) createMetricsExporter(
 		TimeoutConfig: exporterhelper.TimeoutConfig{
 			Timeout: cfg.Timeout,
 		},
-		QueueConfig: cfg.QueueSettings,
+		QueueBatchConfig: cfg.QueueSettings,
 	}
 	return sf.CreateMetrics(ctx, set, ex)
 }
