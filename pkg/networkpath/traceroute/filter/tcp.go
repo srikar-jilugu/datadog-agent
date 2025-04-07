@@ -51,7 +51,7 @@ func (c TCP4FilterConfig) GenerateTCP4Filter() ([]bpf.RawInstruction, error) {
 		// (006) ld       [30] -- load destination IP
 		bpf.LoadAbsolute{Size: 4, Off: 30 - ethHeaderSize},
 		// (007) jeq      #0x1030507       jt 8	jf 16 -- if dstAddr matches, goto 8, else 16
-		bpf.JumpIf{Cond: bpf.JumpEqual, Val: dstAddr, SkipTrue: 0, SkipFalse: 8},
+		bpf.JumpIf{Cond: bpf.JumpEqual, Val: dstAddr, SkipTrue: 0, SkipFalse: 0}, // tmp disable
 		// (008) ldh      [20] -- load Fragment Offset
 		bpf.LoadAbsolute{Size: 2, Off: 20 - ethHeaderSize},
 		// (009) jset     #0x1fff          jt 16	jf 10 -- if fragmented, goto 16, else 10
@@ -65,7 +65,7 @@ func (c TCP4FilterConfig) GenerateTCP4Filter() ([]bpf.RawInstruction, error) {
 		// (013) ldh      [x + 16] -- load destination port
 		bpf.LoadIndirect{Size: 2, Off: 16 - ethHeaderSize},
 		// (014) jeq      #0x162e          jt 15	jf 16 -- if dstPort matches, goto 15, else 16
-		bpf.JumpIf{Cond: bpf.JumpEqual, Val: dstPort, SkipTrue: 0, SkipFalse: 1},
+		bpf.JumpIf{Cond: bpf.JumpEqual, Val: dstPort, SkipTrue: 0, SkipFalse: 0},
 		// (015) ret      #262144 -- accept packet
 		bpf.RetConstant{Val: 262144},
 		// (016) ret      #0 -- drop packet
