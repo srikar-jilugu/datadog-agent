@@ -26,7 +26,7 @@ func setupDataScrubber(t *testing.T) *DataScrubber {
 	scrubber.AddCustomSensitiveWords(customSensitiveWords)
 
 	assert.Equal(t, true, scrubber.Enabled)
-	assert.Equal(t, len(defaultSensitiveWords)+len(customSensitiveWords), len(scrubber.SensitivePatterns))
+	assert.Equal(t, len(defaultSensitiveWords())+len(customSensitiveWords), len(scrubber.SensitivePatterns))
 
 	return scrubber
 }
@@ -45,7 +45,7 @@ func setupDataScrubberWildCard(t *testing.T) *DataScrubber {
 	scrubber.AddCustomSensitiveWords(wildcards)
 
 	assert.Equal(t, true, scrubber.Enabled)
-	assert.Equal(t, len(defaultSensitiveWords)+len(wildcards), len(scrubber.SensitivePatterns))
+	assert.Equal(t, len(defaultSensitiveWords())+len(wildcards), len(scrubber.SensitivePatterns))
 
 	return scrubber
 }
@@ -274,7 +274,7 @@ func TestUncompilableWord(t *testing.T) {
 	scrubber.AddCustomSensitiveWords(customSensitiveWords)
 
 	assert.Equal(t, true, scrubber.Enabled)
-	assert.Equal(t, len(defaultSensitiveWords)+len(validCustomSenstiveWords)+len(validWildCards), len(scrubber.SensitivePatterns))
+	assert.Equal(t, len(defaultSensitiveWords())+len(validCustomSenstiveWords)+len(validWildCards), len(scrubber.SensitivePatterns))
 
 	cases := []struct {
 		cmdline       []string

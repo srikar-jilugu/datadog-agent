@@ -11,16 +11,14 @@ import (
 	"strings"
 )
 
-var (
-	defaultSensitiveWords = []string{
-		"*password*", "*passwd*", "*mysql_pwd*",
-		"*access_token*", "*auth_token*",
-		"*api_key*", "*apikey*",
-		"*secret*", "*credentials*", "stripetoken",
-		// windows arguments
-		"/p", "/rp",
+func defaultPlatformSensitiveWords() []string {
+	return []string{
+		"/p",
+		"/rp",
 	}
+}
 
+var (
 	// note the `/` at the beginning of the regex.  it's not an escape or a typo
 	// it's for handling parameters like `/p` and `/rp` in windows
 	forbiddenSymbolsRegex = "[^/a-zA-Z0-9_*]"

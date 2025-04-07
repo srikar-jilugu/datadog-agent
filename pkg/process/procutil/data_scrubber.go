@@ -18,6 +18,24 @@ const (
 	defaultCacheMaxCycles = 25
 )
 
+func defaultSensitiveWords() []string {
+	return append([]string{
+		"*password*",
+		"*passwd*",
+		"*mysql_pwd*",
+		"*access_token*",
+		"*access-token*",
+		"*auth_token*",
+		"*auth-token*",
+		"*api_key*",
+		"*api-key*",
+		"*apikey*",
+		"*secret*",
+		"*credentials*",
+		"stripetoken",
+	}, defaultPlatformSensitiveWords()...)
+}
+
 type processCacheKey struct {
 	pid        int32
 	createTime int64
@@ -44,7 +62,7 @@ type DataScrubber struct {
 // NewDefaultDataScrubber creates a DataScrubber with the default behavior: enabled
 // and matching the default sensitive words
 func NewDefaultDataScrubber() *DataScrubber {
-	patterns := CompileStringsToRegex(defaultSensitiveWords)
+	patterns := CompileStringsToRegex(defaultSensitiveWords())
 	newDataScrubber := &DataScrubber{
 		Enabled:           true,
 		SensitivePatterns: patterns,
