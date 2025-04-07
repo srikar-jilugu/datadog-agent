@@ -21,7 +21,7 @@ func defaultPlatformSensitiveWords() []string {
 var (
 	// note the `/` at the beginning of the regex.  it's not an escape or a typo
 	// it's for handling parameters like `/p` and `/rp` in windows
-	forbiddenSymbolsRegex = "[^/a-zA-Z0-9_*]"
+	forbiddenSymbolsRegex = "[^/a-zA-Z0-9_-*]"
 )
 
 var executableExtensions = []string{".com", ".exe", ".bat", ".cmd", ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh", ".psc1", ".ps1"}

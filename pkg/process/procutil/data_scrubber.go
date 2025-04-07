@@ -87,7 +87,7 @@ func CompileStringsToRegex(words []string) []DataScrubberPattern {
 	for _, word := range words {
 		if forbiddenSymbols.MatchString(word) {
 			log.Warnf("data scrubber: %s skipped. The sensitive word must "+
-				"contain only alphanumeric characters, underscores or wildcards ('*')", word)
+				"contain only alphanumeric characters, underscores, hyphens or wildcards ('*')", word)
 			continue
 		}
 

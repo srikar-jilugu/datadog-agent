@@ -15,7 +15,7 @@ func defaultPlatformSensitiveWords() []string {
 	return []string{}
 }
 
-var forbiddenSymbolsRegex = "[^a-zA-Z0-9_*]"
+var forbiddenSymbolsRegex = "[^a-zA-Z0-9_-*]"
 
 // stripArguments removes all arguments given a command line.
 func (ds *DataScrubber) stripArguments(cmdline []string) []string {
