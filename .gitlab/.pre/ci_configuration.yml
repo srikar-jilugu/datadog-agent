@@ -13,6 +13,7 @@ test_gitlab_configuration:
     - dda inv -- -e linter.ssm-parameters
 
 test_gitlab_compare_to:
+  # Force execution
   stage: .pre
   image: registry.ddbuild.io/ci/datadog-agent-buildimages/deb_x64$DATADOG_AGENT_BUILDIMAGES_SUFFIX:$DATADOG_AGENT_BUILDIMAGES
   tags: ["arch:amd64"]
