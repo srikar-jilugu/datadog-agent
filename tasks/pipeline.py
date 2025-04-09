@@ -16,7 +16,6 @@ from tasks.libs.ciproviders.gitlab_api import (
     cancel_pipeline,
     get_gitlab_bot_token,
     get_gitlab_repo,
-    gitlab_configuration_is_modified,
     refresh_pipeline,
 )
 from tasks.libs.common.color import Color, color_message
@@ -701,9 +700,9 @@ def trigger_external(ctx, owner_branch_name: str, no_verify=False):
     branch_re = re.compile(r'^(?P<owner>[a-zA-Z0-9_-]+):(?P<branch_name>[a-zA-Z0-9_/-]+)$')
     match = branch_re.match(owner_branch_name)
 
-    assert (
-        match is not None
-    ), f'owner_branch_name should be "<owner-name>:<prefix>/<branch-name>" or "<owner-name>:<branch-name>" but is {owner_branch_name}'
+    assert match is not None, (
+        f'owner_branch_name should be "<owner-name>:<prefix>/<branch-name>" or "<owner-name>:<branch-name>" but is {owner_branch_name}'
+    )
     assert "'" not in owner_branch_name
 
     owner, branch = match.group('owner'), match.group('branch_name')
@@ -713,9 +712,9 @@ def trigger_external(ctx, owner_branch_name: str, no_verify=False):
     status_res = ctx.run('git status --porcelain')
     assert status_res.stdout.strip() == '', 'Cannot run this task if changes have not been committed'
     branch_res = ctx.run('git branch', hide='stdout')
-    assert (
-        re.findall(f'\\b{owner_branch_name}\\b', branch_res.stdout) == []
-    ), f'{owner_branch_name} branch already exists'
+    assert re.findall(f'\\b{owner_branch_name}\\b', branch_res.stdout) == [], (
+        f'{owner_branch_name} branch already exists'
+    )
     remote_res = ctx.run('git remote', hide='stdout')
     assert re.findall(f'\\b{owner}\\b', remote_res.stdout) == [], f'{owner} remote already exists'
 
@@ -824,9 +823,9 @@ def compare_to_itself(ctx):
     """
     Create a new branch with 'compare_to_itself' in gitlab-ci.yml and trigger a pipeline
     """
-    if not gitlab_configuration_is_modified(ctx):
-        print("No modification in the gitlab configuration, ignoring this test.")
-        return
+    # if not gitlab_configuration_is_modified(ctx):
+    #     print("No modification in the gitlab configuration, ignoring this test.")
+    #     return
     agent = get_gitlab_repo()
     gh = GithubAPI()
     current_branch = os.environ["CI_COMMIT_REF_NAME"]
@@ -858,6 +857,8 @@ def compare_to_itself(ctx):
 
     ctx.run("git commit -am 'Commit to compare to itself'", hide=True)
     ctx.run(f"git push origin {new_branch}", hide=True)
+    # Prepare DDCI: force the trigger
+    trigger_agent_pipeline(repo=agent, ref=new_branch)
     max_attempts = 6
     compare_to_pipeline = None
     for attempt in range(max_attempts):
