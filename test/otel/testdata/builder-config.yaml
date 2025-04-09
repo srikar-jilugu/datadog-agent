@@ -2,7 +2,7 @@ connectors:
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector
     v0.123.0
 - gomod: github.com/DataDog/datadog-agent/comp/otelcol/otlp/components/connector/datadogconnector
-    v0.122.0
+    v0.123.0
 converters:
 - gomod: github.com/DataDog/datadog-agent/comp/otelcol/converter/impl v0.61.0
   path: ./comp/otelcol/converter/impl
