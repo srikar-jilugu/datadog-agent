@@ -23,7 +23,7 @@ def _cgo_godefs_impl(ctx):
     out_file_path = out_file_path + "_" + target_platform + "." + extension
     out_file = ctx.actions.declare_file(out_file_path)
 
-    include_dirs = ["-I " + path.dirname for path in ctx.files.headers]
+    include_dirs = ["-I " + path.dirname for path in ctx.files.headers + [in_file]]
 
     deps = [dep[CcInfo] for dep in ctx.attr.deps]
     # Temporary set to ensure we're not passing the same "-I folder" 15 times
