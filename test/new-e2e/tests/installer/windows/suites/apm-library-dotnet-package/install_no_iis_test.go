@@ -10,7 +10,6 @@ import (
 
 	"github.com/DataDog/datadog-agent/test/new-e2e/pkg/e2e"
 	winawshost "github.com/DataDog/datadog-agent/test/new-e2e/pkg/provisioners/aws/host/windows"
-	installer "github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/unix"
 	installerwindows "github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/windows"
 	"github.com/DataDog/datadog-agent/test/new-e2e/tests/installer/windows/consts"
 
@@ -32,11 +31,7 @@ func (s *testDotnetLibraryInstallSuiteWithoutIIS) TestInstallDotnetLibraryPackag
 	s.Require().NoError(s.Installer().Install())
 	defer s.Installer().Purge()
 
-	// TODO: remove override once image is published in prod
-	_, err := s.Installer().InstallPackage("datadog-apm-library-dotnet",
-		installer.WithVersion("3.13.0-pipeline.58951229.beta.sha-af5a1fab-1"),
-		installer.WithRegistry("install.datad0g.com"),
-	)
+	_, err := s.Installer().InstallPackage("datadog-apm-library-dotnet")
 	s.Require().Error(err, "Installing the dotnet library package without IIS should fail")
 	// TODO today the package does not get deleted but I think it should
 	// s.Require().Host(s.Env().RemoteHost).
@@ -45,13 +40,9 @@ func (s *testDotnetLibraryInstallSuiteWithoutIIS) TestInstallDotnetLibraryPackag
 }
 
 func (s *testDotnetLibraryInstallSuiteWithoutIIS) TestMSIInstallDotnetLibraryFailsWithoutIIS() {
-	version := "3.13.0-pipeline.58951229.beta.sha-af5a1fab-1"
 	s.Require().Error(s.Installer().Install(
 		installerwindows.WithMSIArg("DD_APM_INSTRUMENTATION_ENABLED=iis"),
-		// TODO: remove override once image is published in prod
-		// TODO: support DD_INSTALLER_REGISTRY_URL
-		installerwindows.WithMSIArg("SITE=datad0g.com"),
-		installerwindows.WithMSIArg(fmt.Sprintf("DD_APM_INSTRUMENTATION_LIBRARIES=dotnet:%s", version)),
+		installerwindows.WithMSIArg("DD_APM_INSTRUMENTATION_LIBRARIES=dotnet")),
 		installerwindows.WithMSILogFile("install-rollback.log"),
 	))
 	defer s.Installer().Purge()
