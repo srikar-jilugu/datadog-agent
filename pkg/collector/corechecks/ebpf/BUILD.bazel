@@ -94,3 +94,7 @@ go_library(
         "//conditions:default": [],
     }),
 )
+
+exports_files([
+    "c/runtime/oom-kill-kern-user.h",
+])
