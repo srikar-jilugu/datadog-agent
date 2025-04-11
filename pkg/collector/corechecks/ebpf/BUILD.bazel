@@ -97,4 +97,5 @@ go_library(
 
 exports_files([
     "c/runtime/oom-kill-kern-user.h",
+    "c/runtime/ebpf-kern-user.h",
 ])
