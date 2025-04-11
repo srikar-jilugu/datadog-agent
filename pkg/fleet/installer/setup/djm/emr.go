@@ -223,6 +223,7 @@ func enableEmrLogs(s *common.Setup) {
 			Service: "emr-logs",
 			LogProcessingRules: []common.LogProcessingRule{
 				{Type: "multi_line", Name: "dataframe_show", Pattern: "`\\|[\\sa-zA-Z-_.\\|]+\\|$`gm"},
+				{Type: "multi_line", Name: "python_logger", Pattern: "^(ERROR|INFO|DEBUG|WARN)"},
 			},
 		},
 		{
