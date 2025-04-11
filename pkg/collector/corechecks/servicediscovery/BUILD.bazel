@@ -68,3 +68,7 @@ go_test(
         "//conditions:default": [],
     }),
 )
+
+exports_files([
+    "c/ebpf/runtime/discovery-types.h",
+])
