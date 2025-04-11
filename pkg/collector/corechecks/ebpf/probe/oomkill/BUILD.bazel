@@ -5,10 +5,6 @@ cgo_godefs(
     name = "c_types",
     src = "c_types.go",
     headers = ["//pkg/collector/corechecks/ebpf:c/runtime/oom-kill-kern-user.h"],
-    target_platform = select({
-        "@platforms//os:linux": "linux",
-        "@platforms//os:windows": "windows",
-    }),
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
     ],

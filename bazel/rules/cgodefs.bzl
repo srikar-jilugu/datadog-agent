@@ -9,11 +9,18 @@ CgoGodefsProvider = provider(
 )
 
 def _cgo_godefs_impl(ctx):
+    if ctx.target_platform_has_constraint(ctx.attr._linux[platform_common.ConstraintValueInfo]):
+        target_platform = "linux"
+    elif ctx.target_platform_has_constraint(ctx.attr._macos[platform_common.ConstraintValueInfo]):
+        target_platform = "macos"
+    elif ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo]):
+        target_platform = "windows"
+
     in_file = ctx.files.src[0]
     # Compute the output file name with the platform name appended
     extension = in_file.extension
     out_file_path = in_file.short_path.removesuffix("." + extension)
-    out_file_path = out_file_path + "_" + ctx.attr.target_platform + "." + extension
+    out_file_path = out_file_path + "_" + target_platform + "." + extension
     out_file = ctx.actions.declare_file(out_file_path)
 
     include_dirs = ["-I " + path.dirname for path in ctx.files.headers]
@@ -65,7 +72,6 @@ cgo_godefs = rule(
             mandatory = True,
         ),
         "deps": attr.label_list(providers=[CcInfo]),
-        "target_platform": attr.string(),
         "headers": attr.label_list(allow_files = True),
         "_go": attr.label(
             # default = Label("@rules_go//go"),
@@ -73,6 +79,9 @@ cgo_godefs = rule(
             executable = True,
             cfg = "exec",
         ),
+        "_linux": attr.label(default = "@platforms//os:linux"),
+        "_macos": attr.label(default = "@platforms//os:macos"),
+        "_windows": attr.label(default = "@platforms//os:windows"),
     },
     provides = [CgoGodefsProvider],
 )
