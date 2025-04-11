@@ -1,4 +1,14 @@
 load("@rules_go//go:def.bzl", "go_library", "go_test")
+load("//:bazel/rules/cgodefs.bzl", "cgo_godefs")
+
+cgo_godefs(
+    name = "go_tls_types",
+    src = "go_tls_types.go",
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/network/ebpf/c:ebpf_c_network",
+    ],
+)
 
 go_library(
     name = "gotls",
