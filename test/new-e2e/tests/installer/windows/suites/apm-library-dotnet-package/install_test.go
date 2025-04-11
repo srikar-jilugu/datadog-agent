@@ -87,19 +87,28 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 	s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-before-update.txt")
 	s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-before-update.txt")
 
+	output, err := s.Env().RemoteHost.Execute("powershell -Command Get-Date")
+	s.Require().NoError(err, "Failed to get remote host time: %s", output)
+	s.T().Logf("Remote host time before update: %s", output)
+
 	// Install the new version of the library
 	s.installDotnetAPMLibraryWithVersion(newVersion)
 
+	output, err = s.Env().RemoteHost.Execute("powershell -Command Get-Date")
+	s.Require().NoError(err, "Failed to get remote host time: %s", output)
+	s.T().Logf("Remote host time after update: %s", output)
+
 	// Check that the old version of the library is still loaded since we have not restarted yet
-	output := s.getLibraryPathFromInstrumentedIIS()
-	s.Require().Contains(output, oldVersion[:len(oldVersion)-2], "the injected library should still be the old version")
+	output = s.getLibraryPathFromInstrumentedIIS()
 
 	s.baseIISSuite.WriteWASEventLogs("was-event-logs-after-update.txt")
 	s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-after-update.txt")
 	s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-after-update.txt")
 
+	s.Require().Contains(output, oldVersion[:len(oldVersion)-2], "the injected library should still be the old version")
+
 	// Check that a garbage collection does not remove the old version of the library
-	output, err := s.Installer().GarbageCollect()
+	output, err = s.Installer().GarbageCollect()
 	s.Require().NoErrorf(err, "failed to garbage collect: %s", output)
 	s.Require().Host(s.Env().RemoteHost).DirExists(oldLibraryPath, "the old library path: %s should still exist after garbage collection", oldLibraryPath)
 
