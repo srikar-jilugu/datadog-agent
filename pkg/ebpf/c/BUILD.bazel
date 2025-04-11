@@ -1,0 +1,32 @@
+cc_library(
+    name = "ebpf_c_headers",
+    hdrs = [
+        "asm_goto_workaround.h",
+        "bpf_cross_compile.h",
+        "bpf_helpers.h",
+        "bpf_tracing.h",
+        "compiler.h",
+        "kconfig.h",
+        "lock_contention.h",
+        "vmlinux_5_15_0.h",
+        "bpf_builtins.h",
+        "bpf_endian.h",
+        "bpf_metadata.h",
+        "map-defs.h",
+        "vmlinux.h",
+        "bpf_bypass.h",
+        "bpf_helper_defs.h",
+        "bpf_telemetry.h",
+        "cgroup.h",
+        "ktypes.h",
+        "telemetry_types.h",
+        "bpf_core_read.h",
+        "bpf_helpers_custom.h",
+        "bpf_tracing_custom.h",
+        "vmlinux_5_15_0_arm.h",
+        #FIXME: what to do with:
+        # lock_contention.c
+        # "ksyms_iter.c",
+    ],
+    visibility = ["//visibility:public"],
+)
