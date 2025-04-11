@@ -1,0 +1,4 @@
+exports_files([
+    "c/base_event.h",
+    "c/macros.h",
+])
