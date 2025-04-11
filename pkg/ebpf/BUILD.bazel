@@ -1,4 +1,13 @@
 load("@rules_go//go:def.bzl", "go_library", "go_test")
+load("//:bazel/rules/cgodefs.bzl", "cgo_godefs")
+
+cgo_godefs(
+    name = "types",
+    src = "types.go",
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
+)
 
 go_library(
     name = "ebpf",
