@@ -1,4 +1,16 @@
 load("@rules_go//go:def.bzl", "go_library", "go_test")
+load("//:bazel/rules/cgodefs.bzl", "cgo_godefs")
+
+cgo_godefs(
+    name = "tcp_queue_length_kern_types",
+    src = "tcp_queue_length_kern_types.go",
+    headers = [
+        "//pkg/collector/corechecks/ebpf:c/runtime/tcp-queue-length-kern-user.h",
+    ],
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
+)
 
 go_library(
     name = "tcpqueuelength",
