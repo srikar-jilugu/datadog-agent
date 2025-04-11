@@ -83,20 +83,20 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 	oldLibraryPath := s.getLibraryPathFromInstrumentedIIS()
 	s.Require().Contains(oldLibraryPath, oldVersion[:len(oldVersion)-2])
 
-	// s.baseIISSuite.WriteWASEventLogs("was-event-logs-before-update.txt")
-	// s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-before-update.txt")
-	// s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-before-update.txt")
+	s.baseIISSuite.WriteWASEventLogs("was-event-logs-before-update.txt")
+	s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-before-update.txt")
+	s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-before-update.txt")
 
 	// Install the new version of the library
 	s.installDotnetAPMLibraryWithVersion(newVersion)
 
-	// s.baseIISSuite.WriteWASEventLogs("was-event-logs-after-update.txt")
-	// s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-after-update.txt")
-	// s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-after-update.txt")
-
 	// Check that the old version of the library is still loaded since we have not restarted yet
 	output := s.getLibraryPathFromInstrumentedIIS()
 	s.Require().Contains(output, oldVersion[:len(oldVersion)-2], "the injected library should still be the old version")
+
+	s.baseIISSuite.WriteWASEventLogs("was-event-logs-after-update.txt")
+	s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-after-update.txt")
+	s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-after-update.txt")
 
 	// Check that a garbage collection does not remove the old version of the library
 	output, err := s.Installer().GarbageCollect()
