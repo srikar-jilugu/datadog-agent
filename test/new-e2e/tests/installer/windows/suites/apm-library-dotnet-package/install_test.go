@@ -69,8 +69,8 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 		newVersion = "3.13.0-pipeline.58951229.beta.sha-af5a1fab-1"
 	)
 	// flake.Mark(s.T())
-	// s.baseIISSuite.EnableProcessAudit()
-	// s.baseIISSuite.EnableIISConfigurationLog()
+	s.baseIISSuite.EnableProcessAudit()
+	s.baseIISSuite.EnableIISConfigurationLog()
 
 	// Install first version
 	s.installDotnetAPMLibraryWithVersion(oldVersion)
