@@ -461,6 +461,7 @@ def hacky_dev_image_build(
     trace_agent=False,
     push=False,
     signed_pull=False,
+    amd64=False,
 ):
     if base_image is None:
         import requests
@@ -482,7 +483,7 @@ def hacky_dev_image_build(
     # Extract the python library of the docker image
     with tempfile.TemporaryDirectory() as extracted_python_dir:
         ctx.run(
-            f"docker run --rm '{base_image}' bash -c 'tar --create /opt/datadog-agent/embedded/{{bin,lib,include}}/*python*' | tar --directory '{extracted_python_dir}' --extract"
+            f"docker run {"--platform linux/amd64" if amd64 else ""} --rm '{base_image}' bash -c 'tar --create /opt/datadog-agent/embedded/{{bin,lib,include}}/*python*' | tar --directory '{extracted_python_dir}' --extract"
         )
 
         os.environ["DELVE"] = "1"
@@ -493,9 +494,10 @@ def hacky_dev_image_build(
             ctx,
             cmake_options=f'-DPython3_ROOT_DIR={extracted_python_dir}/opt/datadog-agent/embedded -DPython3_FIND_STRATEGY=LOCATION',
         )
-        ctx.run(
-            f'perl -0777 -pe \'s|{extracted_python_dir}(/opt/datadog-agent/embedded/lib/python\\d+\\.\\d+/../..)|substr $1."\\0"x length$&,0,length$&|e or die "pattern not found"\' -i dev/lib/libdatadog-agent-three.so'
-        )
+        if not amd64:
+            ctx.run(
+                f'perl -0777 -pe \'s|{extracted_python_dir}(/opt/datadog-agent/embedded/lib/python\\d+\\.\\d+/../..)|substr $1."\\0"x length$&,0,length$&|e or die "pattern not found"\' -i dev/lib/libdatadog-agent-three.so'
+            )
 
     copy_extra_agents = ""
     if process_agent:
@@ -573,7 +575,7 @@ ENV DD_SSLKEYLOGFILE=/tmp/sslkeylog.txt
         pull_env = {}
         if signed_pull:
             pull_env['DOCKER_CONTENT_TRUST'] = '1'
-        ctx.run(f'docker build -t {target_image} -f {dockerfile.name} .', env=pull_env)
+        ctx.run(f'docker build {"--platform linux/amd64" if amd64 else ""} -t {target_image} -f {dockerfile.name} .', env=pull_env)
 
         if push:
             ctx.run(f'docker push {target_image}')
