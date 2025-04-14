@@ -15,13 +15,13 @@ int BPF_BYPASSABLE_UPROBE(uprobe__SSL_do_handshake, void *ssl_ctx) {
     return 0;
 }
 
-SEC("uretprobe/SSL_do_handshake")
-int BPF_BYPASSABLE_URETPROBE(uretprobe__SSL_do_handshake) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    log_debug("uretprobe/SSL_do_handshake: pid_tgid=%llx", pid_tgid);
-    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
-    return 0;
-}
+//SEC("uretprobe/SSL_do_handshake")
+//int BPF_BYPASSABLE_URETPROBE(uretprobe__SSL_do_handshake) {
+//    u64 pid_tgid = bpf_get_current_pid_tgid();
+//    log_debug("uretprobe/SSL_do_handshake: pid_tgid=%llx", pid_tgid);
+//    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
+//    return 0;
+//}
 
 SEC("uprobe/SSL_connect")
 int BPF_BYPASSABLE_UPROBE(uprobe__SSL_connect, void *ssl_ctx) {
@@ -31,13 +31,13 @@ int BPF_BYPASSABLE_UPROBE(uprobe__SSL_connect, void *ssl_ctx) {
     return 0;
 }
 
-SEC("uretprobe/SSL_connect")
-int BPF_BYPASSABLE_URETPROBE(uretprobe__SSL_connect) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    log_debug("uretprobe/SSL_connect: pid_tgid=%llx", pid_tgid);
-    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
-    return 0;
-}
+//SEC("uretprobe/SSL_connect")
+//int BPF_BYPASSABLE_URETPROBE(uretprobe__SSL_connect) {
+//    u64 pid_tgid = bpf_get_current_pid_tgid();
+//    log_debug("uretprobe/SSL_connect: pid_tgid=%llx", pid_tgid);
+//    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
+//    return 0;
+//}
 
 // this uprobe is essentially creating an index mapping a SSL context to a conn_tuple_t
 SEC("uprobe/SSL_set_fd")
@@ -367,6 +367,7 @@ int BPF_BYPASSABLE_UPROBE(uprobe__SSL_shutdown, void *ssl_ctx) {
 
     // tls_finish can launch a tail call, thus cleanup should be done before.
     bpf_map_delete_elem(&ssl_sock_by_ctx, &ssl_ctx);
+    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
     tls_finish(ctx, t, false);
 
     return 0;
@@ -379,12 +380,12 @@ int BPF_BYPASSABLE_UPROBE(uprobe__gnutls_handshake, void *ssl_ctx) {
     return 0;
 }
 
-SEC("uretprobe/gnutls_handshake")
-int BPF_BYPASSABLE_URETPROBE(uretprobe__gnutls_handshake) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
-    return 0;
-}
+//SEC("uretprobe/gnutls_handshake")
+//int BPF_BYPASSABLE_URETPROBE(uretprobe__gnutls_handshake) {
+//    u64 pid_tgid = bpf_get_current_pid_tgid();
+//    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
+//    return 0;
+//}
 
 // void gnutls_transport_set_int (gnutls_session_t session, int fd)
 // Note: this function is implemented as a macro in gnutls
@@ -532,6 +533,7 @@ static __always_inline void gnutls_goodbye(struct pt_regs *ctx, void *ssl_sessio
 
     // tls_finish can launch a tail call, thus cleanup should be done before.
     bpf_map_delete_elem(&ssl_sock_by_ctx, &ssl_session);
+    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
     tls_finish(ctx, t, false);
 }
 
@@ -564,7 +566,12 @@ static __always_inline void delete_pid_in_maps() {
     bpf_map_delete_elem(&ssl_read_ex_args, &pid_tgid);
     bpf_map_delete_elem(&ssl_write_args, &pid_tgid);
     bpf_map_delete_elem(&ssl_write_ex_args, &pid_tgid);
-    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
+    void **ssl_ctx_map_val = bpf_map_lookup_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
+    if (ssl_ctx_map_val != NULL) {
+        void *ssl_ctx = *ssl_ctx_map_val;
+        bpf_map_delete_elem(&ssl_sock_by_ctx, &ssl_ctx);
+        bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
+    }
     bpf_map_delete_elem(&bio_new_socket_args, &pid_tgid);
 }
 

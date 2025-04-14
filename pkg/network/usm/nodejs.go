@@ -46,11 +46,11 @@ var (
 						EBPFFuncName: sslDoHandshakeProbe,
 					},
 				},
-				&manager.ProbeSelector{
-					ProbeIdentificationPair: manager.ProbeIdentificationPair{
-						EBPFFuncName: sslDoHandshakeRetprobe,
-					},
-				},
+				//&manager.ProbeSelector{
+				//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+				//		EBPFFuncName: sslDoHandshakeRetprobe,
+				//	},
+				//},
 				&manager.ProbeSelector{
 					ProbeIdentificationPair: manager.ProbeIdentificationPair{
 						EBPFFuncName: sslSetBioProbe,
@@ -125,11 +125,11 @@ var nodejsSpec = &protocols.ProtocolSpec{
 				EBPFFuncName: sslDoHandshakeProbe,
 			},
 		},
-		{
-			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				EBPFFuncName: sslDoHandshakeRetprobe,
-			},
-		},
+		//{
+		//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+		//		EBPFFuncName: sslDoHandshakeRetprobe,
+		//	},
+		//},
 		{
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
 				EBPFFuncName: sslSetBioProbe,

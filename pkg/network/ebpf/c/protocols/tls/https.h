@@ -277,10 +277,10 @@ static __always_inline void map_ssl_ctx_to_sock(struct sock *skp) {
     if (ssl_ctx_map_val == NULL) {
         return;
     }
-    bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
 
     ssl_sock_t ssl_sock = {};
     if (!read_conn_tuple(&ssl_sock.tup, skp, pid_tgid, CONN_TYPE_TCP)) {
+        bpf_map_delete_elem(&ssl_ctx_by_pid_tgid, &pid_tgid);
         return;
     }
 

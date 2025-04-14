@@ -42,25 +42,25 @@ import (
 )
 
 const (
-	sslReadExProbe              = "uprobe__SSL_read_ex"
-	sslReadExRetprobe           = "uretprobe__SSL_read_ex"
-	sslWriteExProbe             = "uprobe__SSL_write_ex"
-	sslWriteExRetprobe          = "uretprobe__SSL_write_ex"
-	sslDoHandshakeProbe         = "uprobe__SSL_do_handshake"
-	sslDoHandshakeRetprobe      = "uretprobe__SSL_do_handshake"
-	sslConnectProbe             = "uprobe__SSL_connect"
-	sslConnectRetprobe          = "uretprobe__SSL_connect"
-	sslSetBioProbe              = "uprobe__SSL_set_bio"
-	sslSetFDProbe               = "uprobe__SSL_set_fd"
-	sslReadProbe                = "uprobe__SSL_read"
-	sslReadRetprobe             = "uretprobe__SSL_read"
-	sslWriteProbe               = "uprobe__SSL_write"
-	sslWriteRetprobe            = "uretprobe__SSL_write"
-	sslShutdownProbe            = "uprobe__SSL_shutdown"
-	bioNewSocketProbe           = "uprobe__BIO_new_socket"
-	bioNewSocketRetprobe        = "uretprobe__BIO_new_socket"
-	gnutlsHandshakeProbe        = "uprobe__gnutls_handshake"
-	gnutlsHandshakeRetprobe     = "uretprobe__gnutls_handshake"
+	sslReadExProbe      = "uprobe__SSL_read_ex"
+	sslReadExRetprobe   = "uretprobe__SSL_read_ex"
+	sslWriteExProbe     = "uprobe__SSL_write_ex"
+	sslWriteExRetprobe  = "uretprobe__SSL_write_ex"
+	sslDoHandshakeProbe = "uprobe__SSL_do_handshake"
+	//sslDoHandshakeRetprobe = "uretprobe__SSL_do_handshake"
+	sslConnectProbe      = "uprobe__SSL_connect"
+	sslConnectRetprobe   = "uretprobe__SSL_connect"
+	sslSetBioProbe       = "uprobe__SSL_set_bio"
+	sslSetFDProbe        = "uprobe__SSL_set_fd"
+	sslReadProbe         = "uprobe__SSL_read"
+	sslReadRetprobe      = "uretprobe__SSL_read"
+	sslWriteProbe        = "uprobe__SSL_write"
+	sslWriteRetprobe     = "uretprobe__SSL_write"
+	sslShutdownProbe     = "uprobe__SSL_shutdown"
+	bioNewSocketProbe    = "uprobe__BIO_new_socket"
+	bioNewSocketRetprobe = "uretprobe__BIO_new_socket"
+	gnutlsHandshakeProbe = "uprobe__gnutls_handshake"
+	//gnutlsHandshakeRetprobe     = "uretprobe__gnutls_handshake"
 	gnutlsTransportSetInt2Probe = "uprobe__gnutls_transport_set_int2"
 	gnutlsTransportSetPtrProbe  = "uprobe__gnutls_transport_set_ptr"
 	gnutlsTransportSetPtr2Probe = "uprobe__gnutls_transport_set_ptr2"
@@ -107,11 +107,11 @@ var openSSLProbes = []manager.ProbesSelector{
 					EBPFFuncName: sslDoHandshakeProbe,
 				},
 			},
-			&manager.ProbeSelector{
-				ProbeIdentificationPair: manager.ProbeIdentificationPair{
-					EBPFFuncName: sslDoHandshakeRetprobe,
-				},
-			},
+			//&manager.ProbeSelector{
+			//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			//		EBPFFuncName: sslDoHandshakeRetprobe,
+			//	},
+			//},
 			&manager.ProbeSelector{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
 					EBPFFuncName: sslConnectProbe,
@@ -186,11 +186,11 @@ var gnuTLSProbes = []manager.ProbesSelector{
 					EBPFFuncName: gnutlsHandshakeProbe,
 				},
 			},
-			&manager.ProbeSelector{
-				ProbeIdentificationPair: manager.ProbeIdentificationPair{
-					EBPFFuncName: gnutlsHandshakeRetprobe,
-				},
-			},
+			//&manager.ProbeSelector{
+			//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			//		EBPFFuncName: gnutlsHandshakeRetprobe,
+			//	},
+			//},
 			&manager.ProbeSelector{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
 					EBPFFuncName: gnutlsTransportSetInt2Probe,
@@ -313,11 +313,11 @@ var opensslSpec = &protocols.ProtocolSpec{
 				EBPFFuncName: sslDoHandshakeProbe,
 			},
 		},
-		{
-			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				EBPFFuncName: sslDoHandshakeRetprobe,
-			},
-		},
+		//{
+		//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+		//		EBPFFuncName: sslDoHandshakeRetprobe,
+		//	},
+		//},
 		{
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
 				EBPFFuncName: sslConnectProbe,
@@ -378,11 +378,11 @@ var opensslSpec = &protocols.ProtocolSpec{
 				EBPFFuncName: gnutlsHandshakeProbe,
 			},
 		},
-		{
-			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				EBPFFuncName: gnutlsHandshakeRetprobe,
-			},
-		},
+		//{
+		//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+		//		EBPFFuncName: gnutlsHandshakeRetprobe,
+		//	},
+		//},
 		{
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
 				EBPFFuncName: gnutlsTransportSetInt2Probe,
