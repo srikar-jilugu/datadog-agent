@@ -48,8 +48,8 @@ const (
 	sslWriteExRetprobe  = "uretprobe__SSL_write_ex"
 	sslDoHandshakeProbe = "uprobe__SSL_do_handshake"
 	//sslDoHandshakeRetprobe = "uretprobe__SSL_do_handshake"
-	sslConnectProbe      = "uprobe__SSL_connect"
-	sslConnectRetprobe   = "uretprobe__SSL_connect"
+	sslConnectProbe = "uprobe__SSL_connect"
+	//sslConnectRetprobe   = "uretprobe__SSL_connect"
 	sslSetBioProbe       = "uprobe__SSL_set_bio"
 	sslSetFDProbe        = "uprobe__SSL_set_fd"
 	sslReadProbe         = "uprobe__SSL_read"
@@ -117,11 +117,11 @@ var openSSLProbes = []manager.ProbesSelector{
 					EBPFFuncName: sslConnectProbe,
 				},
 			},
-			&manager.ProbeSelector{
-				ProbeIdentificationPair: manager.ProbeIdentificationPair{
-					EBPFFuncName: sslConnectRetprobe,
-				},
-			},
+			//&manager.ProbeSelector{
+			//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+			//		EBPFFuncName: sslConnectRetprobe,
+			//	},
+			//},
 			&manager.ProbeSelector{
 				ProbeIdentificationPair: manager.ProbeIdentificationPair{
 					EBPFFuncName: sslSetBioProbe,
@@ -323,11 +323,11 @@ var opensslSpec = &protocols.ProtocolSpec{
 				EBPFFuncName: sslConnectProbe,
 			},
 		},
-		{
-			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				EBPFFuncName: sslConnectRetprobe,
-			},
-		},
+		//{
+		//	ProbeIdentificationPair: manager.ProbeIdentificationPair{
+		//		EBPFFuncName: sslConnectRetprobe,
+		//	},
+		//},
 		{
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
 				EBPFFuncName: sslSetBioProbe,
