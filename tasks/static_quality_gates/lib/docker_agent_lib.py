@@ -110,6 +110,7 @@ def generic_docker_agent_quality_gate(gate_name, arch, jmx=False, flavor="agent"
     if flavor != "dogstatsd" and is_nightly_run:
         flavor += "-nightly"
     url = f"registry.ddbuild.io/ci/datadog-agent/{flavor}:v{pipeline_id}-{commit_sha}{image_suffixes}-{arch}"
+    print(url)
     # Fetch the on wire and on disk size of the image from the url
     image_on_wire_size, image_on_disk_size = get_image_url_size(ctx, metric_handler, gate_name, url)
     # Check if the docker image is within acceptable bounds
