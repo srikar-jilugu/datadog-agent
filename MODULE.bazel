@@ -37,6 +37,15 @@ register_toolchains(
     "//bazel/toolchains/mingw:mingw_cc_toolchain",
 )
 
+ebpf_clang_repo = use_repo_rule("//:bazel/toolchains/ebpf/clang.bzl", "ebpf_clang_repo")
+
+ebpf_clang_repo(
+    name = "ebpf_clang",
+    arch = "x86_64",
+    sha256 = "6b3cc55d3ef413be79785c4dc02828ab3bd6b887872b143e3091692fc6acefe7",
+    version = "12.0.1",
+)
+
 # Make our 3rd parties depencency repositories known
 include("//deps:repos.MODULE.bazel")
 
