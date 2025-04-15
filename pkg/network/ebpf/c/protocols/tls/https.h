@@ -269,6 +269,8 @@ static __always_inline void init_ssl_sock(void *ssl_ctx, u32 socket_fd) {
     ssl_sock_t ssl_sock = { 0 };
     ssl_sock.fd = socket_fd;
     bpf_map_update_with_telemetry(ssl_sock_by_ctx, &ssl_ctx, &ssl_sock, BPF_ANY);
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    bpf_map_update_with_telemetry(ssl_ctx_by_pid_tgid, &pid_tgid, &ssl_ctx, BPF_ANY);
 }
 
 static __always_inline void map_ssl_ctx_to_sock(struct sock *skp) {
