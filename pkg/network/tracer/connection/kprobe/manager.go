@@ -31,6 +31,7 @@ var mainProbes = []probes.ProbeFuncName{
 	probes.TCPRecvMsgReturn,
 	probes.TCPReadSock,
 	probes.TCPReadSockReturn,
+	probes.TCPCleanupRbuf,
 	probes.TCPClose,
 	probes.TCPDone,
 	probes.TCPCloseCleanProtocolsReturn,
@@ -69,6 +70,7 @@ func initManager(mgr *ddebpf.Manager, runtimeTracer bool) error {
 	mgr.Maps = []*manager.Map{
 		{Name: probes.ConnMap},
 		{Name: probes.TCPStatsMap},
+		{Name: probes.TCPStateMap},
 		{Name: probes.TCPOngoingConnectPid},
 		{Name: probes.ConnCloseBatchMap},
 		{Name: "udp_recv_sock"},

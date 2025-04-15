@@ -93,6 +93,12 @@ typedef struct {
     conn_stats_ts_t conn_stats;
 } conn_t;
 
+// Internal state for a TCP connection that doesn't get copied to userspace
+typedef struct {
+    // store the last copied_seq number - used to determine recv_bytes
+    __u32 copied_seq;
+} tcp_state_t;
+
 // Must match the number of conn_t objects embedded in the batch_t struct
 #ifndef CONN_CLOSED_BATCH_SIZE
 #define CONN_CLOSED_BATCH_SIZE 4

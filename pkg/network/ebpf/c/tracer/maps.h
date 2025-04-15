@@ -16,6 +16,11 @@ BPF_HASH_MAP(conn_stats, conn_tuple_t, conn_stats_ts_t, 0)
  */
 BPF_HASH_MAP(tcp_stats, conn_tuple_t, tcp_stats_t, 0)
 
+/* This map contains internal TCP state that does not need to get copied to userspace.
+ * Currently, this is only the copied_seq number which is used to track recv bytes
+ */
+BPF_HASH_MAP(tcp_state, struct sock *, tcp_state_t, 0)
+
 /*
  * Hash map to store conn_tuple_t to retransmits. We use a separate map
  * for retransmits from tcp_stats above since we don't normally
