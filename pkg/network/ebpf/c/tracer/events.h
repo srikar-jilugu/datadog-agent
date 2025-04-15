@@ -91,6 +91,8 @@ static __always_inline int cleanup_conn(void *ctx, conn_tuple_t *tup, struct soc
     }
 
     if (is_tcp) {
+        bpf_map_delete_elem(&tcp_state, &sk);
+
         tst = bpf_map_lookup_elem(&tcp_stats, &(conn.tup));
         if (tst && (bpf_map_delete_elem(&tcp_stats, &(conn.tup)) == 0)) {
             conn.tcp_stats = *tst;

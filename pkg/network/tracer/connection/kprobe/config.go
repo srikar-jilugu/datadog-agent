@@ -60,6 +60,8 @@ func enabledProbes(c *config.Config, runtimeTracer, coreTracer bool) (map[probes
 
 	hasSendPage := HasTCPSendPage(kv)
 
+	usingCopiedSeq := runtimeTracer || coreTracer
+
 	if c.CollectTCPv4Conns || c.CollectTCPv6Conns {
 		if ClassificationSupported(c) {
 			enableProbe(enabled, probes.ProtocolClassifierEntrySocketFilter)
@@ -79,9 +81,14 @@ func enabledProbes(c *config.Config, runtimeTracer, coreTracer bool) (map[probes
 		}
 		// 5.19: remove noblock parameter in *_recvmsg https://github.com/torvalds/linux/commit/ec095263a965720e1ca39db1d9c5cd47846c789b
 		enableProbe(enabled, selectVersionBasedProbe(runtimeTracer, kv, selectVersionBasedProbe(runtimeTracer, kv, probes.TCPRecvMsg, probes.TCPRecvMsgPre5190, kv5190), probes.TCPRecvMsgPre410, kv410))
-		enableProbe(enabled, probes.TCPRecvMsgReturn)
 		enableProbe(enabled, probes.TCPReadSock)
-		enableProbe(enabled, probes.TCPReadSockReturn)
+		if usingCopiedSeq {
+			enableProbe(enabled, probes.TCPCleanupRbuf)
+			enableProbe(enabled, probes.TCPFin)
+		} else {
+			enableProbe(enabled, probes.TCPRecvMsgReturn)
+			enableProbe(enabled, probes.TCPReadSockReturn)
+		}
 		enableProbe(enabled, probes.TCPClose)
 		if c.CustomBatchingEnabled {
 			enableProbe(enabled, probes.TCPCloseFlushReturn)

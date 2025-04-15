@@ -83,6 +83,10 @@ const (
 	TCPReadSock ProbeFuncName = "kprobe__tcp_read_sock"
 	// TCPReadSockReturn traces the return for the tcp_read_sock() kernel function
 	TCPReadSockReturn ProbeFuncName = "kretprobe__tcp_read_sock"
+	// TCPCleanupRbuf traces the tcp_cleanup_rbuf() kernel function
+	TCPCleanupRbuf ProbeFuncName = "kprobe__tcp_cleanup_rbuf"
+	// TCPFin traces the tcp_fin() kernel function
+	TCPFin ProbeFuncName = "kprobe__tcp_fin"
 
 	// TCPClose traces the tcp_close() system call
 	TCPClose ProbeFuncName = "kprobe__tcp_close"
@@ -194,6 +198,8 @@ const (
 	ConnMap BPFMapName = "conn_stats"
 	// TCPStatsMap is the map storing TCP stats
 	TCPStatsMap BPFMapName = "tcp_stats"
+	// TCPStateMap is the map storing internal TCP state that does not need to get copied to userspace
+	TCPStateMap BPFMapName = "tcp_state"
 	// TCPRetransmitsMap is the map storing TCP retransmits
 	TCPRetransmitsMap BPFMapName = "tcp_retransmits"
 	// TCPOngoingConnectPid is the map storing ongoing TCP connection PIDs by (socket + tuple)
