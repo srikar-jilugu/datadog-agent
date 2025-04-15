@@ -68,6 +68,7 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 		oldVersion = "3.13.0-pipeline.58926677.beta.sha-af5a1fab-1"
 		newVersion = "3.13.0-pipeline.58951229.beta.sha-af5a1fab-1"
 	)
+	s.baseIISSuite.StopTrustedInstaller()
 	// flake.Mark(s.T())
 	s.baseIISSuite.EnableProcessAudit()
 	s.baseIISSuite.EnableIISConfigurationLog()

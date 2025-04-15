@@ -164,3 +164,8 @@ func (s *baseIISSuite) WriteIISConfigurationLogs(filename string) error {
 
 	return os.WriteFile(outputPath, []byte(output), 0644)
 }
+
+func (s *baseIISSuite) StopTrustedInstaller() {
+	output, err := s.Env().RemoteHost.Execute("sc stop TrustedInstaller")
+	s.Require().NoErrorf(err, "failed to stop TrustedInstaller: %s", output)
+}
