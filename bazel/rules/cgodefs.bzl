@@ -1,4 +1,5 @@
 # Rule to generate cgo defs files
+load("//:bazel/private/utils.bzl", "expand_header_deps")
 
 CgoGodefsProvider = provider(
     "Forward files needed to generate a godefs file to bazel",
@@ -25,18 +26,12 @@ def _cgo_godefs_impl(ctx):
 
     include_dirs = ["-I " + path.dirname for path in ctx.files.headers + [in_file]]
 
-    deps = [dep[CcInfo] for dep in ctx.attr.deps]
-    # Temporary set to ensure we're not passing the same "-I folder" 15 times
-    header_dirs = set([
-        h.dirname
-        for d in deps
-            for h in d.compilation_context.direct_headers
-    ])
-    include_dirs += ["-I " + h for h in header_dirs]
+    header_deps, headers_include_dirs = expand_header_deps(ctx.attr.deps)
+    include_dirs += ["-I " + h for h in headers_include_dirs]
 
     ctx.actions.run_shell(
         outputs = [out_file],
-        inputs = [in_file] + ctx.files.headers + [h for d in deps for h in d.compilation_context.direct_headers],
+        inputs = [in_file] + ctx.files.headers + header_deps,
         command = "%s tool cgo -godefs -- %s -fsigned-char %s > %s" % (
             # This doesn't work as expected:
             # Error in fail: //go is only meant to be used with 'bazel run', not as a tool.
@@ -53,13 +48,11 @@ def _cgo_godefs_impl(ctx):
         use_default_shell_env = True,
     )
 
-    headers_deps = [depset([h]) for h in ctx.files.headers]
-
     return [
         DefaultInfo(files = depset([out_file])),
         CgoGodefsProvider(
-            headers = headers_deps,
-            deps = deps,
+            headers = [depset([h]) for h in ctx.files.headers],
+            deps = header_deps,
         )
     ]
 
