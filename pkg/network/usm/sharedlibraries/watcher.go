@@ -11,7 +11,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -155,6 +157,10 @@ func (w *Watcher) DetachPID(pid uint32) error {
 
 // AttachPID attaches a given pid to the eBPF program
 func (w *Watcher) AttachPID(pid uint32) error {
+	if res, err := w.isDatadogProcess(pid); err == nil && res {
+		return nil
+	}
+
 	mapsPath := fmt.Sprintf("%s/%d/maps", w.procRoot, pid)
 	maps, err := os.Open(mapsPath)
 	if err != nil {
@@ -225,6 +231,9 @@ func (w *Watcher) Start() {
 
 	_ = kernel.WithAllProcs(w.procRoot, func(pid int) error {
 		if pid == w.thisPID { // don't scan ourself
+			return nil
+		}
+		if res, err := w.isDatadogProcess(uint32(pid)); err == nil && res {
 			return nil
 		}
 
@@ -355,4 +364,28 @@ func (w *Watcher) sync() {
 	if w.mapsCleaner != nil {
 		w.mapsCleaner(alivePIDs)
 	}
+}
+
+var (
+	internalProcessRegex = regexp.MustCompile("datadog-agent/.*/((process|security|trace)-agent|system-probe|agent)")
+)
+
+func (w *Watcher) isDatadogProcess(pid uint32) (bool, error) {
+	pidAsStr := strconv.FormatUint(uint64(pid), 10)
+	exePath := filepath.Join(w.procRoot, pidAsStr, "exe")
+
+	binPath, err := os.Readlink(exePath)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if the process is datadog's internal process, if so, we don't want to hook the process.
+	if internalProcessRegex.MatchString(binPath) {
+		if log.ShouldLog(log.DebugLvl) {
+			log.Debugf("ignoring pid %d, as it is an internal datadog component (%q)", pid, binPath)
+		}
+		return true, nil
+	}
+
+	return false, nil
 }
