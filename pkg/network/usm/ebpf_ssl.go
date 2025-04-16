@@ -460,14 +460,18 @@ func newSSLProgramProtocolFactory(m *manager.Manager, c *config.Config) (protoco
 		cfg:         c,
 		ebpfManager: m,
 	}
-	var cleanerCB func(map[uint32]struct{})
-	if features.HaveProgramType(ebpf.RawTracepoint) != nil {
-		cleanerCB = sslProgram.cleanupDeadPids
+
+	enableUserModeCleanup := features.HaveProgramType(ebpf.RawTracepoint) != nil
+	bla := func(mmap map[uint32]struct{}) {
+		sslProgram.cleanSSLSockByCtxMap(mmap)
+		if enableUserModeCleanup {
+			sslProgram.cleanupDeadPids(mmap)
+		}
 	}
 	procRoot := kernel.ProcFSRoot()
 
 	if c.EnableNativeTLSMonitoring && usmconfig.TLSSupported(c) {
-		watcher, err = sharedlibraries.NewWatcher(c, sharedlibraries.LibsetCrypto, cleanerCB,
+		watcher, err = sharedlibraries.NewWatcher(c, sharedlibraries.LibsetCrypto, bla,
 			sharedlibraries.Rule{
 				Re:           regexp.MustCompile(`libssl.so`),
 				RegisterCB:   addHooks(m, procRoot, openSSLProbes),
@@ -850,6 +854,28 @@ func (o *sslProgram) addProcessExitProbe(options *manager.Options) {
 		options.ActivatedProbes = append(options.ActivatedProbes, &manager.ProbeSelector{ProbeIdentificationPair: p.ProbeIdentificationPair})
 		// exclude a raw tracepoint
 		options.ExcludedFunctions = append(options.ExcludedFunctions, rawTracepointSchedProcessExit)
+	}
+}
+
+func (o *sslProgram) cleanSSLSockByCtxMap(alivePIDs map[uint32]struct{}) {
+	emap, _, err := o.ebpfManager.GetMap(sslSockByCtxMap)
+	if err != nil && log.ShouldLog(log.DebugLvl) {
+		log.Debugf("SSL map %q cleanup error: %v", sslSockByCtxMap, err)
+		return
+	}
+
+	var keysToDelete []uint64
+	var key uint64 // representing C.void *4
+	var value http.SslSock
+	iter := emap.Iterate()
+
+	for iter.Next(unsafe.Pointer(&key), unsafe.Pointer(&value)) {
+		if _, exists := alivePIDs[value.Tup.Pid]; !exists {
+			keysToDelete = append(keysToDelete, key)
+		}
+	}
+	for _, k := range keysToDelete {
+		_ = emap.Delete(unsafe.Pointer(&k))
 	}
 }
 
