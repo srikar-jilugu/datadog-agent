@@ -17,7 +17,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/envs"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/language"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/servicediscovery/usm"
 	"github.com/DataDog/datadog-agent/pkg/discovery/tracermetadata"
@@ -35,8 +34,10 @@ const (
 	None Instrumentation = "none"
 	// Provided means the service has been manually instrumented.
 	Provided Instrumentation = "provided"
-	// Injected means the service is using automatic APM injection.
+	// Injected means the service was injected but does not contain a tracer.
 	Injected Instrumentation = "injected"
+	// Auto means the service is using automatic APM injection.
+	Auto Instrumentation = "auto"
 )
 
 type detector func(ctx usm.DetectionContext) Instrumentation
@@ -55,23 +56,19 @@ var (
 
 // Detect attempts to detect the type of APM instrumentation for the given service.
 func Detect(lang language.Language, ctx usm.DetectionContext) Instrumentation {
-	// first check to see if the DD_INJECTION_ENABLED is set to tracer
-	if isInjected(ctx.Envs) {
+	containsInjector := isInjected(ctx)
+	containsTracer := isTraced(lang, ctx)
+
+	switch {
+	case containsInjector && containsTracer:
+		return Auto
+	case containsInjector && !containsTracer:
 		return Injected
-	}
-
-	// if the process has valid tracer's metadata, then the
-	// instrumentation is provided
-	if isTracerMetadataValid(ctx) {
+	case !containsInjector && containsTracer:
 		return Provided
+	default:
+		return None
 	}
-
-	// different detection for provided instrumentation for each
-	if detect, ok := detectorMap[lang]; ok {
-		return detect(ctx)
-	}
-
-	return None
 }
 
 func isTracerMetadataValid(ctx usm.DetectionContext) bool {
@@ -79,15 +76,22 @@ func isTracerMetadataValid(ctx usm.DetectionContext) bool {
 	return err == nil
 }
 
-func isInjected(envs envs.Variables) bool {
-	if val, ok := envs.Get("DD_INJECTION_ENABLED"); ok {
-		parts := strings.Split(val, ",")
-		for _, v := range parts {
-			if v == "tracer" {
-				return true
-			}
-		}
+func isInjected(ctx usm.DetectionContext) bool {
+	return injectorDetector(ctx) == Injected
+}
+
+func isTraced(lang language.Language, ctx usm.DetectionContext) bool {
+	// if the process has valid tracer's metadata, then the
+	// instrumentation is provided
+	if isTracerMetadataValid(ctx) {
+		return true
 	}
+
+	// different detection for provided instrumentation for each
+	if detect, ok := detectorMap[lang]; ok {
+		return detect(ctx) == Provided
+	}
+
 	return false
 }
 
@@ -144,6 +148,30 @@ func pythonDetectorFromMapsReader(reader io.Reader) Instrumentation {
 
 		if strings.Contains(line, "/ddtrace/") {
 			return Provided
+		}
+	}
+
+	return None
+}
+
+func injectorDetector(ctx usm.DetectionContext) Instrumentation {
+	mapsPath := kernel.HostProc(strconv.Itoa(ctx.Pid), "maps")
+	mapsFile, err := os.Open(mapsPath)
+	if err != nil {
+		return None
+	}
+	defer mapsFile.Close()
+
+	return injectorDetectorFromMapsReader(mapsFile)
+}
+
+func injectorDetectorFromMapsReader(reader io.Reader) Instrumentation {
+	scanner := bufio.NewScanner(bufio.NewReader(reader))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.Contains(line, "/inject/") {
+			return Injected
 		}
 	}
 
