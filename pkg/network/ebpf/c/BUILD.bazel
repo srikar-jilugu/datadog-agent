@@ -92,8 +92,6 @@ cc_library(
         "protocols/tls/tags-types.h",
         "protocols/tls/tls.h",
         "protocols/tls/tls-maps.h",
-        "runtime/conntrack.h",
-        "runtime/conntrack-types.h",
         "shared-libraries/maps.h",
         "shared-libraries/probes.h",
         "shared-libraries/types.h",
@@ -108,6 +106,8 @@ cc_library(
         "tracer/tcp_recv.h",
         "tracer/telemetry.h",
         "tracer/tracer.h",
+        "//pkg/network/ebpf/c/runtime:conntrack.h",
+        "//pkg/network/ebpf/c/runtime:conntrack-types.h",
     ],
     visibility = ["//visibility:public"],
 )

@@ -416,3 +416,19 @@ http_archive(
     strip_prefix = "libpcap-{0}".format(LIBPCAP_VERSION),
     url = "https://www.tcpdump.org/release/libpcap-{0}.tar.xz".format(LIBPCAP_VERSION),
 )
+
+# LINUX_KERNEL_VERSION = "5.15.180"
+# http_archive(
+#     name = "linux-headers",
+#     build_file_content = all_content,
+#     sha256 = "f51f68b8bbe60aca5e1ff3781f7e5d2ca6a31dd299c8446c39bf880bfff1cd39",
+#     strip_prefix = "linux-{0}".format(LINUX_KERNEL_VERSION),
+#     url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-{0}.tar.xz".format(LINUX_KERNEL_VERSION),
+# )
+http_archive(
+    name = "linux-headers",
+    build_file_content = all_content,
+    sha256 = "245f31a066460a51849365009557f61350e46579288e3f46cf9f44b3f5bee3ed",
+    strip_prefix = "kernel-headers-deb-x64",
+    url = "https://dd-agent-omnibus.s3.us-east-1.amazonaws.com/kernel-4.9-headers-deb-x64.tgz",
+)
