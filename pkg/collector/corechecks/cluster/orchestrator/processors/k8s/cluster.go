@@ -180,6 +180,9 @@ func (p *ClusterProcessor) Process(ctx processors.ProcessorContext, list interfa
 			Tags:            pctx.Cfg.ExtraTags,
 		},
 	}
+
+	log.Debugf("Sending manifest: %s", string(yaml))
+
 	processResult = processors.ProcessResult{
 		MetadataMessages: metadataMessages,
 		ManifestMessages: manifestMessages,
