@@ -160,6 +160,8 @@ func (p *ClusterProcessor) Process(ctx processors.ProcessorContext, list interfa
 		return processResult, 0, nil
 	}
 
+	log.Debugf("Sending manifest: %s", string(yaml))
+
 	metadataMessages := []model.MessageBody{
 		&model.CollectorCluster{
 			ClusterName: pctx.Cfg.KubeClusterName,
