@@ -206,6 +206,10 @@ func (w *Watcher) handleLibraryOpen(lib LibPath) {
 		return
 	}
 
+	if res, err := w.isDatadogProcess(lib.Pid); err == nil && res {
+		return
+	}
+
 	w.libHits.Add(1)
 	path := ToBytes(&lib)
 	for _, r := range w.rules {
