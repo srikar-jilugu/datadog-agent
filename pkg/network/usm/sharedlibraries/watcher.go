@@ -157,10 +157,6 @@ func (w *Watcher) DetachPID(pid uint32) error {
 
 // AttachPID attaches a given pid to the eBPF program
 func (w *Watcher) AttachPID(pid uint32) error {
-	if res, err := w.isDatadogProcess(pid); err == nil && res {
-		return nil
-	}
-
 	mapsPath := fmt.Sprintf("%s/%d/maps", w.procRoot, pid)
 	maps, err := os.Open(mapsPath)
 	if err != nil {
@@ -206,10 +202,6 @@ func (w *Watcher) handleLibraryOpen(lib LibPath) {
 		return
 	}
 
-	if res, err := w.isDatadogProcess(lib.Pid); err == nil && res {
-		return
-	}
-
 	w.libHits.Add(1)
 	path := ToBytes(&lib)
 	for _, r := range w.rules {
@@ -235,9 +227,6 @@ func (w *Watcher) Start() {
 
 	_ = kernel.WithAllProcs(w.procRoot, func(pid int) error {
 		if pid == w.thisPID { // don't scan ourself
-			return nil
-		}
-		if res, err := w.isDatadogProcess(uint32(pid)); err == nil && res {
 			return nil
 		}
 
@@ -326,13 +315,21 @@ func (w *Watcher) sync() {
 		}
 
 		pid := uint32(origPid)
-		alivePIDs[pid] = struct{}{}
+		isDatadogProcess, _ := w.isDatadogProcess(pid)
+		if !isDatadogProcess {
+			alivePIDs[pid] = struct{}{}
+		}
 
-		if _, ok := deletionCandidates[pid]; ok {
+		if _, ok := deletionCandidates[pid]; ok && !isDatadogProcess {
 			// We have previously hooked into this process and it remains
 			// active, so we remove it from the deletionCandidates list, and
 			// move on to the next PID
 			delete(deletionCandidates, pid)
+			return nil
+		}
+
+		if isDatadogProcess {
+			// If the process is a datadog process, we don't want to hook it.
 			return nil
 		}
 
