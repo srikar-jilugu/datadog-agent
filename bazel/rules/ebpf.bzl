@@ -96,10 +96,10 @@ def _ebpf_prog_impl(ctx):
 
     for f in ctx.files.srcs:
         bc_file = ctx.actions.declare_file(f.basename + ".bc")
-        out_file = ctx.actions.declare_file(f.basename + ".o")
+        # out_file = ctx.actions.declare_file(f.basename + ".o")
 
         args = ctx.actions.args()
-        args.add("-v")
+        # args.add("-v")
         args.add("-emit-llvm")
         args.add_all(include_dirs, before_each="-I")
         args.add_all(["-target", "bpf"])
@@ -107,7 +107,7 @@ def _ebpf_prog_impl(ctx):
         args.add_all(ebpf_core_flags)
         args.add_all(flags)
         args.add_all(["-c", f.short_path])
-        args.add_all(["-o", bc_file.short_path])
+        args.add_all(["-o", bc_file])
         # args.add_all(linux_headers_info.system_includes, before_each="-isystem")
         # args.add("-I", linux_headers_info.headers.to_list()[0].short_path)
 
@@ -119,18 +119,16 @@ def _ebpf_prog_impl(ctx):
             arguments = [args],
             # executable = "clang",
             executable = ctx.file._clang,
-            use_default_shell_env = True,
+            # use_default_shell_env = True,
         )
 
-        ctx.actions.run_shell(
-            inputs = [bc_file],
-            outputs = [out_file],
-            command = "LOLNOPE",
-        )
+        # ctx.actions.run_shell(
+        #     inputs = [bc_file],
+        #     outputs = [out_file],
+        #     command = "LOLNOPE",
+        # )
     return [
-        DefaultInfo(files = depset(
-            direct = [bc_file, out_file],
-        )),
+        DefaultInfo(files = depset([bc_file])),
         EbpfProgram(
             # transitive = [depset([bc_file])],
             deps = header_deps,
