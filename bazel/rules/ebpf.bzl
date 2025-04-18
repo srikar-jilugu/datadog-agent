@@ -15,7 +15,6 @@ def _ebpf_compile_flags():
             '-DCONFIG_64BIT',
             '-D__BPF_TRACING__',
             '-DKBUILD_MODNAME="ddsysprobe"',
-            '-DCOMPILE_PREBUILT',
         ]
     )
     # if arch is not None:
@@ -36,8 +35,8 @@ def _ebpf_compile_flags():
             # '-Werror',
         ]
     )
-    flags.extend(["-include", "pkg/ebpf/c/asm_goto_workaround.h"])
-    flags.extend(["-O2"])
+    # flags.extend(["-include", "pkg/ebpf/c/asm_goto_workaround.h"])
+    flags.extend(["-O2", "-g"])
     flags.extend(
         [
             # Some linux distributions enable stack protector by default which is not available on eBPF
@@ -52,6 +51,7 @@ def _ebpf_compile_flags():
     flags.extend([
         '-D__x86_64__',
         '-D__TARGET_ARCH_x86',
+        '-DCOMPILE_CORE',
 
     ])
     return flags
@@ -102,7 +102,7 @@ def _ebpf_prog_impl(ctx):
         args.add("-v")
         args.add("-emit-llvm")
         args.add_all(include_dirs, before_each="-I")
-        args.add_all(["-MD", "-MF", bc_file.short_path + ".d", "-target", "bpf"])
+        args.add_all(["-target", "bpf"])
         args.add_all(linux_headers_dirs, before_each="-isystem")
         args.add_all(ebpf_core_flags)
         args.add_all(flags)
