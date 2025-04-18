@@ -46,6 +46,12 @@ ebpf_clang_repo(
     version = "12.0.1",
 )
 
+linux_headers_repo = use_repo_rule("//:bazel/linux_kernel_repo.bzl", "linux_headers")
+
+linux_headers_repo(
+    name = "linux_headers",
+)
+
 # Make our 3rd parties depencency repositories known
 include("//deps:repos.MODULE.bazel")
 

@@ -12,6 +12,9 @@ def _ebpf_clang_impl(rctx):
     )
     rctx.file("BUILD.bazel", 'exports_files(["bin/clang"])')
 
+# def _ebpf_custom_clang(rctx):
+    # https://dd-agent-omnibus.s3.amazonaws.com/llvm/clang-12.0.1.amd64
+
 ebpf_clang_repo = repository_rule(
     implementation = _ebpf_clang_impl,
     attrs = {

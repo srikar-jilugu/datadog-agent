@@ -3496,11 +3496,11 @@
         "bzlTransitiveDigest": "9BNh8iWoWxa19VesDfjXzdinl2SoPmOuLOpgCYASgos=",
         "usagesDigest": "oiURu4TnqQ3+kjC5HmzcwiY6dKtNXsz4yKm58S2qumU=",
         "recordedFileInputs": {
-          "@@+_repo_rules2+sds//sds-bindings-utils/Cargo.toml": "0abbb1975fe831c39eda01281b5bc3cba540629a480ad8f03242051232c263b6",
-          "@@+_repo_rules2+sds//sds-go/rust/Cargo.lock": "bdb1071d7750384687be5f8d4dbab8885b30ac9827272ddb4e87cce73f2c8e21",
-          "@@+_repo_rules2+sds//sds-go/rust/Cargo.toml": "075c9d94b3e11e3e73cb57b8be7d8c5634efe59a60d97946d434f19ec58352aa",
-          "@@+_repo_rules2+sds//sds/Cargo.toml": "53c035b96630994ce62e06fb64db5d6d1a8bf96cf30df699ab4d3da83aa32465",
-          "@@+_repo_rules2+sds//sds/tools/fuzz/Cargo.toml": "8a4445477c10538e0e0bca16b7de91db7e47f9ea9593fcfefbca4b2e8a698955"
+          "@@+_repo_rules3+sds//sds-bindings-utils/Cargo.toml": "0abbb1975fe831c39eda01281b5bc3cba540629a480ad8f03242051232c263b6",
+          "@@+_repo_rules3+sds//sds-go/rust/Cargo.lock": "bdb1071d7750384687be5f8d4dbab8885b30ac9827272ddb4e87cce73f2c8e21",
+          "@@+_repo_rules3+sds//sds-go/rust/Cargo.toml": "075c9d94b3e11e3e73cb57b8be7d8c5634efe59a60d97946d434f19ec58352aa",
+          "@@+_repo_rules3+sds//sds/Cargo.toml": "53c035b96630994ce62e06fb64db5d6d1a8bf96cf30df699ab4d3da83aa32465",
+          "@@+_repo_rules3+sds//sds/tools/fuzz/Cargo.toml": "8a4445477c10538e0e0bca16b7de91db7e47f9ea9593fcfefbca4b2e8a698955"
         },
         "recordedDirentsInputs": {},
         "envVariables": {
@@ -6218,7 +6218,7 @@
           [
             "",
             "sds",
-            "+_repo_rules2+sds"
+            "+_repo_rules3+sds"
           ],
           [
             "bazel_features+",
