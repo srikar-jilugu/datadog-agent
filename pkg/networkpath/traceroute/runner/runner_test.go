@@ -40,6 +40,7 @@ func TestProcessResults(t *testing.T) {
 		protocol         payload.Protocol
 		hname            string
 		destinationHost  string
+		destinationPort  uint16
 		useGatewayLookup bool
 		expected         payload.NetworkPath
 		errMsg           string
@@ -55,6 +56,7 @@ func TestProcessResults(t *testing.T) {
 			protocol:         payload.ProtocolUDP,
 			hname:            "test-hostname",
 			destinationHost:  "test-destination-hostname",
+			destinationPort:  1234,
 			inputResults: &common.Results{
 				Source:     net.ParseIP("10.0.0.5"),
 				SourcePort: 12345,
@@ -87,7 +89,7 @@ func TestProcessResults(t *testing.T) {
 				Destination: payload.NetworkPathDestination{
 					Hostname:  "test-destination-hostname",
 					IPAddress: "8.8.8.8",
-					Port:      33434,
+					Port:      1234,
 				},
 				Hops: []payload.NetworkPathHop{
 					{
@@ -120,6 +122,7 @@ func TestProcessResults(t *testing.T) {
 			protocol:         payload.ProtocolTCP,
 			hname:            "test-hostname",
 			destinationHost:  "test-destination-hostname",
+			destinationPort:  443,
 			inputResults: &common.Results{
 				Source:     net.ParseIP("10.0.0.5"),
 				SourcePort: 12345,
@@ -190,6 +193,7 @@ func TestProcessResults(t *testing.T) {
 			protocol:         payload.ProtocolUDP,
 			hname:            "test-hostname",
 			destinationHost:  "test-destination-hostname",
+			destinationPort:  1234,
 			inputResults: &common.Results{
 				Source:     net.ParseIP("10.0.0.5"),
 				SourcePort: 12345,
@@ -232,7 +236,7 @@ func TestProcessResults(t *testing.T) {
 				Destination: payload.NetworkPathDestination{
 					Hostname:  "test-destination-hostname",
 					IPAddress: "8.8.8.8",
-					Port:      33434,
+					Port:      1234,
 				},
 				Hops: []payload.NetworkPathHop{
 					{
@@ -285,7 +289,7 @@ func TestProcessResults(t *testing.T) {
 					},
 				)
 			}
-			actual, err := runner.processResults(test.inputResults, test.protocol, test.hname, test.destinationHost)
+			actual, err := runner.processResults(test.inputResults, test.protocol, test.hname, test.destinationHost, test.destinationPort)
 			if test.errMsg != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), test.errMsg)
