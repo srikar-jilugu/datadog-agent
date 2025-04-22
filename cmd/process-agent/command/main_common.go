@@ -99,7 +99,7 @@ func runApp(ctx context.Context, globalParams *GlobalParams) error {
 		Config       config.Component
 		WorkloadMeta workloadmeta.Component
 	}
-	app := fx.New(
+	err := fxutil.Run(
 		fx.Supply(
 			core.BundleParams{
 				SysprobeConfigParams: sysprobeconfigimpl.NewParams(
@@ -192,7 +192,6 @@ func runApp(ctx context.Context, globalParams *GlobalParams) error {
 		}),
 
 		// Provides specific features to our own fx wrapper (logging, lifecycle, shutdowner)
-		fxutil.FxAgentBase(),
 		logging.EnableFxLoggingOnDebug[logcomp.Component](),
 
 		// Set the pid file path
@@ -236,42 +235,16 @@ func runApp(ctx context.Context, globalParams *GlobalParams) error {
 		}),
 		settingsimpl.Module(),
 	)
-
-	err := app.Start(ctx)
 	if err != nil {
 		if errors.Is(err, errAgentDisabled) {
 			if !shouldStayAlive(appInitDeps.Config) {
 				log.Info("process-agent is not enabled, exiting...")
 				return nil
 			}
-		} else {
-			// At this point it is not guaranteed that the logger has been successfully initialized. We should fall back to
-			// stdout just in case.
-			if appInitDeps.Logger == nil {
-				fmt.Println("Failed to initialize the process agent: ", fxutil.UnwrapIfErrArgumentsFailed(err))
-			} else {
-				appInitDeps.Logger.Critical("Failed to initialize the process agent: ", fxutil.UnwrapIfErrArgumentsFailed(err))
-			}
-			return err
 		}
 	}
 
-	// Wait for exit signal
-	select {
-	case <-exitSignal:
-		log.Info("Received exit signal, shutting down...")
-	case <-ctx.Done():
-		log.Info("Received stop from service manager, shutting down...")
-	}
-
-	err = app.Stop(context.Background())
-	if err != nil {
-		log.Criticalf("Failed to properly stop the process agent: %v", err)
-	} else {
-		log.Info("The process-agent has successfully been shut down")
-	}
-
-	return nil
+	return err
 }
 
 type miscDeps struct {
