@@ -70,8 +70,11 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 	)
 	// s.baseIISSuite.StopTrustedInstaller()
 	// flake.Mark(s.T())
+	s.baseIISSuite.WriteSvcHostTasks("svc-host-tasks.txt")
 	s.baseIISSuite.EnableProcessAudit()
 	s.baseIISSuite.EnableIISConfigurationLog()
+	s.baseIISSuite.EnableETWTrace()
+	s.baseIISSuite.EnableAppHostFileAudit()
 
 	// Install first version
 	s.installDotnetAPMLibraryWithVersion(oldVersion)
@@ -105,6 +108,8 @@ func (s *testDotnetLibraryInstallSuite) TestUpdate() {
 	s.baseIISSuite.WriteWASEventLogs("was-event-logs-after-update.txt")
 	s.baseIISSuite.WriteProcessAuditLogs("process-audit-logs-after-update.txt")
 	s.baseIISSuite.WriteIISConfigurationLogs("iis-configuration-logs-after-update.txt")
+	s.baseIISSuite.WriteAppHostFileAuditLogs("app-host-file-audit-logs-after-update.txt")
+	s.baseIISSuite.StopETWTrace()
 
 	s.Require().Contains(output, oldVersion[:len(oldVersion)-2], "the injected library should still be the old version")
 
