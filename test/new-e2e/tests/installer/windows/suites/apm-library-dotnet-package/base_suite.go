@@ -178,6 +178,9 @@ func (s *baseIISSuite) WriteSvcHostTasks(filename string) error {
 // EnableFileAudit enables auditing on the IIS ApplicationHost.config file
 func (s *baseIISSuite) EnableAppHostFileAudit() {
 	script := `
+AuditPol /set /subcategory:"File System" /success:enable /failure:enable
+gpupdate /force
+
 # Target file
 $file = "$env:windir\System32\inetsrv\config\ApplicationHost.config"
 
@@ -208,7 +211,8 @@ $auditRule = New-Object System.Security.AccessControl.FileSystemAuditRule (
 
 # Apply the audit rule
 $acl.AddAuditRule($auditRule)
-Set-Acl -Path $file -AclObject $acl`
+Set-Acl -Path $file -AclObject $acl
+`
 
 	host := s.Env().RemoteHost
 	output, err := host.Execute(script)
@@ -225,6 +229,7 @@ func (s *baseIISSuite) WriteAppHostFileAuditLogs(filename string) error {
 
 	output, err := s.Env().RemoteHost.Execute(script)
 	if err != nil {
+		fmt.Printf("failed to get app host file audit logs: %s\n%s", err, output)
 		return fmt.Errorf("failed to get app host file audit logs: %w", err)
 	}
 
@@ -239,7 +244,7 @@ Microsoft-Windows-Kernel-Process 0xFF 0x5
 Microsoft-Windows-Kernel-File 0xFF 0x5
 "@ | Out-File -Encoding ASCII -FilePath .\providers.pf
 
-logman create trace MyKernelTrace -pff .\providers.pf -o $env:TEMP\MyKernelTrace.etl -ets`
+logman create trace MyKernelTrace -pf .\providers.pf -o $env:TEMP\MyKernelTrace.etl -ets`
 
 	output, err := s.Env().RemoteHost.Execute(script)
 	s.Require().NoErrorf(err, "failed to enable ETW tracing: %s", output)
@@ -250,17 +255,20 @@ func (s *baseIISSuite) StopETWTrace() {
 	output, err := s.Env().RemoteHost.Execute("logman stop MyKernelTrace -ets")
 	s.Require().NoErrorf(err, "failed to stop ETW tracing: %s", output)
 
-	output, err = s.Env().RemoteHost.Execute(`tracerpt "$env:TEMP\MyKernelTrace.etl" -o "$env:TEMP\report.csv" -of CSV`)
+	output, err = s.Env().RemoteHost.Execute(`tracerpt -y "$env:TEMP\MyKernelTrace.etl" -o "$env:TEMP\report.csv" -of CSV`)
 	s.Require().NoErrorf(err, "failed to convert ETW trace to CSV: %s", output)
 
 	tempDir, err := s.Env().RemoteHost.Execute("echo $env:TEMP")
+	tempDir = strings.TrimSpace(tempDir)
 	s.Require().NoErrorf(err, "failed to get temp directory: %s", err)
 
 	reportPath := filepath.Join(s.GetTestOutputDir(s.TestName()), "report.csv")
-	tracePath := filepath.Join(tempDir, "MyKernelTrace.etl")
+	tracePath := filepath.Join(s.GetTestOutputDir(s.TestName()), "MyKernelTrace.etl")
 
-	s.Env().RemoteHost.GetFile(pathJoin(tempDir, "MyKernelTrace.etl"), tracePath)
-	s.Env().RemoteHost.GetFile(pathJoin(tempDir, "report.csv"), reportPath)
+	err = s.Env().RemoteHost.GetFile(pathJoin(tempDir, "MyKernelTrace.etl"), tracePath)
+	s.Require().NoErrorf(err, "failed to get ETW trace file: %s", err)
+	err = s.Env().RemoteHost.GetFile(pathJoin(tempDir, "report.csv"), reportPath)
+	s.Require().NoErrorf(err, "failed to get ETW trace report: %s", err)
 }
 
 func (s *baseIISSuite) StopTrustedInstaller() {
