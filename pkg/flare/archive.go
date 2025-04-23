@@ -253,6 +253,31 @@ func getChecksFromProcessAgent(fb flaretypes.FlareBuilder, getAddressPort func()
 	getCheck("process_discovery", "process_config.process_discovery.enabled")
 }
 
+
+// GetAutoscalerList fetches the autoscaler list from the given URL.
+func GetAutoscalerList(remoteURL string) ([]byte, error) {
+	c := apiutil.GetClient(apiutil.WithInsecureTransport) // FIX IPC: get certificates right then remove this option
+
+	r, err := apiutil.DoGet(c, remoteURL, apiutil.LeaveConnectionOpen)
+	if err != nil {
+		return nil, err
+	}
+
+	adr := autoscalingWorkload.AutoscalingDumpResponse{}
+	err = json.Unmarshal(r, &adr)
+	
+	if err != nil {
+		return nil, err
+	}
+
+	fct := func(w io.Writer) error {
+		adr.Write(w)
+		return nil
+	}
+	return functionOutputToBytes(fct), nil
+}
+
+
 func getAgentTaggerList() ([]byte, error) {
 	ipcAddress, err := pkgconfigsetup.GetIPCAddress(pkgconfigsetup.Datadog())
 	if err != nil {

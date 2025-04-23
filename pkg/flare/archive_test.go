@@ -105,6 +105,29 @@ func setupProcessAPIServer(t *testing.T, port int) {
 	))
 }
 
+func TestGetAutoscalerList(t *testing.T) {
+	autoscalerDumpResponse := autoscalingWorkload.AutoscalingDumpResponse{
+		PodAutoscalers: []*autoscalingWorkload.PodAutoscalerInternal{
+			{
+				ID: "pod_autoscaler_id",
+			},
+		},
+	}
+
+	s := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		out, _ := json.Marshal(&autoscalerDumpResponse)
+		w.Write(out)
+	}))
+	defer s.Close()
+
+	setupIPCAddress(t, configmock.New(t), s.URL)
+
+	content, err := getAgentWorkloadList()
+	require.NoError(t, err)
+
+	assert.Contains(t, string(content), "pod_autoscaler_id")
+}
+
 func TestGetAgentTaggerList(t *testing.T) {
 	tagMap := make(map[string]types.TaggerListEntity)
 	tagMap["random_prefix://random_id"] = types.TaggerListEntity{
