@@ -242,6 +242,16 @@ func (s *baseIISSuite) EnableETWTrace() {
 	script := `@"
 Microsoft-Windows-Kernel-Process 0xFF 0x5
 Microsoft-Windows-Kernel-File 0xFF 0x5
+Microsoft-Windows-IIS-Configuration 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-APPHOSTSVC 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-FTP 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-IisMetabaseAudit 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-IISReset 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-Logging 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-W3SVC 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-W3SVC-PerfCounters 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-W3SVC-WP 0xFFFFFFFFFFFFFFFF 255
+Microsoft-Windows-IIS-WMSVC 0xFFFFFFFFFFFFFFFF 255
 "@ | Out-File -Encoding ASCII -FilePath .\providers.pf
 
 logman create trace MyKernelTrace -pf .\providers.pf -o $env:TEMP\MyKernelTrace.etl -ets`
