@@ -49,8 +49,11 @@ type TrapsConfig struct {
 	authoritativeEngineID string   `mapstructure:"-" yaml:"-"`
 }
 
+var LastTrapConfig TrapsConfig
+
 // ReadConfig builds the traps configuration from the Agent configuration.
 func ReadConfig(host string, conf config.Component) (*TrapsConfig, error) {
+	fmt.Println("Reading config of SNMP TRAPS")
 	var c = &TrapsConfig{}
 	err := structure.UnmarshalKey(conf, "network_devices.snmp_traps", c)
 	if err != nil {
@@ -59,6 +62,7 @@ func ReadConfig(host string, conf config.Component) (*TrapsConfig, error) {
 	if err := c.SetDefaults(host, conf.GetString("network_devices.namespace")); err != nil {
 		return c, err
 	}
+	LastTrapConfig = *c
 	return c, nil
 }
 

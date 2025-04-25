@@ -15,6 +15,8 @@ type Component interface {
 	GetTrapsPackets() int64
 	AddTrapsPacketsUnknownCommunityString(int64)
 	GetTrapsPacketsUnknownCommunityString() int64
+	AddTrapsBlaBla(int64)
+	GetTrapsBlaBla() int64
 	SetStartError(error)
 	GetStartError() error
 }

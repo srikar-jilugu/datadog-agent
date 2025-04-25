@@ -237,6 +237,9 @@ func runLocalDiagnose(s *systrayImpl) []byte {
 		diagnose.CoreEndpointsConnectivity: func(diagCfg diagnose.Config) []diagnose.Diagnosis {
 			return connectivity.Diagnose(diagCfg, s.log)
 		},
+		diagnose.FirewallConnectivity: func(diagCfg diagnose.Config) []diagnose.Diagnosis {
+			return connectivity.Diagnose(diagCfg, s.log)
+		},
 	}
 
 	config := diagnose.Config{Verbose: true}

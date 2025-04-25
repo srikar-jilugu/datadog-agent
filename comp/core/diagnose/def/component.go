@@ -8,6 +8,7 @@ package diagnose
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/fatih/color"
@@ -38,6 +39,8 @@ const (
 	EventPlatformConnectivity = "connectivity-datadog-event-platform"
 	// PortConflict is the suite name for the port-conflict suite
 	PortConflict = "port-conflict"
+
+	FirewallConnectivity = "connectivity-datadog-firewall"
 )
 
 // AllSuites is a list of all available suites
@@ -47,6 +50,7 @@ var AllSuites = []string{
 	CoreEndpointsConnectivity,
 	EventPlatformConnectivity,
 	PortConflict,
+	FirewallConnectivity,
 }
 
 var catalog *Catalog
@@ -62,6 +66,8 @@ type Catalog struct {
 
 // Register registers a diagnose function
 func (c *Catalog) Register(name string, diagnoseFunc func(Config) []Diagnosis) {
+	fmt.Println("REGISTER DIAGNOSE FUNCTION")
+	fmt.Println(AllSuites)
 	registeredSuite := false
 	for _, suite := range AllSuites {
 		if suite == name {

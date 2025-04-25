@@ -28,9 +28,9 @@ func newMock() status.Component {
 
 // mockManager mocks a manager using plain values (not expvars)
 type mockManager struct {
-	trapsPackets, trapsPacketsUnknownCommunityString int64
-	lock                                             sync.Mutex
-	err                                              error
+	trapsPackets, trapsPacketsUnknownCommunityString, trapsBlaBla int64
+	lock                                                          sync.Mutex
+	err                                                           error
 }
 
 func (s *mockManager) AddTrapsPackets(i int64) {
@@ -67,4 +67,16 @@ func (s *mockManager) GetStartError() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	return s.err
+}
+
+func (s *mockManager) AddTrapsBlaBla(i int64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.trapsBlaBla += i
+}
+
+func (s *mockManager) GetTrapsBlaBla() int64 {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.trapsBlaBla
 }

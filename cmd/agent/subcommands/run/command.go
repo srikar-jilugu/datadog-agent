@@ -646,6 +646,10 @@ func startAgent(
 		return connectivity.Diagnose(diagCfg, log)
 	})
 
+	diagnosecatalog.Register(diagnose.FirewallConnectivity, func(diagCfg diagnose.Config) []diagnose.Diagnosis {
+		return connectivity.DiagnoseFirewallConnectivity(diagCfg, log)
+	})
+
 	// start dependent services
 	// must run in background go command because the agent might be in service start pending
 	// and not service running yet, and as such, the call will block or fail

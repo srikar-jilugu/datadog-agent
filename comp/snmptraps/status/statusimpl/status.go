@@ -10,7 +10,9 @@ import (
 	"embed"
 	"encoding/json"
 	"expvar"
+	"fmt"
 	"io"
+	"os"
 
 	"go.uber.org/fx"
 
@@ -31,13 +33,22 @@ var (
 	trapsExpvars                       = expvar.NewMap("snmp_traps")
 	trapsPackets                       = expvar.Int{}
 	trapsPacketsUnknownCommunityString = expvar.Int{}
+	trapsBlaBla                        = expvar.Int{}
 	// startError stores the error we report to GetStatus()
 	startError error
 )
 
 func init() {
+	fmt.Println("INIT SNMP TRAPS STATUS")
+	if os.Geteuid() == 0 {
+		fmt.Println("Running as admin (root).")
+	} else {
+		fmt.Println("Not running as admin.")
+	}
+
 	trapsExpvars.Set("Packets", &trapsPackets)
 	trapsExpvars.Set("PacketsUnknownCommunityString", &trapsPacketsUnknownCommunityString)
+	trapsExpvars.Set("BlaBla", &trapsBlaBla)
 }
 
 // New creates a new status manager component
@@ -49,27 +60,49 @@ type manager struct {
 }
 
 func (s *manager) AddTrapsPackets(i int64) {
+	fmt.Println("ADD TRAPS PACKETS IN SNMP TRAPS STATUS")
+
 	trapsPackets.Add(i)
 }
 
 func (s *manager) AddTrapsPacketsUnknownCommunityString(i int64) {
+	fmt.Println("ADD TRAPS PACKETS UNKNOWN COMMUNITY STRING IN SNMP TRAPS STATUS")
+
 	trapsPacketsUnknownCommunityString.Add(i)
 }
 
 func (s *manager) GetTrapsPackets() int64 {
+	fmt.Println("GET TRAPS PACKETS IN SNMP TRAPS STATUS")
+
 	return trapsPackets.Value()
 }
 
 func (s *manager) GetTrapsPacketsUnknownCommunityString() int64 {
+	fmt.Println("GET TRAPS PACKETS UNKNOWN COMMUNITY STRING IN SNMP TRAPS STATUS")
+
 	return trapsPacketsUnknownCommunityString.Value()
 }
 
 func (s *manager) GetStartError() error {
+	fmt.Println("GET START ERROR IN SNMP TRAPS STATUS")
+
 	return startError
 }
 
 func (s *manager) SetStartError(err error) {
+	fmt.Println("SET START ERROR IN SNMP TRAPS STATUS")
+
 	startError = err
+}
+
+func (s *manager) AddTrapsBlaBla(i int64) {
+	fmt.Println("ADD TRAPS BLA BLA IN SNMP TRAPS STATUS")
+	trapsBlaBla.Add(i)
+}
+
+func (s *manager) GetTrapsBlaBla() int64 {
+	fmt.Println("GET TRAPS BLA BLA IN SNMP TRAPS STATUS")
+	return trapsBlaBla.Value()
 }
 
 //go:embed status_templates
@@ -80,16 +113,22 @@ type Provider struct{}
 
 // Name returns the name
 func (Provider) Name() string {
-	return "SNMP Traps"
+	fmt.Println("NAME SNMP TRAPS STATUS")
+
+	return "SNMP Traps Name"
 }
 
 // Section return the section
 func (Provider) Section() string {
-	return "SNMP Traps"
+	fmt.Println("SECTION SNMP TRAPS STATUS")
+
+	return "SNMP Traps Section"
 }
 
 // JSON populates the status map
 func (Provider) JSON(_ bool, stats map[string]interface{}) error {
+	fmt.Println("JSON SNMP TRAPS STATUS")
+
 	stats["snmpTrapsStats"] = GetStatus()
 
 	return nil
@@ -97,15 +136,21 @@ func (Provider) JSON(_ bool, stats map[string]interface{}) error {
 
 // Text renders the text output
 func (p Provider) Text(_ bool, buffer io.Writer) error {
+	fmt.Println("TEXT SNMP TRAPS STATUS")
+
 	return status.RenderText(templatesFS, "snmp.tmpl", buffer, p.populateStatus())
 }
 
 // HTML renders the html output
 func (p Provider) HTML(_ bool, buffer io.Writer) error {
+	fmt.Println("HTML SNMP TRAPS STATUS")
+
 	return status.RenderHTML(templatesFS, "snmpHTML.tmpl", buffer, p.populateStatus())
 }
 
 func (p Provider) populateStatus() map[string]interface{} {
+	fmt.Println("POPULATE STATUS SNMP TRAPS")
+
 	stats := make(map[string]interface{})
 
 	p.JSON(false, stats) //nolint:errcheck
@@ -114,6 +159,8 @@ func (p Provider) populateStatus() map[string]interface{} {
 }
 
 func getDroppedPackets() float64 {
+	fmt.Println("GET DROPPED PACKETS IN SNMP TRAPS STATUS")
+
 	aggregatorMetrics, ok := expvar.Get("aggregator").(*expvar.Map)
 	if !ok {
 		return 0
@@ -133,6 +180,7 @@ func getDroppedPackets() float64 {
 
 // GetStatus returns key-value data for use in status reporting of the traps server.
 func GetStatus() map[string]interface{} {
+	fmt.Println("GETTING STATUS IN SNMP TRAPS")
 
 	status := make(map[string]interface{})
 
@@ -146,5 +194,6 @@ func GetStatus() map[string]interface{} {
 	if startError != nil {
 		status["error"] = startError.Error()
 	}
+	fmt.Println(status)
 	return status
 }

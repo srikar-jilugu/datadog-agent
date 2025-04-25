@@ -28,6 +28,9 @@ import (
 	logshttp "github.com/DataDog/datadog-agent/pkg/logs/client/http"
 	logstcp "github.com/DataDog/datadog-agent/pkg/logs/client/tcp"
 	"github.com/DataDog/datadog-agent/pkg/util/scrubber"
+	//"github.com/DataDog/datadog-agent/comp/core/config"
+	"github.com/DataDog/datadog-agent/comp/snmptraps/config"
+	//"github.com/DataDog/datadog-agent/comp/netflow/config"
 )
 
 func getLogsEndpoints(useTCP bool) (*logsConfig.Endpoints, error) {
@@ -301,4 +304,19 @@ func sendHTTPHEADRequestToEndpoint(url string, client *http.Client) (int, error)
 		return res.StatusCode, nil
 	}
 	return res.StatusCode, fmt.Errorf("The request wasn't redirected nor achieving his goal: %v", res.Status)
+}
+
+func DiagnoseFirewallConnectivity(diagCfg diagnose.Config, log log.Component) []diagnose.Diagnosis {
+	fmt.Println("Firewall connectivity check")
+	fmt.Println("SNMP TRAPS PORT: ", config.LastTrapConfig.Port)
+
+	return []diagnose.Diagnosis{
+		{
+			Status:      diagnose.DiagnosisWarning,
+			Name:        "Firewall Configuration",
+			Diagnosis:   "Firewall Diagnosis",
+			Remediation: "Firewall Remediation",
+			RawError:    "Firewall Error",
+		},
+	}
 }

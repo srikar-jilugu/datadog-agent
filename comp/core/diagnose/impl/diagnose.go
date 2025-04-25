@@ -61,6 +61,8 @@ func NewComponent(_ Requires) (Provides, error) {
 }
 
 func (d *diagnoseRegistry) RunSuite(suiteName string, formatOutput string, verbose bool) ([]byte, error) {
+	fmt.Println("RUN SUITE IN DIAGNOSE")
+
 	catalog := diagnose.GetCatalog()
 	diag, ok := catalog.Suites[suiteName]
 	if !ok {
@@ -260,7 +262,16 @@ func getSortedAndFilteredDiagnoseSuites(diagCfg diagnose.Config, suites []suite)
 }
 
 func getSuiteDiagnoses(ds suite, diagConfig diagnose.Config) []diagnose.Diagnosis {
+	fmt.Println("GET SUITE DIAGNOSES")
+	//fmt.Println("DS")
+	//fmt.Println(ds)
+	//fmt.Println("DIAG CONFIG")
+	//fmt.Println(diagConfig)
+
 	diagnoses := ds.diagnose(diagConfig)
+
+	//fmt.Println("DIAGNOSES")
+	//fmt.Println(diagnoses)
 
 	// validate each diagnoses
 	for i, d := range diagnoses {

@@ -347,6 +347,7 @@ func cmdDiagnose(cliParams *cliParams,
 	tagger tagger.Component,
 	diagnoseComponent diagnose.Component,
 	config config.Component) error {
+	fmt.Println("CMD DIAGNOSE")
 
 	diagCfg := diagnose.Config{
 		Verbose: cliParams.verbose,
@@ -373,9 +374,11 @@ func cmdDiagnose(cliParams *cliParams,
 	var err error
 	var result *diagnose.Result
 	if !cliParams.runLocal {
+		fmt.Println("CMD DIAGNOSE NOT RUNNING LOCALLY")
 		result, err = requestDiagnosesFromAgentProcess(diagCfg)
 
 		if err != nil {
+			fmt.Println("CMD DIAGNOSE NOT RUNNING LOCALLY ERROR")
 			if !cliParams.JSONOutput { // If JSON output is requested, the output should stay a valid JSON
 				fmt.Fprintln(w, color.YellowString(fmt.Sprintf("Error running diagnose in Agent process: %s", err)))
 				fmt.Fprintln(w, "Running diagnose command locally (may take extra time to run checks locally) ...")
@@ -383,6 +386,7 @@ func cmdDiagnose(cliParams *cliParams,
 			result, err = diagnoseLocal.Run(diagnoseComponent, diagCfg, log, senderManager, wmeta, ac, secretResolver, tagger, config)
 		}
 	} else {
+		fmt.Println("DIAGNOSE CMD RUNNING LOCALLY")
 		if !cliParams.JSONOutput { // If JSON output is requested, the output should stay a valid JSON
 			fmt.Fprintln(w, "Running diagnose command locally (may take extra time to run checks locally) ...")
 		}
