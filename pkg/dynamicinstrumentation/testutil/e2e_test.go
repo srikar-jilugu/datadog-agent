@@ -10,6 +10,7 @@ package testutil
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -24,13 +25,15 @@ import (
 
 	"github.com/kr/pretty"
 
-	"github.com/DataDog/datadog-agent/pkg/dynamicinstrumentation"
-	"github.com/DataDog/datadog-agent/pkg/dynamicinstrumentation/diconfig"
-	"github.com/DataDog/datadog-agent/pkg/dynamicinstrumentation/ditypes"
-	"github.com/DataDog/datadog-agent/pkg/util/testutil/flake"
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/features"
 	"github.com/cilium/ebpf/rlimit"
+
+	"github.com/DataDog/datadog-agent/pkg/dynamicinstrumentation"
+	"github.com/DataDog/datadog-agent/pkg/dynamicinstrumentation/diconfig"
+	"github.com/DataDog/datadog-agent/pkg/dynamicinstrumentation/ditypes"
+	consumerstestutil "github.com/DataDog/datadog-agent/pkg/eventmonitor/consumers/testutil"
+	"github.com/DataDog/datadog-agent/pkg/util/testutil/flake"
 
 	"github.com/stretchr/testify/require"
 )
@@ -112,7 +115,9 @@ func runTestCase(t *testing.T, function string, expectedCaptureValue CapturedVal
 		err  error
 	)
 
-	GoDI, err = dynamicinstrumentation.RunDynamicInstrumentation(opts)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	GoDI, err = dynamicinstrumentation.RunDynamicInstrumentation(ctx, consumerstestutil.NewTestProcessConsumer(t), opts)
 	require.NoError(t, err)
 	t.Cleanup(GoDI.Close)
 
