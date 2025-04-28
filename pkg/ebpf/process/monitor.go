@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025-present Datadog, Inc.
 
+//go:build linux
+
 // Package process provides eBPF-based utilities for monitoring process events
 package process
 
