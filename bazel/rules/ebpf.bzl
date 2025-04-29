@@ -7,7 +7,8 @@ EbpfProgram = provider(
     }
 )
 
-def _ebpf_compile_flags():
+def _ebpf_compile_flags(ctx):
+    debug = ctx.attr.debug
     flags = []
     flags.extend(
         [
@@ -52,33 +53,18 @@ def _ebpf_compile_flags():
         '-D__x86_64__',
         '-D__TARGET_ARCH_x86',
         '-DCOMPILE_CORE',
-
     ])
+    if debug:
+        flags.extend('-DDEBUG=1')
     return flags
 
-def _ebpf_prog_impl(ctx):
-    ebpf_core_flags = []
-    flags = _ebpf_compile_flags()
+def _ebpf_replace_extension(file, new_ext):
+    extension = file.extension
+    return file.basename.removesuffix(extension) + new_ext
 
-    header_deps, include_dirs = expand_header_deps(ctx.attr.deps)
+def _ebpf_linux_kernel_include_dirs(header_files):
+    linux_headers_root = header_files[0].dirname
 
-    linux_headers_info = ctx.attr._linux_headers
-    linux_headers_files = ctx.files._linux_headers
-    linux_headers_root = ctx.files._linux_headers[0].dirname
-    print(linux_headers_root)
-
-    # subdirs = [
-    #     # "include",
-    #     # "include/uapi",
-    #     # "include/x86_64-linux-gnu/",
-    #     "include/generated/uapi",
-    #     "src/linux-headers-4.9.0-9-amd64/arch/x86/include/",
-    #     "src/linux-headers-4.9.0-9-amd64/arch/x86/include/generated/",
-    #     "src/linux-headers-4.9.0-9-amd64/arch/x86/include/generated/uapi",
-    #     "src/linux-headers-4.9.0-9-common/include/",
-    #     "src/linux-headers-4.9.0-9-common/arch/x86/include/",
-    #     "src/linux-headers-4.9.0-9-common/arch/x86/include/uapi/",
-    # ]
     kernel_folders = ["/usr/src/linux-headers-5.10.0-0.deb10.30-amd64", "/usr/src/linux-headers-5.10.0-0.deb10.30-common/"]
     # kernel_folders = ["/usr/src/linux-headers-5.15.0-47", "/usr/src/linux-headers-5.15.0-47-generic/"]
     subdirs = [
@@ -93,123 +79,77 @@ def _ebpf_prog_impl(ctx):
     linux_headers_dirs = []
     for kf in kernel_folders:
         linux_headers_dirs += [linux_headers_root + "/" + kf + "/" + d for d in subdirs]
+    return linux_headers_dirs
 
-    for f in ctx.files.srcs:
-        bc_file = ctx.actions.declare_file(f.basename + ".bc")
-        # out_file = ctx.actions.declare_file(f.basename + ".o")
+def _ebpf_build_bytecode(ctx, file, extra_deps, deps_include_dirs):
+    ebpf_core_flags = []
+    flags = _ebpf_compile_flags(ctx)
 
-        args = ctx.actions.args()
-        # args.add("-v")
-        args.add("-emit-llvm")
-        args.add_all(include_dirs, before_each="-I")
-        args.add_all(["-target", "bpf"])
-        args.add_all(linux_headers_dirs, before_each="-isystem")
-        args.add_all(ebpf_core_flags)
-        args.add_all(flags)
-        args.add_all(["-c", f.short_path])
-        args.add_all(["-o", bc_file])
-        # args.add_all(linux_headers_info.system_includes, before_each="-isystem")
-        # args.add("-I", linux_headers_info.headers.to_list()[0].short_path)
+    linux_headers_files = ctx.files._linux_headers
+    linux_headers_dirs = _ebpf_linux_kernel_include_dirs(linux_headers_files)
+    bc_file = ctx.actions.declare_file(_ebpf_replace_extension(file, "bc"))
+    # out_file = ctx.actions.declare_file(f.basename + ".o")
 
-        # name="ebpfcoreclang",
-        # command=f"{compiler} -MD -MF $out.d -target bpf $ebpfcoreflags $flags -c $in -o $out",
-        ctx.actions.run(
-            inputs = [f] + header_deps + linux_headers_files,
-            outputs = [bc_file],
-            arguments = [args],
-            # executable = "clang",
-            executable = ctx.file._clang,
-            # use_default_shell_env = True,
-        )
+    args = ctx.actions.args()
+    # args.add("-v")
+    args.add("-emit-llvm")
+    args.add_all(deps_include_dirs, before_each="-I")
+    args.add_all(["-target", "bpf"])
+    args.add_all(linux_headers_dirs, before_each="-isystem")
+    args.add_all(ebpf_core_flags)
+    args.add_all(flags)
+    args.add_all(["-c", file.short_path])
+    args.add_all(["-o", bc_file])
 
-        # ctx.actions.run_shell(
-        #     inputs = [bc_file],
-        #     outputs = [out_file],
-        #     command = "LOLNOPE",
-        # )
-    return [
-        DefaultInfo(files = depset([bc_file])),
-        EbpfProgram(
-            # transitive = [depset([bc_file])],
-            deps = header_deps,
-        ),
-    ]
+    # name="ebpfcoreclang",
+    # command=f"{compiler} -MD -MF $out.d -target bpf $ebpfcoreflags $flags -c $in -o $out",
+    ctx.actions.run(
+        inputs = [file] + extra_deps + linux_headers_files,
+        outputs = [bc_file],
+        arguments = [args],
+        # executable = "clang",
+        executable = ctx.file._clang,
+        # use_default_shell_env = True,
+    )
+    return bc_file
 
-def _ebpf_prog_impl_debug(ctx):
-    # cmd = "-Wno-unused-value -Wno-pointer-sign -Wno-compare-distinct-pointer-types -Wunused -Wall -Werror -include pkg/ebpf/c/asm_goto_workaround.h -O2 -Ipkg/ebpf/c  -Ipkg/network/ebpf/c -g"
+def _ebpf_build_object(ctx, bc_file):
+    """
+    Compile an EBPF bytecode object to an actual object file
+    This step is common for all EBPF programs, regardless of the CO-RE mode
+    """
+    obj_file = ctx.actions.declare_file(_ebpf_replace_extension(bc_file, "o.tmp"))
+    stripped_obj_file = ctx.actions.declare_file(_ebpf_replace_extension(bc_file, "o"))
+    # llc -march=bpf -filetype=obj -o pkg/ebpf/bytecode/build/x86_64/co-re/conntrack.o pkg/ebpf/bytecode/build/x86_64/co-re/conntrack.bc && llvm-strip -g pkg/ebpf/bytecode/build/x86_64/co-re/conntrack.o
+    args = ctx.actions.args()
+    args.add_all(["-march=bpf", "-filetype=obj"])
+    args.add_all(["-o", obj_file])
+    args.add(bc_file)
+    ctx.actions.run(
+        inputs = [bc_file],
+        outputs = [obj_file],
+        arguments = [args],
+        executable = ctx.file._llc,
+    )
+    strip_args = ctx.actions.args()
+    strip_args.add_all(["--strip-debug", obj_file, "-o", stripped_obj_file])
+    ctx.actions.run(
+        inputs = [obj_file],
+        outputs = [stripped_obj_file],
+        arguments = [strip_args],
+        executable = ctx.file._llvm_strip,
+    )
+    return stripped_obj_file
 
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/include
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/include/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/include/generated/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/arch/x86/include
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/arch/x86/include/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/arch/x86/include/generated
-# -isystem/usr/src/linux-headers-5.10.0-34-amd64/arch/x86/include/generated/uapi
-# -isystem/usr/lib/linux-kbuild-5.10/include
-# -isystem/usr/lib/linux-kbuild-5.10/include/uapi
-# -isystem/usr/lib/linux-kbuild-5.10/include/generated/uapi
-# -isystem/usr/lib/linux-kbuild-5.10/arch/x86/include
-# -isystem/usr/lib/linux-kbuild-5.10/arch/x86/include/uapi
-# -isystem/usr/lib/linux-kbuild-5.10/arch/x86/include/generated
-# -isystem/usr/lib/linux-kbuild-5.10/arch/x86/include/generated/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-common/include
-# -isystem/usr/src/linux-headers-5.10.0-34-common/include/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-common/include/generated/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-common/arch/x86/include
-# -isystem/usr/src/linux-headers-5.10.0-34-common/arch/x86/include/uapi
-# -isystem/usr/src/linux-headers-5.10.0-34-common/arch/x86/include/generated
-# -isystem/usr/src/linux-headers-5.10.0-34-common/arch/x86/include/generated/uapi
+def _ebpf_prog_impl(ctx):
     header_deps, include_dirs = expand_header_deps(ctx.attr.deps)
 
-    linux_headers_info = ctx.attr._linux_headers
-    linux_headers_files = ctx.files._linux_headers
-    linux_headers_root = ctx.files._linux_headers[0].dirname
-    kernel_folders = ["/usr/src/linux-headers-5.15.0-47", "/usr/src/linux-headers-5.15.0-47-generic/"]
-
-    subdirs = [
-        "include",
-        "include/uapi",
-        "include/generated/uapi",
-        "arch/x86/include",
-        "arch/x86/include/uapi",
-        "arch/x86/include/generated",
-        "arch/x86/include/generated/uapi",
-    ]
-    linux_headers_dirs = []
-    for kf in kernel_folders:
-        linux_headers_dirs += [linux_headers_root + "/" + kf + "/" + d for d in subdirs]
-
     for f in ctx.files.srcs:
-        bc_file = ctx.actions.declare_file(f.basename + ".bc")
-        # out_file = ctx.actions.declare_file(f.basename + ".o")
+        bc_file = _ebpf_build_bytecode(ctx, f, header_deps, include_dirs)
+        obj_file = _ebpf_build_object(ctx, bc_file)
 
-        args = ctx.actions.args()
-        args.add("-v")
-        args.add_all(["-MD", "-MF", bc_file.short_path + ".d", "-target", "bpf"])
-        args.add("-emit-llvm")
-        args.add_all(["-D__KERNEL__", "-DCONFIG_64BIT", "-D__BPF_TRACING__", '-DKBUILD_MODNAME="ddsysprobe"', "-DCOMPILE_PREBUILT", "-D__TARGET_ARCH_x86", "-D__x86_64__"])
-        args.add_all(["-fno-stack-protector", "-fno-color-diagnostics", "-fno-unwind-tables", "-fno-asynchronous-unwind-tables", "-fno-jump-tables", "-fmerge-all-constants"])
-        args.add_all(include_dirs, before_each="-I")
-        args.add_all(linux_headers_dirs, before_each="-isystem")
-        args.add_all(["-c", f.short_path])
-        args.add_all(["-o", bc_file.short_path])
-        # args.add_all(linux_headers_info.system_includes, before_each="-isystem")
-        # args.add("-I", linux_headers_info.headers.to_list()[0].short_path)
-
-        # name="ebpfcoreclang",
-        # command=f"{compiler} -MD -MF $out.d -target bpf $ebpfcoreflags $flags -c $in -o $out",
-        ctx.actions.run(
-            inputs = [f] + header_deps + linux_headers_files,
-            outputs = [bc_file],
-            arguments = [args],
-            # executable = "clang",
-            executable = ctx.file._clang,
-            use_default_shell_env = True,
-        )
     return [
-        DefaultInfo(files = depset(
-            direct = [bc_file],
-        )),
+        DefaultInfo(files = depset([bc_file, obj_file])),
         EbpfProgram(
             # transitive = [depset([bc_file])],
             deps = header_deps,
@@ -224,7 +164,15 @@ ebpf_prog = rule(
             providers=[CcInfo],
             doc="A list of cc_library target listing all headers needed for EBPF compilation"
         ),
+        "debug": attr.bool(
+            doc="Should debug code be included",
+        ),
+        "core": attr.bool(
+            doc="Should CO-RE mode be enabled",
+        ),
         "_clang": attr.label(default = "@ebpf_clang//:bin/clang", allow_single_file=True),
+        "_llc": attr.label(default = "@ebpf_clang//:bin/llc", allow_single_file=True),
+        "_llvm_strip": attr.label(default = "@ebpf_clang//:bin/llvm-strip", allow_single_file=True),
         "_linux_headers": attr.label(default = "@linux_headers//:all", allow_files = True),
         # "_linux_headers": attr.label(default = "//deps/linux-headers", providers=[CcInfo]),
     },

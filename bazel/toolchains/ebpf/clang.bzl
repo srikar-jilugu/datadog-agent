@@ -10,7 +10,7 @@ def _ebpf_clang_impl(rctx):
         canonical_id = get_default_canonical_id(rctx, [url]),
         strip_prefix = "clang+llvm-{0}-{1}-linux-gnu-ubuntu-".format(rctx.attr.version, rctx.attr.arch),
     )
-    rctx.file("BUILD.bazel", 'exports_files(["bin/clang"])')
+    rctx.file("BUILD.bazel", 'exports_files(["bin/clang", "bin/llc", "bin/llvm-strip"])')
 
 # def _ebpf_custom_clang(rctx):
     # https://dd-agent-omnibus.s3.amazonaws.com/llvm/clang-12.0.1.amd64
