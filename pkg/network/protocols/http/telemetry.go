@@ -38,6 +38,7 @@ type Telemetry struct {
 	hits1XX, hits2XX, hits3XX, hits4XX, hits5XX *TLSCounter
 
 	dropped                                                          *libtelemetry.Counter // this happens when statKeeper reaches capacity
+	droppedIncomplete                                                *libtelemetry.Counter // this happens when statKeeper reaches capacity
 	rejected                                                         *libtelemetry.Counter // this happens when an user-defined reject-filter matches a request
 	emptyPath, unknownMethod, invalidLatency, nonPrintableCharacters *libtelemetry.Counter // this happens when the request doesn't have the expected format
 	aggregations                                                     *libtelemetry.Counter
@@ -62,6 +63,7 @@ func NewTelemetry(protocol string) *Telemetry {
 		hits4XX:                NewTLSCounter(metricGroup, "total_hits", "status:4xx", libtelemetry.OptStatsd),
 		hits5XX:                NewTLSCounter(metricGroup, "total_hits", "status:5xx", libtelemetry.OptStatsd),
 		dropped:                metricGroup.NewCounter("dropped", libtelemetry.OptStatsd),
+		droppedIncomplete:      metricGroup.NewCounter("dropped_incomplete", libtelemetry.OptStatsd),
 		rejected:               metricGroup.NewCounter("rejected", libtelemetry.OptStatsd),
 		emptyPath:              metricGroup.NewCounter("malformed", "type:empty-path", libtelemetry.OptStatsd),
 		unknownMethod:          metricGroup.NewCounter("malformed", "type:unknown-method", libtelemetry.OptStatsd),

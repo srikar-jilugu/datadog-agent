@@ -84,7 +84,7 @@ func (b *incompleteBuffer) Add(tx Transaction) {
 	parts, ok := b.data[key]
 	if !ok {
 		if len(b.data) >= b.maxEntries {
-			b.telemetry.dropped.Add(1)
+			b.telemetry.droppedIncomplete.Add(1)
 			return
 		}
 
