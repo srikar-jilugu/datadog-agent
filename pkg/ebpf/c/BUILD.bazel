@@ -1,3 +1,5 @@
+load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
+
 cc_library(
     name = "ebpf_c_headers",
     hdrs = [
@@ -24,9 +26,24 @@ cc_library(
         "bpf_helpers_custom.h",
         "bpf_tracing_custom.h",
         "vmlinux_5_15_0_arm.h",
-        #FIXME: what to do with:
-        # lock_contention.c
-        # "ksyms_iter.c",
     ],
     visibility = ["//visibility:public"],
+)
+
+ebpf_prog(
+    name = "lock_contention",
+    srcs = ["lock_contention.c"],
+    core = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
+)
+
+ebpf_prog(
+    name = "ksyms_iter",
+    srcs = ["ksyms_iter.c"],
+    core = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
 )
