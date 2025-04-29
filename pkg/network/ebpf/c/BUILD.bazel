@@ -1,3 +1,5 @@
+load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
+
 cc_library(
     name = "ebpf_c_network",
     hdrs = [
@@ -110,4 +112,14 @@ cc_library(
         "//pkg/network/ebpf/c/runtime:conntrack-types.h",
     ],
     visibility = ["//visibility:public"],
+)
+
+ebpf_prog(
+    name = "tracer",
+    srcs = ["tracer.c"],
+    core = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        ":ebpf_c_network",
+    ],
 )
