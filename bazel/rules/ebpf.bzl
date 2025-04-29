@@ -9,11 +9,26 @@ EbpfProgram = provider(
 
 def _ebpf_compile_flags(ctx):
     debug = ctx.attr.debug
-    flags = []
+    flags = [
+        '-emit-llvm',
+        '-D__TARGET_ARCH_x86',
+        '-D__x86_64__',
+    ]
+    if ctx.attr.core:
+        flags.extend([
+            '-target',
+            'bpf',
+            '-DCOMPILE_CORE',
+            '-g',
+        ])
+    else:
+        flags.extend([
+            '-DCONFIG_64BIT',
+            '-DCOMPILE_PREBUILT',
+        ])
     flags.extend(
         [
             '-D__KERNEL__',
-            '-DCONFIG_64BIT',
             '-D__BPF_TRACING__',
             '-DKBUILD_MODNAME="ddsysprobe"',
         ]
@@ -36,8 +51,9 @@ def _ebpf_compile_flags(ctx):
             # '-Werror',
         ]
     )
-    # flags.extend(["-include", "pkg/ebpf/c/asm_goto_workaround.h"])
-    flags.extend(["-O2", "-g"])
+    flags.extend(["-O2"])
+    if not ctx.attr.core:
+        flags.extend(["-include", "pkg/ebpf/c/asm_goto_workaround.h"])
     flags.extend(
         [
             # Some linux distributions enable stack protector by default which is not available on eBPF
@@ -49,11 +65,6 @@ def _ebpf_compile_flags(ctx):
             '-fmerge-all-constants',
         ]
     )
-    flags.extend([
-        '-D__x86_64__',
-        '-D__TARGET_ARCH_x86',
-        '-DCOMPILE_CORE',
-    ])
     if debug:
         flags.extend('-DDEBUG=1')
     return flags
@@ -82,22 +93,23 @@ def _ebpf_linux_kernel_include_dirs(header_files):
     return linux_headers_dirs
 
 def _ebpf_build_bytecode(ctx, file, extra_deps, deps_include_dirs):
-    ebpf_core_flags = []
+    bc_file = ctx.actions.declare_file(_ebpf_replace_extension(file, "bc"))
+
     flags = _ebpf_compile_flags(ctx)
 
-    linux_headers_files = ctx.files._linux_headers
-    linux_headers_dirs = _ebpf_linux_kernel_include_dirs(linux_headers_files)
-    bc_file = ctx.actions.declare_file(_ebpf_replace_extension(file, "bc"))
-    # out_file = ctx.actions.declare_file(f.basename + ".o")
+    if ctx.attr.core:
+        # The existing build system doesn't pass the kernel headers when building in CORE mode
+        linux_headers_files = []
+        linux_headers_dirs = []
+    else:
+        linux_headers_files = ctx.files._linux_headers
+        linux_headers_dirs = _ebpf_linux_kernel_include_dirs(linux_headers_files)
 
     args = ctx.actions.args()
     # args.add("-v")
-    args.add("-emit-llvm")
     args.add_all(deps_include_dirs, before_each="-I")
-    args.add_all(["-target", "bpf"])
-    args.add_all(linux_headers_dirs, before_each="-isystem")
-    args.add_all(ebpf_core_flags)
     args.add_all(flags)
+    args.add_all(linux_headers_dirs, before_each="-isystem")
     args.add_all(["-c", file.short_path])
     args.add_all(["-o", bc_file])
 
@@ -167,7 +179,9 @@ ebpf_prog = rule(
         "debug": attr.bool(
             doc="Should debug code be included",
         ),
+        # FIXME: add a strip flag
         "core": attr.bool(
+            default = False,
             doc="Should CO-RE mode be enabled",
         ),
         "_clang": attr.label(default = "@ebpf_clang//:bin/clang", allow_single_file=True),
