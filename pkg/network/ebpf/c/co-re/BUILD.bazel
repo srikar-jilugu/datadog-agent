@@ -1,0 +1,11 @@
+load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
+
+ebpf_prog(
+    name = "tracer-fentry",
+    srcs = ["tracer-fentry.c"],
+    core = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/network/ebpf/c:ebpf_c_network",
+    ],
+)
