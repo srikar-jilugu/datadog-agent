@@ -5,19 +5,19 @@ go 1.23.0
 require (
 	github.com/DataDog/datadog-agent/comp/core/config v0.64.0-devel
 	github.com/DataDog/datadog-agent/comp/otelcol/converter/def v0.56.0-rc.3
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.123.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/datadog v0.125.0
 	github.com/stretchr/testify v1.10.0
-	go.opentelemetry.io/collector/confmap v1.29.0
-	go.opentelemetry.io/collector/confmap/provider/envprovider v1.29.0
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.29.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.29.0
+	go.opentelemetry.io/collector/confmap v1.31.0
+	go.opentelemetry.io/collector/confmap/provider/envprovider v1.31.0
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.31.0
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.31.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.29.0
-	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.29.0
+	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.31.0
 	go.uber.org/zap v1.27.0
 
 )
 
-require github.com/DataDog/datadog-agent/pkg/trace v0.64.2 // indirect
+require github.com/DataDog/datadog-agent/pkg/trace v0.64.3 // indirect
 
 require (
 	github.com/DataDog/datadog-agent/comp/core/flare/builder v0.61.0 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/executable v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/filesystem v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.64.3 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/hostname/validate v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/hostname/validate v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/log v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/option v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/pointer v0.61.0 // indirect
@@ -61,9 +61,9 @@ require (
 	github.com/hectane/go-acl v0.0.0-20230122075934-ca0b05cb1adb // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
-	github.com/knadh/koanf/providers/confmap v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.1.2 // indirect
-	github.com/lufia/plan9stats v0.0.0-20240909124753-873cd0166683 // indirect
+	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
+	github.com/knadh/koanf/v2 v2.2.0 // indirect
+	github.com/lufia/plan9stats v0.0.0-20250317134145-8bc96cf8fc35 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect
@@ -78,10 +78,10 @@ require (
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/tklauser/go-sysconf v0.3.14 // indirect
-	github.com/tklauser/numcpus v0.9.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.15 // indirect
+	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.opentelemetry.io/collector/featuregate v1.29.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.31.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/dig v1.18.1 // indirect
 	go.uber.org/fx v1.23.0 // indirect
@@ -92,6 +92,7 @@ require (
 	golang.org/x/time v0.11.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 // This section was automatically added by 'dda inv modules.add-all-replace' command, do not edit manually

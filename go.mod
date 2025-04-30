@@ -474,7 +474,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/shirou/gopsutil/v4 v4.25.3
 	go.opentelemetry.io/collector/component/componenttest v0.125.0
-	modernc.org/sqlite v1.36.2 // indirect
 )
 
 require (
@@ -719,14 +718,9 @@ require (
 	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.67.0-devel.0.20250429225111-6ef5c0f1208a // indirect
 	github.com/DataDog/datadog-agent/pkg/config/viperconfig v0.67.0-devel.0.20250429225111-6ef5c0f1208a // indirect
 	github.com/DataDog/datadog-agent/pkg/logs/status/statusinterface v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
-	github.com/DataDog/datadog-agent/pkg/opentelemetry-mapping-go/inframetadata v0.0.0-20250429165338-2444768c3033 // indirect
-	github.com/DataDog/datadog-agent/pkg/opentelemetry-mapping-go/otlp/attributes v0.0.0-20250429225111-6ef5c0f1208a // indirect
 	github.com/DataDog/datadog-agent/pkg/util/buf v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/quantile v0.0.0-20250429165338-2444768c3033 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/quantile/sketchtest v0.0.0-20250429165338-2444768c3033 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/statstracker v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/system/socket v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
-	github.com/DataDog/datadog-agent/test/fakeintake v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
 	github.com/DataDog/datadog-api-client-go/v2 v2.37.1 // indirect
 	github.com/DataDog/dd-sensitive-data-scanner/sds-go/go v0.0.0-20250429195617-95f3884aa7a5 // indirect
 	github.com/DataDog/go-runtime-metrics-internal v0.0.4-0.20241206090539-a14610dc22b6 // indirect
@@ -791,7 +785,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
-	github.com/gophercloud/gophercloud v1.14.1 // indirect
 	github.com/gophercloud/gophercloud/v2 v2.7.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -831,6 +824,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
+	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
@@ -893,8 +887,6 @@ require (
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/ovh/go-ovh v1.7.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
-	github.com/prometheus-community/windows_exporter v0.27.2 // indirect
-	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/prometheus v0.303.0 // indirect
 	github.com/prometheus/sigv4 v0.1.2 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
