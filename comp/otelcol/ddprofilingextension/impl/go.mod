@@ -39,37 +39,38 @@ require (
 	github.com/DataDog/datadog-agent/comp/core/flare/types v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/comp/core/secrets v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/comp/core/tagger/origindetection v0.62.0-rc.7 // indirect
-	github.com/DataDog/datadog-agent/comp/core/tagger/types v0.0.0-00010101000000-000000000000 // indirect
-	github.com/DataDog/datadog-agent/comp/def v0.63.0 // indirect
+	github.com/DataDog/datadog-agent/comp/core/tagger/types v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
+	github.com/DataDog/datadog-agent/comp/core/tagger/utils v0.64.3 // indirect
+	github.com/DataDog/datadog-agent/comp/def v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/comp/trace/compression/def v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/collector/check/defaults v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/create v0.0.0-00010101000000-000000000000 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/create v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
 	github.com/DataDog/datadog-agent/pkg/config/env v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/pkg/config/mock v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/model v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/nodetreemodel v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/model v0.64.3 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/nodetreemodel v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/config/setup v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/pkg/config/structure v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/config/viperconfig v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/teeconfig v0.64.3 // indirect
+	github.com/DataDog/datadog-agent/pkg/config/viperconfig v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/fips v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.63.0-devel.0.20250123185937-1feb84b482c8 // indirect
 	github.com/DataDog/datadog-agent/pkg/remoteconfig/state v0.61.0 // indirect
-	github.com/DataDog/datadog-agent/pkg/template v0.0.0-00010101000000-000000000000 // indirect
+	github.com/DataDog/datadog-agent/pkg/template v0.67.0-devel.0.20250429165338-2444768c3033 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/cgroups v0.61.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/executable v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/filesystem v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.63.0 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/hostname/validate v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/log v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/log v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/log/setup v0.62.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/option v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/option v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/pointer v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.64.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/system v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/system/socket v0.64.2 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/winutil v0.64.2 // indirect
-	github.com/DataDog/datadog-agent/pkg/version v0.64.2 // indirect
+	github.com/DataDog/datadog-agent/pkg/version v0.64.3 // indirect
 	github.com/DataDog/datadog-api-client-go/v2 v2.36.1 // indirect
 	github.com/DataDog/go-libddwaf/v3 v3.5.2 // indirect
 	github.com/DataDog/go-sqllexer v0.1.6 // indirect
@@ -140,7 +141,7 @@ require (
 	github.com/knadh/koanf/providers/confmap v0.1.0 // indirect
 	github.com/knadh/koanf/v2 v2.1.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240909124753-873cd0166683 // indirect
-	github.com/magiconair/properties v1.8.9 // indirect
+	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect
@@ -172,7 +173,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.25.3 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/spf13/afero v1.11.0 // indirect
+	github.com/spf13/afero v1.14.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
