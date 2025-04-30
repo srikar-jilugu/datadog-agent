@@ -92,3 +92,11 @@ const (
 
 	ebpfGRPC ebpfProtocolType = 0x2001
 )
+
+type Message struct {
+	Buf       [208]byte
+	Comm_name [16]byte
+	Pid       uint64
+	Buf_len   uint8
+	Pad_cgo_0 [7]byte
+}

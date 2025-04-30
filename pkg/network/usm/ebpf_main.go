@@ -54,6 +54,7 @@ var (
 		goTLSSpec,
 		istioSpec,
 		nodejsSpec,
+		ExampleSpec,
 	}
 )
 

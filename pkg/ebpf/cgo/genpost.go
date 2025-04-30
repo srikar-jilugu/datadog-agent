@@ -44,6 +44,7 @@ func processFile(rdr io.Reader, out io.Writer) error {
 	b = removeAbsolutePath(b, runtime.GOOS)
 
 	int8variableNames := []string{
+		"Comm_name",
 		"Buf",
 		"Cgroup",
 		"Cgroup_name",

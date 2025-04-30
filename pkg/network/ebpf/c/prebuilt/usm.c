@@ -19,6 +19,7 @@
 #include "protocols/tls/https.h"
 #include "protocols/tls/native-tls.h"
 #include "protocols/tls/tags-types.h"
+#include "protocols/example/example.h"
 
 SEC("socket/protocol_dispatcher")
 int socket__protocol_dispatcher(struct __sk_buff *skb) {

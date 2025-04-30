@@ -10,6 +10,7 @@ package protocols
 // #cgo CFLAGS: -I ../../ebpf/c  -I ../ebpf/c
 // #include "../ebpf/c/protocols/classification/defs.h"
 // #include "../ebpf/c/protocols/postgres/types.h"
+// #include "../ebpf/c/protocols/example/types.h"
 import "C"
 
 const (
@@ -107,3 +108,5 @@ const (
 	// GRPC protocol
 	ebpfGRPC ebpfProtocolType = C.PROTOCOL_GRPC
 )
+
+type Message C.message_t

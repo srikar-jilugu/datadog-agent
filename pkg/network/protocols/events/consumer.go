@@ -148,6 +148,9 @@ func (c *Consumer[V]) Start() {
 					break
 				}
 
+				if b.Failed_flushes > 0 {
+					fmt.Println("failed flushes", b.Failed_flushes, c.proto)
+				}
 				c.failedFlushesCount.Add(int64(b.Failed_flushes))
 				c.kernelDropsCount.Add(int64(b.Dropped_events))
 				c.process(b, false)

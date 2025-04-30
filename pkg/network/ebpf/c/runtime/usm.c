@@ -32,6 +32,7 @@
 #include "protocols/tls/https.h"
 #include "protocols/tls/native-tls.h"
 #include "protocols/tls/tags-types.h"
+#include "protocols/example/example.h"
 
 // The entrypoint for all packets classification & decoding in universal service monitoring.
 SEC("socket/protocol_dispatcher")
