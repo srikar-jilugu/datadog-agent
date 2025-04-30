@@ -96,6 +96,7 @@ def _ebpf_build_bytecode(ctx, file, extra_deps, deps_include_dirs):
     bc_file = ctx.actions.declare_file(_ebpf_replace_extension(file, "bc"))
 
     flags = _ebpf_compile_flags(ctx)
+    flags.extend(ctx.attr.extra_flags)
 
     if ctx.attr.core:
         # The existing build system doesn't pass the kernel headers when building in CORE mode
@@ -184,6 +185,7 @@ ebpf_prog = rule(
             default = False,
             doc="Should CO-RE mode be enabled",
         ),
+        "extra_flags": attr.string_list(),
         "_clang": attr.label(default = "@ebpf_clang//:bin/clang", allow_single_file=True),
         "_llc": attr.label(default = "@ebpf_clang//:bin/llc", allow_single_file=True),
         "_llvm_strip": attr.label(default = "@ebpf_clang//:bin/llvm-strip", allow_single_file=True),
