@@ -162,7 +162,7 @@ def _ebpf_prog_impl(ctx):
         obj_file = _ebpf_build_object(ctx, bc_file)
 
     return [
-        DefaultInfo(files = depset([bc_file, obj_file])),
+        DefaultInfo(files = depset([obj_file])),
         EbpfProgram(
             # transitive = [depset([bc_file])],
             deps = header_deps,
