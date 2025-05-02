@@ -168,7 +168,7 @@ def hacky_dev_image_build(
     arch=None,
 ):
     os.environ["DELVE"] = "1"
-    build(ctx)
+    build(ctx, race=True)
 
     if arch is None:
         arch = CONTAINER_PLATFORM_MAPPING.get(platform.machine().lower())

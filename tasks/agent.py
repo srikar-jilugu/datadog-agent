@@ -492,6 +492,7 @@ def hacky_dev_image_build(
         )
         build(
             ctx,
+            race=True,
             cmake_options=f'-DPython3_ROOT_DIR={extracted_python_dir}/opt/datadog-agent/embedded -DPython3_FIND_STRATEGY=LOCATION',
         )
         ctx.run(
