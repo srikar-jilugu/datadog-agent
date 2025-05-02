@@ -164,11 +164,12 @@ def hacky_dev_image_build(
     base_image=None,
     target_image="cluster-agent",
     push=False,
+    race=False,
     signed_pull=False,
     arch=None,
 ):
     os.environ["DELVE"] = "1"
-    build(ctx, race=True)
+    build(ctx, race=race)
 
     if arch is None:
         arch = CONTAINER_PLATFORM_MAPPING.get(platform.machine().lower())
