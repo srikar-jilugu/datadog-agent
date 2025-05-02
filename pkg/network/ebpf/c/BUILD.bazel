@@ -15,9 +15,6 @@ cc_library(
         "pid_fd.h",
         "pid_tgid.h",
         "port_range.h",
-        "//pkg/network/ebpf/c/prebuilt:conntrack.h",
-        "//pkg/network/ebpf/c/prebuilt:offset-guess.h",
-        "//pkg/network/ebpf/c/prebuilt:offsets.h",
         "protocols/amqp/defs.h",
         "protocols/amqp/helpers.h",
         "protocols/classification/classification-context.h",
@@ -108,6 +105,9 @@ cc_library(
         "tracer/tcp_recv.h",
         "tracer/telemetry.h",
         "tracer/tracer.h",
+        "//pkg/network/ebpf/c/prebuilt:conntrack.h",
+        "//pkg/network/ebpf/c/prebuilt:offset-guess.h",
+        "//pkg/network/ebpf/c/prebuilt:offsets.h",
         "//pkg/network/ebpf/c/runtime:conntrack.h",
         "//pkg/network/ebpf/c/runtime:conntrack-types.h",
     ],
@@ -119,7 +119,7 @@ ebpf_prog(
     srcs = ["tracer.c"],
     core = True,
     deps = [
-        "//pkg/ebpf/c:ebpf_c_headers",
         ":ebpf_c_network",
+        "//pkg/ebpf/c:ebpf_c_headers",
     ],
 )

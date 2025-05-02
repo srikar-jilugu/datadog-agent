@@ -8,6 +8,7 @@ ebpf_prog(
         "//pkg/network/ebpf/c:ebpf_c_network",
     ],
 )
+
 ebpf_prog(
     name = "offset-guess",
     srcs = ["offset-guess.c"],
@@ -16,6 +17,7 @@ ebpf_prog(
         "//pkg/network/ebpf/c:ebpf_c_network",
     ],
 )
+
 ebpf_prog(
     name = "usm",
     srcs = ["usm.c"],
@@ -24,6 +26,7 @@ ebpf_prog(
         "//pkg/network/ebpf/c:ebpf_c_network",
     ],
 )
+
 ebpf_prog(
     name = "usm_events_test",
     srcs = ["usm_events_test.c"],
@@ -32,6 +35,7 @@ ebpf_prog(
         "//pkg/network/ebpf/c:ebpf_c_network",
     ],
 )
+
 ebpf_prog(
     name = "shared-libraries",
     srcs = ["shared-libraries.c"],
@@ -40,6 +44,7 @@ ebpf_prog(
         "//pkg/network/ebpf/c:ebpf_c_network",
     ],
 )
+
 ebpf_prog(
     name = "conntrack",
     srcs = ["conntrack.c"],
@@ -54,4 +59,3 @@ exports_files([
     "offsets.h",
     "offset-guess.h",
 ])
-
