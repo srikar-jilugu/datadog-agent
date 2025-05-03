@@ -69,11 +69,10 @@ func (t *TaskHandlers) ExtractResource(ctx processors.ProcessorContext, resource
 //nolint:revive // TODO(CAPP) Fix revive linter
 func (t *TaskHandlers) ResourceList(ctx processors.ProcessorContext, list interface{}) (resources []interface{}) {
 	resourceList := list.([]transformers.TaskWithContainers)
-
 	resources = make([]interface{}, 0, len(resourceList))
 
 	for _, resource := range resourceList {
-		resources = append(resources, resource)
+		resources = append(resources, resource.DeepCopy())
 	}
 
 	return resources

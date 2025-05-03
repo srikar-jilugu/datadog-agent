@@ -34,6 +34,18 @@ type TaskWithContainers struct {
 	Containers []*workloadmeta.Container
 }
 
+func (t *TaskWithContainers) DeepCopy() *TaskWithContainers {
+	containers := make([]*workloadmeta.Container, 0, len(t.Containers))
+	for _, container := range t.Containers {
+		containers = append(containers, container.DeepCopy().(*workloadmeta.Container))
+	}
+
+	return &TaskWithContainers{
+		Task:       t.Task.DeepCopy().(*workloadmeta.ECSTask),
+		Containers: containers,
+	}
+}
+
 // ExtractECSTask returns the protobuf model corresponding to an ECS Task resource.
 func ExtractECSTask(task TaskWithContainers, tagger tagger.Component) *model.ECSTask {
 	if task.Task == nil {

@@ -89,7 +89,7 @@ func (t *TaskCollector) Process(rcfg *collectors.CollectorRunConfig, list interf
 
 	result := &collectors.CollectorRunResult{
 		Result:             processResult,
-		ResourcesListed:    len(t.processor.Handlers().ResourceList(ctx, list)),
+		ResourcesListed:    processed,
 		ResourcesProcessed: processed,
 	}
 
