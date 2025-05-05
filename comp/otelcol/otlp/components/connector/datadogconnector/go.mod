@@ -49,14 +49,7 @@ require (
 )
 
 require (
-	go.opentelemetry.io/collector/config/configmiddleware v0.126.0 // indirect
-	go.opentelemetry.io/collector/extension/extensionmiddleware v0.126.0 // indirect
-	go.opentelemetry.io/contrib/otelconf v0.15.0 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
-)
-
-require (
-	github.com/DataDog/agent-payload/v5 v5.0.150 // indirect
+	github.com/DataDog/agent-payload/v5 v5.0.153 // indirect
 	github.com/DataDog/datadog-agent/comp/core/config v0.64.1 // indirect
 	github.com/DataDog/datadog-agent/comp/core/flare/builder v0.64.1 // indirect
 	github.com/DataDog/datadog-agent/comp/core/flare/types v0.64.1 // indirect
@@ -249,6 +242,7 @@ require (
 	go.opentelemetry.io/collector/config/configcompression v1.32.0 // indirect
 	go.opentelemetry.io/collector/config/configgrpc v0.126.0 // indirect
 	go.opentelemetry.io/collector/config/confighttp v0.126.0 // indirect
+	go.opentelemetry.io/collector/config/configmiddleware v0.126.0 // indirect
 	go.opentelemetry.io/collector/config/confignet v1.32.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.32.0 // indirect
 	go.opentelemetry.io/collector/config/configretry v1.32.0 // indirect
@@ -270,6 +264,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.32.0 // indirect
 	go.opentelemetry.io/collector/extension/extensionauth v1.32.0 // indirect
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.126.0 // indirect
+	go.opentelemetry.io/collector/extension/extensionmiddleware v0.126.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.126.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.126.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.126.0 // indirect
@@ -289,6 +284,7 @@ require (
 	go.opentelemetry.io/contrib/bridges/otelzap v0.10.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0 // indirect
+	go.opentelemetry.io/contrib/otelconf v0.15.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.35.0 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.11.0 // indirect
@@ -327,6 +323,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 // This section was automatically added by 'dda inv modules.add-all-replace' command, do not edit manually
