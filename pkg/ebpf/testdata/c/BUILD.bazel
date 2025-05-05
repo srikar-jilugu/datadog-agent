@@ -1,0 +1,31 @@
+load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
+
+ebpf_prog(
+    name = "logdebug-test",
+    src = "logdebug-test.c",
+    core = True,
+    debug = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
+)
+
+ebpf_prog(
+    name = "error_telemetry",
+    src = "error_telemetry.c",
+    core = True,
+    debug = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
+)
+
+ebpf_prog(
+    name = "uprobe_attacher-test",
+    src = "uprobe_attacher-test.c",
+    core = True,
+    debug = True,
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+    ],
+)
