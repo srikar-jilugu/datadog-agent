@@ -1,0 +1,28 @@
+load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
+
+ebpf_prog(
+    name = "gpu",
+    src = "gpu.c",
+    core = True,
+    # Warning: the order is important here, the GPU dependency must
+    # come first for the appropriate types.h to be included
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/gpu/ebpf/c:ebpf_gpu_c_headers",
+        "//pkg/network/ebpf/c:ebpf_c_network",
+    ],
+)
+
+ebpf_prog(
+    name = "gpu-debug",
+    src = "gpu.c",
+    core = True,
+    debug = True,
+    # Warning: the order is important here, the GPU dependency must
+    # come first for the appropriate types.h to be included
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/gpu/ebpf/c:ebpf_gpu_c_headers",
+        "//pkg/network/ebpf/c:ebpf_c_network",
+    ],
+)

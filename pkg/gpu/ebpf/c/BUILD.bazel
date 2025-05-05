@@ -1,0 +1,7 @@
+cc_library(
+    name = "ebpf_gpu_c_headers",
+    hdrs = [
+        "types.h",
+    ],
+    visibility = ["//visibility:public"],
+)
