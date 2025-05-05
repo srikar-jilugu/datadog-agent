@@ -66,7 +66,7 @@ def _ebpf_compile_flags(ctx):
         ]
     )
     if debug:
-        flags.extend('-DDEBUG=1')
+        flags.extend(['-DDEBUG=1'])
     return flags
 
 def _ebpf_replace_extension(file, new_ext):
