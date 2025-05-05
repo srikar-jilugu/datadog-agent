@@ -157,9 +157,8 @@ def _ebpf_build_object(ctx, bc_file):
 def _ebpf_prog_impl(ctx):
     header_deps, include_dirs = expand_header_deps(ctx.attr.deps)
 
-    for f in ctx.files.srcs:
-        bc_file = _ebpf_build_bytecode(ctx, f, header_deps, include_dirs)
-        obj_file = _ebpf_build_object(ctx, bc_file)
+    bc_file = _ebpf_build_bytecode(ctx, ctx.file.src, header_deps, include_dirs)
+    obj_file = _ebpf_build_object(ctx, bc_file)
 
     return [
         DefaultInfo(files = depset([obj_file])),
@@ -172,7 +171,7 @@ def _ebpf_prog_impl(ctx):
 ebpf_prog = rule(
     implementation = _ebpf_prog_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files = [".c"]),
+        "src": attr.label(allow_single_file = [".c"]),
         "deps": attr.label_list(
             providers=[CcInfo],
             doc="A list of cc_library target listing all headers needed for EBPF compilation"

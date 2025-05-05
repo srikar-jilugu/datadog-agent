@@ -2,7 +2,7 @@ load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
 
 ebpf_prog(
     name = "probe",
-    srcs = ["probe.c"],
+    src = "probe.c",
     extra_flags = ["-DUSE_SYSCALL_WRAPPER=0"],
     visibility = ["//visibility:public"],
     deps = [

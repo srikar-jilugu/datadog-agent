@@ -116,7 +116,7 @@ cc_library(
 
 ebpf_prog(
     name = "tracer",
-    srcs = ["tracer.c"],
+    src = "tracer.c",
     core = True,
     deps = [
         ":ebpf_c_network",

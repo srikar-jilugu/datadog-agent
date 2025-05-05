@@ -2,7 +2,7 @@ load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
 
 ebpf_prog(
     name = "dns",
-    srcs = ["dns.c"],
+    src = "dns.c",
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
         "//pkg/network/ebpf/c:ebpf_c_network",
@@ -11,7 +11,7 @@ ebpf_prog(
 
 ebpf_prog(
     name = "offset-guess",
-    srcs = ["offset-guess.c"],
+    src = "offset-guess.c",
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
         "//pkg/network/ebpf/c:ebpf_c_network",
@@ -20,7 +20,7 @@ ebpf_prog(
 
 ebpf_prog(
     name = "usm",
-    srcs = ["usm.c"],
+    src = "usm.c",
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
         "//pkg/network/ebpf/c:ebpf_c_network",
@@ -29,7 +29,7 @@ ebpf_prog(
 
 ebpf_prog(
     name = "usm_events_test",
-    srcs = ["usm_events_test.c"],
+    src = "usm_events_test.c",
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
         "//pkg/network/ebpf/c:ebpf_c_network",
@@ -38,7 +38,7 @@ ebpf_prog(
 
 ebpf_prog(
     name = "shared-libraries",
-    srcs = ["shared-libraries.c"],
+    src = "shared-libraries.c",
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
         "//pkg/network/ebpf/c:ebpf_c_network",
@@ -47,7 +47,7 @@ ebpf_prog(
 
 ebpf_prog(
     name = "conntrack",
-    srcs = ["conntrack.c"],
+    src = "conntrack.c",
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
         "//pkg/network/ebpf/c:ebpf_c_network",

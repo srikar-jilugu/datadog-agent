@@ -32,7 +32,7 @@ cc_library(
 
 ebpf_prog(
     name = "lock_contention",
-    srcs = ["lock_contention.c"],
+    src = "lock_contention.c",
     core = True,
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
@@ -41,7 +41,7 @@ ebpf_prog(
 
 ebpf_prog(
     name = "ksyms_iter",
-    srcs = ["ksyms_iter.c"],
+    src = "ksyms_iter.c",
     core = True,
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
