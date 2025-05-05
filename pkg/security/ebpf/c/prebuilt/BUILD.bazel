@@ -1,9 +1,44 @@
 load("//:bazel/rules/ebpf.bzl", "ebpf_prog")
 
 ebpf_prog(
-    name = "probe",
+    name = "runtime-security",
     src = "probe.c",
     extra_flags = ["-DUSE_SYSCALL_WRAPPER=0"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/security/ebpf/c/include:security_ebpf_headers",
+    ],
+)
+
+ebpf_prog(
+    name = "probe-syscall-wrapper",
+    src = "probe.c",
+    extra_flags = ["-DUSE_SYSCALL_WRAPPER=1"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/security/ebpf/c/include:security_ebpf_headers",
+    ],
+)
+
+ebpf_prog(
+    name = "probe-fentry",
+    src = "probe.c",
+    extra_flags = [
+        "-DUSE_SYSCALL_WRAPPER=1",
+        "-DUSE_FENTRY=1",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/ebpf/c:ebpf_c_headers",
+        "//pkg/security/ebpf/c/include:security_ebpf_headers",
+    ],
+)
+
+ebpf_prog(
+    name = "runtime-security-offset-guesser",
+    src = "offset-guesser.c",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/ebpf/c:ebpf_c_headers",
