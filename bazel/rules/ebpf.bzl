@@ -93,7 +93,8 @@ def _ebpf_linux_kernel_include_dirs(header_files):
     return linux_headers_dirs
 
 def _ebpf_build_bytecode(ctx, file, extra_deps, deps_include_dirs):
-    bc_file = ctx.actions.declare_file(_ebpf_replace_extension(file, "bc"))
+    bc_file_name = ctx.label.name + ".bc"
+    bc_file = ctx.actions.declare_file(bc_file_name)
 
     flags = _ebpf_compile_flags(ctx)
     flags.extend(ctx.attr.extra_flags)
