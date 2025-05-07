@@ -21,10 +21,7 @@ from tasks.libs.ciproviders.gitlab_api import (
 )
 from tasks.libs.common.color import Color, color_message
 from tasks.libs.common.git import get_commit_sha, get_current_branch, get_default_branch
-from tasks.libs.common.utils import (
-    get_all_allowed_repo_branches,
-    is_allowed_repo_branch,
-)
+from tasks.libs.common.utils import get_all_allowed_repo_branches, is_allowed_repo_branch, set_gitconfig_in_ci
 from tasks.libs.owners.parsing import read_owners
 from tasks.libs.pipeline.tools import (
     FilteredOutException,
@@ -694,9 +691,9 @@ def trigger_external(ctx, owner_branch_name: str, no_verify=False):
     branch_re = re.compile(r'^(?P<owner>[a-zA-Z0-9_-]+):(?P<branch_name>[a-zA-Z0-9_/-]+)$')
     match = branch_re.match(owner_branch_name)
 
-    assert (
-        match is not None
-    ), f'owner_branch_name should be "<owner-name>:<prefix>/<branch-name>" or "<owner-name>:<branch-name>" but is {owner_branch_name}'
+    assert match is not None, (
+        f'owner_branch_name should be "<owner-name>:<prefix>/<branch-name>" or "<owner-name>:<branch-name>" but is {owner_branch_name}'
+    )
     assert "'" not in owner_branch_name
 
     owner, branch = match.group('owner'), match.group('branch_name')
@@ -706,9 +703,9 @@ def trigger_external(ctx, owner_branch_name: str, no_verify=False):
     status_res = ctx.run('git status --porcelain')
     assert status_res.stdout.strip() == '', 'Cannot run this task if changes have not been committed'
     branch_res = ctx.run('git branch', hide='stdout')
-    assert (
-        re.findall(f'\\b{owner_branch_name}\\b', branch_res.stdout) == []
-    ), f'{owner_branch_name} branch already exists'
+    assert re.findall(f'\\b{owner_branch_name}\\b', branch_res.stdout) == [], (
+        f'{owner_branch_name} branch already exists'
+    )
     remote_res = ctx.run('git remote', hide='stdout')
     assert re.findall(f'\\b{owner}\\b', remote_res.stdout) == [], f'{owner} remote already exists'
 
@@ -821,22 +818,17 @@ def compare_to_itself(ctx):
         print("No modification in the gitlab configuration, ignoring this test.")
         return
     agent = get_gitlab_repo()
-    gh = GithubAPI()
     current_branch = os.environ["CI_COMMIT_REF_NAME"]
     if current_branch.startswith("compare/"):
         print("Branch already in compare_to_itself mode, ignoring this test to prevent infinite loop")
         return
     new_branch = f"compare/{current_branch}/{int(datetime.now(timezone.utc).timestamp())}"
     ctx.run(f"git checkout -b {new_branch}", hide=True)
-    ctx.run(
-        f"git remote set-url origin https://x-access-token:{gh._auth.token}@github.com/DataDog/datadog-agent.git",
-        hide=True,
-    )
-    ctx.run(f"git config --global user.name '{BOT_NAME}'", hide=True)
-    ctx.run("git config --global user.email 'github-app[bot]@users.noreply.github.com'", hide=True)
+    ctx.run(f"git push --set-upstream origin {new_branch}")
+    set_gitconfig_in_ci(ctx)
     # The branch must exist in gitlab to be able to "compare_to"
     # Push an empty commit to prevent linking this pipeline to the actual PR
-    ctx.run("git commit -m 'Initial push of the compare/to branch' --allow-empty", hide=True)
+    ctx.run("git commit -m 'Initial push of the compare/to branch' --allow-empty --no-verify", hide=True)
     ctx.run(f"git push origin {new_branch}")
 
     from tasks.libs.releasing.json import load_release_json
