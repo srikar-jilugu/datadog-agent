@@ -1189,6 +1189,7 @@ workflow:
       # Pull coverage cache on dev branches
       COVERAGE_CACHE_FLAG: "--pull-coverage-cache"
 
+# Fake change
 .on_gitlab_changes:
   changes:
     paths:
