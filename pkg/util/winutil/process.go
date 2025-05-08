@@ -21,7 +21,7 @@ var (
 	modntdll                       = windows.NewLazyDLL("ntdll.dll")
 	modkernel                      = windows.NewLazyDLL("kernel32.dll")
 	procNtQueryInformationProcess  = modntdll.NewProc("NtQueryInformationProcess")
-	procZwQueryInformationProcess  = modntdll.NewProc("ZwQueryInformationProcess")
+	procGetProcessInformation      = modkernel.NewProc("GetProcessInformation")
 	procReadProcessMemory          = modkernel.NewProc("ReadProcessMemory")
 	procIsWow64Process             = modkernel.NewProc("IsWow64Process")
 	procQueryFullProcessImageNameW = modkernel.NewProc("QueryFullProcessImageNameW")
@@ -52,9 +52,21 @@ const (
 	ProcessImageFileName = PROCESSINFOCLASS(27)
 	// ProcessBreakOnTermination included for completeness
 	ProcessBreakOnTermination = PROCESSINFOCLASS(29)
-	// ProcessProtectionInformation returns the type of protected process/signer.
-	ProcessProtectionInformation = PROCESSINFOCLASS(61)
 )
+
+/*
+c++ definition from processthreadsapi.h
+https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ne-processthreadsapi-process_information_class
+
+	typedef enum _PROCESS_INFORMATION_CLASS {
+	  ProcessProtectionLevelInfo = 7
+	} PROCESS_INFORMATION_CLASS;
+*/
+
+// PROCESS_THREAD_INFO_CLASS is the Go representation of the above enum
+type PROCESSTHREADINFOCLASS uint32
+
+const ProcessProtectionLevelInfo = PROCESSTHREADINFOCLASS(7)
 
 // IsWow64Process determines if the specified process is running under WOW64
 // that is, if it's a 32 bit process running on 64 bit winodws
@@ -89,13 +101,12 @@ func NtQueryInformationProcess(h windows.Handle, class PROCESSINFOCLASS, target,
 	return nil
 }
 
-// ZwQueryInformationProcess wraps the Windows NT kernel call of the same name.
-func ZwQueryInformationProcess(h windows.Handle, class PROCESSINFOCLASS, target uintptr, size uintptr) (err error) {
-	r, _, _ := procZwQueryInformationProcess.Call(uintptr(h),
+func GetProcessInformation(h windows.Handle, class PROCESSTHREADINFOCLASS, target uintptr, size uintptr) (err error) {
+	r, _, _ := procGetProcessInformation.Call(uintptr(h),
 		uintptr(class),
 		target,
 		size,
-		uintptr(0))
+	)
 	if r != 0 {
 		err = windows.GetLastError()
 		return err
@@ -104,28 +115,20 @@ func ZwQueryInformationProcess(h windows.Handle, class PROCESSINFOCLASS, target 
 }
 
 // IsProcessProtected checks if the process has any level of protection and returns true if any protection is present
-// more info https://learn.microsoft.com/en-us/windows/win32/procthread/zwqueryinformationprocess
+// more info https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocessinformation
 func IsProcessProtected(h windows.Handle) (bool, error) {
-	// ZwQueryInformationProcess returns 1 byte of protection information when passed in with param 61
-	var processProtection uint8
-	err := ZwQueryInformationProcess(h, ProcessProtectionInformation, uintptr(unsafe.Pointer(&processProtection)), unsafe.Sizeof(processProtection))
+	// GetProcessInformation returns a DWORD (double word = 32 bits) of protection information when passed in with the protection parameter
+	// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_protection_level_information
+	var ProcessProtectionInfo struct {
+		Level uint32
+	}
+	err := GetProcessInformation(h, ProcessProtectionLevelInfo, uintptr(unsafe.Pointer(&ProcessProtectionInfo)), unsafe.Sizeof(ProcessProtectionInfo))
 	if err != nil {
 		return false, err
 	}
-	/*
-		The first 3 bits contain the type of protected process:
+	fmt.Printf("Process protection level %#x, %b, %d\n", ProcessProtectionInfo.Level, ProcessProtectionInfo.Level, ProcessProtectionInfo.Level)
 
-		typedef enum _PS_PROTECTED_TYPE {
-			PsProtectedTypeNone = 0,
-			PsProtectedTypeProtectedLight = 1,
-			PsProtectedTypeProtected = 2
-		} PS_PROTECTED_TYPE, *PPS_PROTECTED_TYPE;
-
-		if the protection type is anything other than 0, then we cannot open the process with PROCESS_VM_READ
-	*/
-
-	// hex 0x07 == binary 111, so we do a binary AND to determine the protection level
-	if processProtection&0x07 != 0 {
+	if ProcessProtectionInfo.Level&0b111 != 0 {
 		return true, nil
 	}
 
