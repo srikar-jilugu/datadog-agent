@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 from datetime import datetime
+from pathlib import Path
 
 from tasks.libs.common.color import Color, color_message
 from tasks.libs.common.constants import ORIGIN_CATEGORY, ORIGIN_PRODUCT, ORIGIN_SERVICE
@@ -124,6 +125,13 @@ def directory_size(ctx, path):
     # See https://unix.stackexchange.com/questions/173947/du-s-apparent-size-vs-du-s
     # TODO: To make this work on other OSes, the complete directory walk would need to be implemented
     return int(ctx.run(f"du --apparent-size -sB1 {path}", hide=True).stdout.split()[0])
+
+
+def directory_size_py(path):
+    return sum(
+        sum((dirpath / basename).lstat().st_size for basename in filenames)
+        for dirpath, _, filenames in Path(path).walk()
+    )
 
 
 def compute_package_size_metrics(

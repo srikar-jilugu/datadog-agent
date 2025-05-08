@@ -1,7 +1,7 @@
 import tempfile
 
 from tasks.libs.common.color import color_message
-from tasks.libs.package.size import directory_size, extract_package, file_size
+from tasks.libs.package.size import directory_size, directory_size_py, extract_package, file_size
 from tasks.static_quality_gates.lib.gates_lib import argument_extractor, find_package_path, read_byte_input
 
 
@@ -10,8 +10,10 @@ def calculate_package_size(ctx, package_os, package_path, gate_name, metric_hand
         extract_package(ctx=ctx, package_os=package_os, package_path=package_path, extract_dir=extract_dir)
         package_on_wire_size = file_size(path=package_path)
         package_on_disk_size = directory_size(ctx, path=extract_dir)
+        package_on_disk_size_py = directory_size_py(extract_dir)
         print(f"[DEBUG] call file_size({package_path}) -> {package_on_wire_size}")
         print(f"[DEBUG] call directory_size({extract_dir} -> {package_on_disk_size})")
+        print(f"[DEBUG] call directory_size_pure({extract_dir} -> {package_on_disk_size_py})")
 
         metric_handler.register_metric(gate_name, "current_on_wire_size", package_on_wire_size)
         metric_handler.register_metric(gate_name, "current_on_disk_size", package_on_disk_size)
@@ -74,6 +76,11 @@ def generic_package_agent_quality_gate(gate_name, arch, os, flavor, **kwargs):
 
     package_path = find_package_path(flavor, package_os, package_arch)
 
+    package_on_wire_size, package_on_disk_size = calculate_package_size(
+        ctx, os, package_path, gate_name, metric_handler
+    )
+
+    # Run a second time for debugging purposes
     package_on_wire_size, package_on_disk_size = calculate_package_size(
         ctx, os, package_path, gate_name, metric_handler
     )
