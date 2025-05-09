@@ -59,6 +59,7 @@ var logsEndpoints = map[string]int{
 // HTTPConnectivity is the status of the HTTP connectivity
 type HTTPConnectivity bool
 
+// CompressionSettings is a struct that contains the compression settings for the HTTP endpoints.
 type CompressionSettings struct {
 	CompressionKind  string
 	CompressionLevel int
