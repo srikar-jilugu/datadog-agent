@@ -67,6 +67,10 @@ var passthroughPipelineDescs = []passthroughPipelineDesc{
 		defaultBatchMaxSize:           pkgconfigsetup.DefaultBatchMaxSize,
 		// High input chan size is needed to handle high number of DBM events being flushed by DBM integrations
 		defaultInputChanSize: 500,
+		compression: &config.CompressionSettings{
+			CompressionKind:  "gzip",
+			CompressionLevel: 6,
+		},
 	},
 	{
 		eventType:              eventTypeDBMMetrics,
@@ -374,6 +378,7 @@ type passthroughPipelineDesc struct {
 	defaultBatchMaxContentSize    int
 	defaultBatchMaxSize           int
 	defaultInputChanSize          int
+	compression                   *config.CompressionSettings
 }
 
 // newHTTPPassthroughPipeline creates a new HTTP-only event platform pipeline that sends messages directly to intake
@@ -388,13 +393,14 @@ func newHTTPPassthroughPipeline(
 ) (p *passthroughPipeline, err error) {
 
 	configKeys := config.NewLogsConfigKeys(desc.endpointsConfigPrefix, coreConfig)
-	endpoints, err := config.BuildHTTPEndpointsWithConfig(
+	endpoints, err := config.BuildHTTPEndpointsWithCompressionOverride(
 		coreConfig,
 		configKeys,
 		desc.hostnameEndpointPrefix,
 		desc.intakeTrackType,
 		config.DefaultIntakeProtocol,
 		config.DefaultIntakeOrigin,
+		desc.compression,
 	)
 	if err != nil {
 		return nil, err

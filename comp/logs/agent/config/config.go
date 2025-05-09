@@ -59,6 +59,11 @@ var logsEndpoints = map[string]int{
 // HTTPConnectivity is the status of the HTTP connectivity
 type HTTPConnectivity bool
 
+type CompressionSettings struct {
+	CompressionKind  string
+	CompressionLevel int
+}
+
 var (
 	// HTTPConnectivitySuccess is the status for successful HTTP connectivity
 	HTTPConnectivitySuccess HTTPConnectivity = true
@@ -191,9 +196,18 @@ func BuildHTTPEndpointsWithVectorOverride(coreConfig pkgconfigmodel.Reader, inta
 	return BuildHTTPEndpointsWithConfig(coreConfig, defaultLogsConfigKeysWithVectorOverride(coreConfig), httpEndpointPrefix, intakeTrackType, intakeProtocol, intakeOrigin)
 }
 
+// BuildHTTPEndpointsWithCompressionOverride returns the HTTP endpoints to send logs to, potentially with a compression override enabled.
+func BuildHTTPEndpointsWithCompressionOverride(coreConfig pkgconfigmodel.Reader, logsConfig *LogsConfigKeys, endpointPrefix string, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeOrigin IntakeOrigin, compression *CompressionSettings) (*Endpoints, error) {
+	return buildHTTPEndpoints(coreConfig, logsConfig, endpointPrefix, intakeTrackType, intakeProtocol, intakeOrigin, compression)
+}
+
 // BuildHTTPEndpointsWithConfig uses two arguments that instructs it how to access configuration parameters, then returns the HTTP endpoints to send logs to. This function is able to default to the 'classic' BuildHTTPEndpoints() w ldHTTPEndpointsWithConfigdefault variables logsConfigDefaultKeys and httpEndpointPrefix
 func BuildHTTPEndpointsWithConfig(coreConfig pkgconfigmodel.Reader, logsConfig *LogsConfigKeys, endpointPrefix string, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeOrigin IntakeOrigin) (*Endpoints, error) {
 	// Provide default values for legacy settings when the configuration key does not exist
+	return buildHTTPEndpoints(coreConfig, logsConfig, endpointPrefix, intakeTrackType, intakeProtocol, intakeOrigin, nil)
+}
+
+func buildHTTPEndpoints(coreConfig pkgconfigmodel.Reader, logsConfig *LogsConfigKeys, endpointPrefix string, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeOrigin IntakeOrigin, compression *CompressionSettings) (*Endpoints, error) {
 	defaultNoSSL := logsConfig.logsNoSSL()
 
 	main := newHTTPEndpoint(logsConfig)
@@ -205,6 +219,12 @@ func BuildHTTPEndpointsWithConfig(coreConfig pkgconfigmodel.Reader, logsConfig *
 		main.Origin = intakeOrigin
 	} else {
 		main.Version = EPIntakeVersion1
+	}
+
+	if compression != nil {
+		main.UseCompression = true
+		main.CompressionKind = compression.CompressionKind
+		main.CompressionLevel = compression.CompressionLevel
 	}
 
 	if vectorURL, vectorURLDefined := logsConfig.getObsPipelineURL(); logsConfig.obsPipelineWorkerEnabled() && vectorURLDefined {
@@ -253,6 +273,7 @@ func BuildHTTPEndpointsWithConfig(coreConfig pkgconfigmodel.Reader, logsConfig *
 		e.IsMRF = true
 		e.UseCompression = main.UseCompression
 		e.CompressionLevel = main.CompressionLevel
+		e.CompressionKind = main.CompressionKind
 		e.BackoffBase = main.BackoffBase
 		e.BackoffMax = main.BackoffMax
 		e.BackoffFactor = main.BackoffFactor
