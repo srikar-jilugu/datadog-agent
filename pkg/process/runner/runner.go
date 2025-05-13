@@ -16,14 +16,14 @@ import (
 
 	model "github.com/DataDog/agent-payload/v5/process"
 
-	sysconfig "github.com/DataDog/datadog-agent/cmd/system-probe/config"
-	sysconfigtypes "github.com/DataDog/datadog-agent/cmd/system-probe/config/types"
 	"github.com/DataDog/datadog-agent/comp/forwarder/defaultforwarder"
 	"github.com/DataDog/datadog-agent/comp/process/types"
 	pkgconfigmodel "github.com/DataDog/datadog-agent/pkg/config/model"
 	"github.com/DataDog/datadog-agent/pkg/process/checks"
 	"github.com/DataDog/datadog-agent/pkg/process/status"
 	"github.com/DataDog/datadog-agent/pkg/process/util/api"
+	sysconfig "github.com/DataDog/datadog-agent/pkg/system-probe/config"
+	sysconfigtypes "github.com/DataDog/datadog-agent/pkg/system-probe/config/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -482,14 +482,18 @@ func getContainerCount(mb model.MessageBody) int {
 func readResponseStatuses(checkName string, responses <-chan defaultforwarder.Response) []*model.CollectorStatus {
 	var statuses []*model.CollectorStatus
 
+	submissionErrors := int64(0)
+
 	for response := range responses {
 		if response.Err != nil {
 			log.Errorf("[%s] Error from %s: %s", checkName, response.Domain, response.Err)
+			submissionErrors++
 			continue
 		}
 
 		if response.StatusCode >= 300 {
 			log.Errorf("[%s] Invalid response from %s: %d -> %v", checkName, response.Domain, response.StatusCode, response.Err)
+			submissionErrors++
 			continue
 		}
 
@@ -501,6 +505,7 @@ func readResponseStatuses(checkName string, responses <-chan defaultforwarder.Re
 		r, err := model.DecodeMessage(response.Body)
 		if err != nil {
 			log.Errorf("[%s] Could not decode response body: %s", checkName, err)
+			submissionErrors++
 			continue
 		}
 
@@ -509,13 +514,17 @@ func readResponseStatuses(checkName string, responses <-chan defaultforwarder.Re
 			rm := r.Body.(*model.ResCollector)
 			if len(rm.Message) > 0 {
 				log.Errorf("[%s] Error in response from %s: %s", checkName, response.Domain, rm.Message)
+				submissionErrors++
 			} else {
 				statuses = append(statuses, rm.Status)
 			}
 		default:
 			log.Errorf("[%s] Unexpected response type from %s: %d", checkName, response.Domain, r.Header.Type)
+			submissionErrors++
 		}
 	}
+
+	status.AddSubmissionErrorCount(submissionErrors)
 
 	return statuses
 }

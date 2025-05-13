@@ -16,6 +16,7 @@ import (
 
 	"github.com/DataDog/agent-payload/v5/cyclonedx_v1_4"
 	"github.com/DataDog/agent-payload/v5/sbom"
+	"github.com/DataDog/test-infra-definitions/components/datadog/apps/redis"
 	"gopkg.in/zorkian/go-datadog-api.v2"
 
 	"github.com/DataDog/datadog-agent/pkg/util/pointer"
@@ -379,17 +380,11 @@ func (suite *k8sSuite) testAgentCLI() {
 }
 
 func (suite *k8sSuite) testClusterAgentCLI() {
-	ctx := context.Background()
-
-	pod, err := suite.Env().KubernetesCluster.Client().CoreV1().Pods("datadog").List(ctx, metav1.ListOptions{
-		LabelSelector: fields.OneTermEqualSelector("app", suite.Env().Agent.LinuxClusterAgent.LabelSelectors["app"]).String(),
-		Limit:         1,
-	})
-	suite.Require().NoError(err)
-	suite.Require().Len(pod.Items, 1)
+	leaderDcaPodName := suite.testDCALeaderElection(false) //check cluster agent leaderelection without restart
+	suite.Require().NotEmpty(leaderDcaPodName, "Leader DCA pod name should not be empty")
 
 	suite.Run("cluster-agent status", func() {
-		stdout, stderr, err := suite.podExec("datadog", pod.Items[0].Name, "cluster-agent", []string{"datadog-cluster-agent", "status"})
+		stdout, stderr, err := suite.podExec("datadog", leaderDcaPodName, "cluster-agent", []string{"datadog-cluster-agent", "status"})
 		suite.Require().NoError(err)
 		suite.Empty(stderr, "Standard error of `datadog-cluster-agent status` should be empty")
 		suite.Contains(stdout, "Collector")
@@ -401,7 +396,7 @@ func (suite *k8sSuite) testClusterAgentCLI() {
 	})
 
 	suite.Run("cluster-agent status --json", func() {
-		stdout, stderr, err := suite.podExec("datadog", pod.Items[0].Name, "cluster-agent", []string{"env", "DD_LOG_LEVEL=off", "datadog-cluster-agent", "status", "--json"})
+		stdout, stderr, err := suite.podExec("datadog", leaderDcaPodName, "cluster-agent", []string{"env", "DD_LOG_LEVEL=off", "datadog-cluster-agent", "status", "--json"})
 		suite.Require().NoError(err)
 		suite.Empty(stderr, "Standard error of `datadog-cluster-agent status` should be empty")
 		if !suite.Truef(json.Valid([]byte(stdout)), "Output of `datadog-cluster-agent status --json` isn’t valid JSON") {
@@ -415,7 +410,7 @@ func (suite *k8sSuite) testClusterAgentCLI() {
 	})
 
 	suite.Run("cluster-agent checkconfig", func() {
-		stdout, stderr, err := suite.podExec("datadog", pod.Items[0].Name, "cluster-agent", []string{"datadog-cluster-agent", "checkconfig"})
+		stdout, stderr, err := suite.podExec("datadog", leaderDcaPodName, "cluster-agent", []string{"datadog-cluster-agent", "checkconfig"})
 		suite.Require().NoError(err)
 		suite.Empty(stderr, "Standard error of `datadog-cluster-agent checkconfig` should be empty")
 		suite.Contains(stdout, "=== kubernetes_state_core check ===")
@@ -426,7 +421,7 @@ func (suite *k8sSuite) testClusterAgentCLI() {
 	})
 
 	suite.Run("cluster-agent clusterchecks", func() {
-		stdout, stderr, err := suite.podExec("datadog", pod.Items[0].Name, "cluster-agent", []string{"datadog-cluster-agent", "clusterchecks"})
+		stdout, stderr, err := suite.podExec("datadog", leaderDcaPodName, "cluster-agent", []string{"datadog-cluster-agent", "clusterchecks"})
 		suite.Require().NoError(err)
 		suite.Empty(stderr, "Standard error of `datadog-cluster-agent clusterchecks` should be empty")
 		suite.Contains(stdout, "agents reporting ===")
@@ -436,6 +431,59 @@ func (suite *k8sSuite) testClusterAgentCLI() {
 			suite.T().Log(stdout)
 		}
 	})
+}
+
+func (suite *k8sSuite) testDCALeaderElection(restartLeader bool) string {
+	ctx := context.Background()
+	var leaderPodName string
+
+	success := suite.EventuallyWithTf(func(c *assert.CollectT) {
+		// find cluster agent pod, it could be either leader or follower
+		pods, err := suite.Env().KubernetesCluster.Client().CoreV1().Pods("datadog").List(ctx, metav1.ListOptions{
+			LabelSelector: fields.OneTermEqualSelector("app", suite.Env().Agent.LinuxClusterAgent.LabelSelectors["app"]).String(),
+			Limit:         1,
+		})
+		assert.NoError(c, err)
+		assert.Len(c, pods.Items, 1, "Expected at least one running cluster agent pod")
+		stdout, stderr, err := suite.podExec("datadog", pods.Items[0].Name, "cluster-agent", []string{"env", "DD_LOG_LEVEL=off", "datadog-cluster-agent", "status", "--json"})
+		assert.NoError(c, err)
+		assert.Empty(c, stderr, "Standard error of `datadog-cluster-agent status` should be empty")
+		var blob interface{}
+		err = json.Unmarshal([]byte(stdout), &blob)
+		assert.NoError(c, err, "Failed to unmarshal JSON output of `datadog-cluster-agent status --json`")
+
+		// Check if the "leaderelection" field exists
+		assert.NotNil(c, blob, "Failed to unmarshal JSON output of `datadog-cluster-agent status --json`")
+		blobMap, ok := blob.(map[string]interface{})
+		assert.Truef(c, ok, "Failed to assert blob as map[string]interface{}")
+
+		// Check if the "leaderName" field exists
+		assert.Contains(c, blobMap, "leaderelection", "Field `leaderelection` not found in the JSON output")
+		assert.Contains(c, blobMap["leaderelection"], "leaderName", "Field `leaderelection.leaderName` not found in the JSON output")
+		leaderPodName, ok = (blobMap["leaderelection"].(map[string]interface{}))["leaderName"].(string)
+		assert.Truef(c, ok, "Failed to assert `leaderelection.leaderName` as string")
+		assert.NotEmpty(c, leaderPodName, "Field `leaderelection.leaderName` is empty in the JSON output")
+		suite.T().Logf("Cluster agent pods have a leader name: %s", leaderPodName)
+		leaderPod, err := suite.Env().KubernetesCluster.Client().CoreV1().Pods("datadog").Get(ctx, leaderPodName, metav1.GetOptions{})
+		assert.NoError(c, err)
+		assert.NotNilf(c, leaderPod, "Leader pod: %s not found", leaderPodName)
+
+		// restart the leader pod
+		if restartLeader {
+			// TODO: not enabled for now because it will cause other tests to fail
+			suite.T().Logf("Restarting leader pod: %s", leaderPodName)
+			err = suite.Env().KubernetesCluster.Client().CoreV1().Pods("datadog").Delete(ctx, leaderPodName, metav1.DeleteOptions{})
+			assert.NoError(c, err)
+		}
+		if suite.T().Failed() {
+			suite.T().Log(stdout)
+		}
+	}, 2*time.Minute, 10*time.Second, "Cluster agent leader election failed")
+
+	if !success {
+		return ""
+	}
+	return leaderPodName
 }
 
 func (suite *k8sSuite) TestNginx() {
@@ -581,7 +629,7 @@ func (suite *k8sSuite) TestRedis() {
 				`^display_container_name:redis`,
 				`^image_id:public.ecr.aws/docker/library/redis@sha256:`,
 				`^image_name:public.ecr.aws/docker/library/redis$`,
-				`^image_tag:latest$`,
+				fmt.Sprintf(`^image_tag:%s$`, redis.RedisVersion),
 				`^kube_container_name:redis$`,
 				`^kube_deployment:redis$`,
 				`^kube_namespace:workload-redis$`,
@@ -637,7 +685,7 @@ func (suite *k8sSuite) TestRedis() {
 				`^filename:[[:digit:]]+.log$`,
 				`^image_id:public.ecr.aws/docker/library/redis@sha256:`,
 				`^image_name:public.ecr.aws/docker/library/redis$`,
-				`^image_tag:latest$`,
+				fmt.Sprintf(`^image_tag:%s$`, redis.RedisVersion),
 				`^kube_container_name:redis$`,
 				`^kube_deployment:redis$`,
 				`^kube_namespace:workload-redis$`,
