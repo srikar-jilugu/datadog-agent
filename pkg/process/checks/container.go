@@ -7,8 +7,9 @@ package checks
 
 import (
 	"fmt"
-	"math"
 	"net/http"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -164,20 +165,81 @@ func (c *ContainerCheck) Run(nextGroupID func() int32, options *RunOptions) (Run
 func (c *ContainerCheck) Cleanup() {}
 
 // chunkContainers formats and chunks the ctrList into a slice of chunks using a specific number of chunks.
+// containers belonging to the same pod are guaranteed to be placed in the same chunk
 func chunkContainers(containers []*model.Container, chunks int) [][]*model.Container {
-	perChunk := int(math.Ceil(float64(len(containers)) / float64(chunks)))
-	chunked := make([][]*model.Container, 0, chunks)
-	chunk := make([]*model.Container, 0, perChunk)
+	if chunks <= 0 || len(containers) == 0 {
+		return nil
+	}
+
+	if chunks > len(containers) {
+		chunks = len(containers)
+	}
+
+	podGroups := make(map[string][]*model.Container)
+	ungrouped := make([]*model.Container, 0)
+
+	// Find container's pod ID from its tags
+	const podNameTag = "pod_name:"
 
 	for _, ctr := range containers {
-		chunk = append(chunk, ctr)
-		if len(chunk) == perChunk {
-			chunked = append(chunked, chunk)
-			chunk = make([]*model.Container, 0, perChunk)
+		var podID string
+		for _, tag := range ctr.Tags {
+			if strings.HasPrefix(tag, podNameTag) {
+				podID = tag
+				break
+			}
+		}
+		if podID == "" {
+			ungrouped = append(ungrouped, ctr)
+		} else {
+			podGroups[podID] = append(podGroups[podID], ctr)
 		}
 	}
-	if len(chunk) > 0 {
-		chunked = append(chunked, chunk)
+
+	chunked := make([][]*model.Container, chunks)
+	chunkSizes := make([]int, chunks) // Used to track the size of each chunk
+
+	podGroupKeys := make([]string, 0, len(podGroups))
+	for podID := range podGroups {
+		podGroupKeys = append(podGroupKeys, podID)
 	}
-	return chunked
+	sort.Slice(podGroupKeys, func(i, j int) bool {
+		return len(podGroups[podGroupKeys[i]]) > len(podGroups[podGroupKeys[j]])
+	})
+
+	findSmallestChunk := func(chunkSizes []int) int {
+		smallestIdx := 0
+		for i := 1; i < chunks; i++ {
+			if chunkSizes[i] < chunkSizes[smallestIdx] {
+				smallestIdx = i
+			}
+		}
+		return smallestIdx
+	}
+
+	// Assign each pod group to the chunk with the least containers
+	for _, podID := range podGroupKeys {
+		podGroup := podGroups[podID]
+
+		smallestIdx := findSmallestChunk(chunkSizes)
+		chunked[smallestIdx] = append(chunked[smallestIdx], podGroup...)
+		chunkSizes[smallestIdx] += len(podGroup)
+	}
+
+	// Distribute each ungrouped container to the smallest chunk
+	for _, ctr := range ungrouped {
+		smallestIdx := findSmallestChunk(chunkSizes)
+		chunked[smallestIdx] = append(chunked[smallestIdx], ctr)
+		chunkSizes[smallestIdx]++
+	}
+
+	// Remove any empty chunks
+	result := make([][]*model.Container, 0, chunks)
+	for _, chunk := range chunked {
+		if len(chunk) > 0 {
+			result = append(result, chunk)
+		}
+	}
+
+	return result
 }
