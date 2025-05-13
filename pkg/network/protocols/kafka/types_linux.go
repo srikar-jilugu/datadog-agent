@@ -6,7 +6,6 @@ package kafka
 const (
 	TopicNameBuckets                                   = 0xa
 	TopicNameMaxSize                                   = 0x50
-	TelemetryMaxAPIVersion                             = 0x1e
 	ClassificationMaxSupportedProduceRequestApiVersion = 0xc
 	ClassificationMinSupportedProduceRequestApiVersion = 0x1
 	DecodingMaxSupportedProduceRequestApiVersion       = 0xc
@@ -72,6 +71,6 @@ type KafkaResponseContext struct {
 type RawKernelTelemetry struct {
 	Topic_name_size_buckets             [10]uint64
 	Produce_no_required_acks            uint64
-	Classified_fetch_api_version_hits   [31]uint64
-	Classified_produce_api_version_hits [31]uint64
+	Classified_produce_api_version_hits [13]uint64
+	Classified_fetch_api_version_hits   [13]uint64
 }
