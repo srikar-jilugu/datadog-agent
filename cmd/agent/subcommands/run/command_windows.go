@@ -67,6 +67,7 @@ import (
 	"github.com/DataDog/datadog-agent/comp/metadata/inventorychecks"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryhost"
 	"github.com/DataDog/datadog-agent/comp/metadata/inventoryotel"
+	"github.com/DataDog/datadog-agent/comp/metadata/inventorysoftware"
 	"github.com/DataDog/datadog-agent/comp/metadata/packagesigning"
 	"github.com/DataDog/datadog-agent/comp/metadata/runner"
 	netflowServer "github.com/DataDog/datadog-agent/comp/netflow/server"
@@ -117,6 +118,7 @@ func StartAgentWithDefaults(ctxChan <-chan context.Context) (<-chan error, error
 			_ inventoryagent.Component,
 			_ inventoryhost.Component,
 			_ inventoryotel.Component,
+			_ inventorysoftware.Component,
 			_ haagentmetadata.Component,
 			_ secrets.Component,
 			invChecks inventorychecks.Component,
@@ -240,6 +242,7 @@ func getPlatformModules() fx.Option {
 		winregistryimpl.Module(),
 		etwimpl.Module,
 		comptraceconfig.Module(),
+		inventorysoftware.Module(),
 		fx.Replace(comptraceconfig.Params{
 			FailIfAPIKeyMissing: false,
 		}),
@@ -248,6 +251,7 @@ func getPlatformModules() fx.Option {
 		fx.Invoke(func(_ etwtracer.Component) {}),
 		fx.Invoke(func(_ windowseventlog.Component) {}),
 		fx.Invoke(func(_ winregistry.Component) {}),
+		fx.Invoke(func(_ inventorysoftware.Component) {}),
 		fx.Invoke(reRegisterCtrlHandler),
 	)
 }

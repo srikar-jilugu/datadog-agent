@@ -1,0 +1,36 @@
+<div class="stat">
+  <span class="stat_title">Software Inventory Metadata</span>
+  <div class="stat_data">
+    {{- $swList := index . "inventory_software_metadata" }}
+    {{- if not $swList }}
+      <div style="font-weight: bold; padding: 1em;">No software inventory metadata - is System Probe running?</div>
+    {{- else }}
+      <table>
+        <thead>
+          <tr>
+            <th>Product Code</th>
+            <th>Metadata</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{- range $sw := $swList }}
+          <tr>
+            <td>{{ $sw.ProductCode }}</td>
+            <td>
+              {{- if $sw.Metadata }}
+                <ul style="margin:0; padding-left:1em;">
+                  {{- range $k, $v := $sw.Metadata }}
+                    <li><strong>{{ $k }}:</strong> {{ $v }}</li>
+                  {{- end }}
+                </ul>
+              {{- else }}
+                <em>No metadata</em>
+              {{- end }}
+            </td>
+          </tr>
+          {{- end }}
+        </tbody>
+      </table>
+    {{- end }}
+  </div>
+</div>

@@ -1,0 +1,8 @@
+{{- $swList := index . "inventory_software_metadata" }}
+{{- if not $swList }}
+  No software inventory metadata - is System Probe running?
+{{- else }}
+  {{- range $sw := $swList }}
+  - {{ index $sw "DisplayName" }}
+  {{- end }}
+{{- end }}
