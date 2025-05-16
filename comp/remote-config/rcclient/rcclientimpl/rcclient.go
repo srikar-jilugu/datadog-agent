@@ -316,8 +316,14 @@ func (rc rcClient) SubscribeAgentTask() {
 	rc.client.Subscribe(state.ProductAgentTask, rc.agentTaskUpdateCallback)
 }
 
-func (rc rcClient) Subscribe(product data.Product, fn func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) {
-	rc.client.Subscribe(string(product), fn)
+// Subscribe the product
+func (rc rcClient) Subscribe(product data.Product, fn func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) string {
+	return rc.client.Subscribe(string(product), fn)
+}
+
+// Unsubscribe the product
+func (rc rcClient) Unsubscribe(product data.Product, subscriptionID string) {
+	rc.client.Unsubscribe(subscriptionID, string(product))
 }
 
 func (rc rcClient) agentConfigUpdateCallback(updates map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus)) {

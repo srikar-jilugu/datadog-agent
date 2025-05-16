@@ -76,7 +76,7 @@ type Client struct {
 
 	state *state.Repository
 
-	listeners map[string][]Listener
+	listeners map[string]map[string]Listener
 
 	// Elements that can be changed during the execution of listeners
 	// They are atomics so that they don't have to share the top-level mutex
@@ -294,7 +294,7 @@ func newClient(cf ConfigFetcher, opts ...func(opts *Options)) (*Client, error) {
 		installerState: installerState,
 		state:          repository,
 		backoffPolicy:  backoffPolicy,
-		listeners:      make(map[string][]Listener),
+		listeners:      make(map[string]map[string]Listener),
 		configFetcher:  cf,
 	}, nil
 }
@@ -330,7 +330,7 @@ func (c *Client) SetAgentName(agentName string) {
 }
 
 // SubscribeAll subscribes to all events (config updates, state changed, ...)
-func (c *Client) SubscribeAll(product string, listener Listener) {
+func (c *Client) SubscribeAll(product string, listener Listener) string {
 	c.m.Lock()
 	defer c.m.Unlock()
 
@@ -340,17 +340,48 @@ func (c *Client) SubscribeAll(product string, listener Listener) {
 		c.products = append(c.products, product)
 	}
 
-	c.listeners[product] = append(c.listeners[product], listener)
+	subscriptionID := generateIDWithSize(12)
+	// Initialize map for product if it doesn't exist
+	if _, ok := c.listeners[product]; !ok {
+		c.listeners[product] = make(map[string]Listener)
+	}
+
+	// Keep generating IDs until we find one that's not in use
+	for {
+		if _, exists := c.listeners[product][subscriptionID]; !exists {
+			break
+		}
+		subscriptionID = generateIDWithSize(12)
+	}
+
+	c.listeners[product][subscriptionID] = listener
+	return subscriptionID
 }
 
 // Subscribe subscribes to config updates of a product.
-func (c *Client) Subscribe(product string, cb func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) {
-	c.SubscribeAll(product, NewUpdateListener(cb))
+func (c *Client) Subscribe(
+	product string,
+	cb func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus)),
+) string {
+	return c.SubscribeAll(product, NewUpdateListener(cb))
+}
+
+// Unsubscribe unsubscribes the client client from a product
+func (c *Client) Unsubscribe(
+	subscriptionID string,
+	product string,
+) {
+	c.m.Lock()
+	defer c.m.Unlock()
+
+	if listeners, ok := c.listeners[product]; ok {
+		delete(listeners, subscriptionID)
+	}
 }
 
 // SubscribeIgnoreExpiration subscribes to config updates of a product, but ignores the case when signatures have expired.
-func (c *Client) SubscribeIgnoreExpiration(product string, cb func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) {
-	c.SubscribeAll(product, NewUpdateListenerIgnoreExpiration(cb))
+func (c *Client) SubscribeIgnoreExpiration(product string, cb func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) string {
+	return c.SubscribeAll(product, NewUpdateListenerIgnoreExpiration(cb))
 }
 
 // GetConfigs returns the current configs applied of a product.
@@ -652,21 +683,22 @@ func NewListener(onUpdate func(updates map[string]state.RawConfig, applyStateCal
 	return &listener{onUpdate: onUpdate, onStateChange: onStateChange}
 }
 
-var (
-	idSize     = 21
-	idAlphabet = []rune("_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-)
+var idAlphabet = []rune("_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 // generateID creates a new random ID for a new client instance
 func generateID() string {
-	bytes := make([]byte, idSize)
+	return generateIDWithSize(21)
+}
+
+func generateIDWithSize(size int) string {
+	bytes := make([]byte, size)
 	_, err := rand.Read(bytes)
 	if err != nil {
 		panic(err)
 	}
-	id := make([]rune, idSize)
-	for i := 0; i < idSize; i++ {
+	id := make([]rune, size)
+	for i := 0; i < size; i++ {
 		id[i] = idAlphabet[bytes[i]&63]
 	}
-	return string(id[:idSize])
+	return string(id[:size])
 }

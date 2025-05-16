@@ -19,10 +19,15 @@ import (
 // Component is the component type.
 type Component interface {
 	// SubscribeAgentTask subscribe the remote-config client to AGENT_TASK
+	// TODO this must be removed.
 	SubscribeAgentTask()
 	// Subscribe is the generic way to start listening to a specific product update
 	// Component can also automatically subscribe to updates by returning a `ListenerProvider` struct
-	Subscribe(product data.Product, fn func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus)))
+	// It will return a subscription ID that can be used to unsubscribe from the remote-config client
+	Subscribe(product data.Product, fn func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) string
+
+	// Unsubscribe unsubscribes the given subscription ID from the remote-config client
+	Unsubscribe(product data.Product, subscriptionID string)
 }
 
 // Params is the input parameter struct for the RC client Component.
