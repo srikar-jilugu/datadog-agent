@@ -333,7 +333,7 @@ func runSystemProbe(ctxChan <-chan context.Context, errChan chan error) error {
 		fx.Provide(func(config config.Component, statsd statsd.Component) (ddgostatsd.ClientInterface, error) {
 			return statsd.CreateForHostPort(pkgconfigsetup.GetBindHost(config), config.GetInt("dogstatsd_port"))
 		}),
-	)
+		remotehostnameimpl.Module(),
 }
 
 // StopSystemProbeWithDefaults is a temporary way for other packages to use stopAgent.
