@@ -55,7 +55,7 @@ func TestStatusTemplates(t *testing.T) {
 			},
 			wantText: "Detected 1 installed software entries",
 			wantHTML: []string{
-				`<td>\s*TestApp\s*</td>`,
+				`<summary>\s*TestApp\s*</summary>`,
 				`<li><strong>ProductCode:</strong>\s*test\s*</li>`,
 				`<li><strong>Version:</strong>\s*1\.0\s*</li>`,
 			},
@@ -67,7 +67,7 @@ func TestStatusTemplates(t *testing.T) {
 			},
 			wantText: "Detected 1 installed software entries",
 			wantHTML: []string{
-				`<td>\s*test-product\s*</td>`,
+				`<summary>\s*test-product\s*</summary>`,
 				`<li><strong>ProductCode:</strong>\s*test-product\s*</li>`,
 				`<li><strong>Version:</strong>\s*2\.0\s*</li>`,
 			},
@@ -79,7 +79,7 @@ func TestStatusTemplates(t *testing.T) {
 			},
 			wantText: "Detected 1 installed software entries",
 			wantHTML: []string{
-				`<td>\s*test-empty\s*</td>`,
+				`<summary>\s*test-empty\s*</summary>`,
 				`<li><strong>ProductCode:</strong>\s*test-empty\s*</li>`,
 				`<li><strong>Publisher:</strong>\s*Test Corp\s*</li>`,
 			},
@@ -92,11 +92,11 @@ func TestStatusTemplates(t *testing.T) {
 			},
 			wantText: "Detected 2 installed software entries",
 			wantHTML: []string{
-				`<td>\s*App One\s*</td>`,
-				`<td>\s*product2\s*</td>`,
+				`<summary>\s*App One\s*</summary>`,
 				`<li><strong>ProductCode:</strong>\s*product1\s*</li>`,
-				`<li><strong>ProductCode:</strong>\s*product2\s*</li>`,
 				`<li><strong>Version:</strong>\s*1\.0\s*</li>`,
+				`<summary>\s*product2\s*</summary>`,
+				`<li><strong>ProductCode:</strong>\s*product2\s*</li>`,
 				`<li><strong>Version:</strong>\s*2\.0\s*</li>`,
 			},
 		},

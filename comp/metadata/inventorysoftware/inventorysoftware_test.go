@@ -65,7 +65,7 @@ func TestRefreshCachedValues(t *testing.T) {
 	sp.AssertNumberOfCalls(t, "GetCheck", 1)
 }
 
-func TestGetPayloadWithError(t *testing.T) {
+func TestRefreshCachedValuesWithError(t *testing.T) {
 	is, sp := newInventorySoftware(t, nil)
 	sp.On("GetCheck", sysconfig.InventorySoftwareModule).Return(SoftwareInventoryMap{}, fmt.Errorf("error"))
 
