@@ -23,7 +23,26 @@ const defaultMaxVariables = 100
 var (
 	variableRegex         = regexp.MustCompile(`\${[^}]*}`)
 	errAppendNotSupported = errors.New("append is not supported")
+
+	// privateVariablesRegistry keeps track of variables that shouldn't be serialized
+	privateVariablesLock     sync.RWMutex
+	privateVariablesRegistry = make(map[string]struct{})
 )
+
+// MarkVariableAsPrivate marks a variable as private
+func MarkVariableAsPrivate(name string) {
+	privateVariablesLock.Lock()
+	defer privateVariablesLock.Unlock()
+	privateVariablesRegistry[name] = struct{}{}
+}
+
+// IsVariablePrivate checks if a variable is private
+func IsVariablePrivate(name string) bool {
+	privateVariablesLock.RLock()
+	defer privateVariablesLock.RUnlock()
+	_, ok := privateVariablesRegistry[name]
+	return ok
+}
 
 // SECLVariable describes a SECL variable value
 type SECLVariable interface {
@@ -841,8 +860,9 @@ type Variables struct {
 
 // VariableOpts holds the options of a variable set
 type VariableOpts struct {
-	Size int
-	TTL  time.Duration
+	Size    int
+	TTL     time.Duration
+	Private bool // When true, the variable will not be serialized
 }
 
 // NewVariables returns a new set of global variables
@@ -872,10 +892,14 @@ func newSECLVariable(value interface{}, opts VariableOpts) (MutableSECLVariable,
 }
 
 // NewSECLVariable returns new variable of the type of the specified value
-func (v *Variables) NewSECLVariable(_ string, value interface{}, opts VariableOpts) (SECLVariable, error) {
+func (v *Variables) NewSECLVariable(name string, value interface{}, opts VariableOpts) (SECLVariable, error) {
 	seclVariable, err := newSECLVariable(value, opts)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.Private {
+		MarkVariableAsPrivate(name)
 	}
 
 	if expirable, ok := seclVariable.(expirableVariable); ok && opts.TTL > 0 {
@@ -917,6 +941,10 @@ func (v *ScopedVariables) Len() int {
 
 // NewSECLVariable returns new variable of the type of the specified value
 func (v *ScopedVariables) NewSECLVariable(name string, value interface{}, opts VariableOpts) (SECLVariable, error) {
+	if opts.Private {
+		MarkVariableAsPrivate(name)
+	}
+
 	getVariable := func(ctx *Context) MutableSECLVariable {
 		scope := v.scoper(ctx)
 		if scope == nil {

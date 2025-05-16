@@ -487,6 +487,10 @@ func newVariablesContext(e *model.Event, rule *rules.Rule, prefix string) (varia
 				continue
 			}
 
+			if eval.IsVariablePrivate(name) {
+				continue
+			}
+
 			evaluator := variable.GetEvaluator()
 			if evaluator, ok := evaluator.(eval.Evaluator); ok {
 				value := evaluator.Eval(eval.NewContext(e))
