@@ -1,8 +1,9 @@
-{{- $swList := index . "inventory_software_metadata" }}
-{{- if not $swList }}
-  No software inventory metadata - is System Probe running?
-{{- else }}
-  {{- range $sw := $swList }}
-  - {{ index $sw "DisplayName" }}
+{{- $swMap := index . "software_inventory_metadata" }}
+{{- $count := 0 }}
+{{- if $swMap }}
+  {{- range $productCode, $meta := $swMap }}
+    {{- $count = add $count 1 }}
   {{- end }}
 {{- end }}
+Detected {{ $count }} installed software entries.
+The full list is not displayed in this status output, but is available in a flare, the Agent status page in the GUI, or in the Datadog Application.

@@ -52,7 +52,7 @@ func (is *inventorySoftware) populateStatus(status map[string]interface{}) {
 	for _, inventory := range is.cachedInventory {
 		data[inventory.ProductCode] = inventory.Metadata
 	}
-	status["inventory_software_metadata"] = data
+	status["software_inventory_metadata"] = data
 }
 
 func (is *inventorySoftware) getStatusInfo() map[string]interface{} {
