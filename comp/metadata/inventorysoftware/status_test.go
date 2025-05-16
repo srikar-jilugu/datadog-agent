@@ -127,3 +127,23 @@ func TestStatusTemplates(t *testing.T) {
 		})
 	}
 }
+
+func TestStatusTemplateWithNoSoftwareInventoryMetadata(t *testing.T) {
+	is, sp := newInventorySoftware(t, nil)
+	sp.On("GetCheck", sysconfig.InventorySoftwareModule).Return(SoftwareInventoryMap{}, nil)
+
+	// Test Text template
+	var buf bytes.Buffer
+	err := is.Text(false, &buf)
+	assert.NoError(t, err)
+	assert.Contains(t, buf.String(), "No software inventory metadata - is System Probe running?")
+
+	// Test HTML template
+	buf.Reset()
+	err = is.HTML(false, &buf)
+	assert.NoError(t, err)
+	assert.Contains(t, buf.String(), "No software inventory metadata - is System Probe running?")
+
+	// When the software inventory list is empty, we call GetCheck every time
+	sp.AssertNumberOfCalls(t, "GetCheck", 2)
+}
