@@ -380,8 +380,9 @@ func (c *Client) Unsubscribe(
 }
 
 // SubscribeIgnoreExpiration subscribes to config updates of a product, but ignores the case when signatures have expired.
-func (c *Client) SubscribeIgnoreExpiration(product string, cb func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) string {
-	return c.SubscribeAll(product, NewUpdateListenerIgnoreExpiration(cb))
+func (c *Client) SubscribeIgnoreExpiration(product string, cb func(update map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus))) {
+	// it's not returning the subscriptionID as it's not in use right now
+	c.SubscribeAll(product, NewUpdateListenerIgnoreExpiration(cb))
 }
 
 // GetConfigs returns the current configs applied of a product.
