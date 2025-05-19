@@ -85,7 +85,7 @@ type Location struct {
 	// PCRange is the range of PC values that will be probed.
 	Range PCRange
 	// The locations of the pieces of the parameter or variable.
-	Location []bininspect.ParameterPiece
+	Pieces []bininspect.ParameterPiece
 }
 
 // PCRange is the range of PC values that will be probed.
