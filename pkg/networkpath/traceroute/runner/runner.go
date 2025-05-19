@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/networkpath/traceroute/icmp"
 	"math/rand"
 	"net"
 	"net/netip"
@@ -147,6 +148,13 @@ func (r *Runner) RunTraceroute(ctx context.Context, cfg config.Config) (payload.
 			tracerouteRunnerTelemetry.failedRuns.Inc()
 			return payload.NetworkPath{}, err
 		}
+	case payload.ProtocolICMP:
+		log.Tracef("Running UDP traceroute for: %+v", cfg)
+		pathResult, err = r.runICMP(cfg, hname, dest, maxTTL, timeout)
+		if err != nil {
+			tracerouteRunnerTelemetry.failedRuns.Inc()
+			return payload.NetworkPath{}, err
+		}
 	default:
 		log.Errorf("Invalid protocol for: %+v", cfg)
 		tracerouteRunnerTelemetry.failedRuns.Inc()
@@ -237,6 +245,36 @@ func (r *Runner) runTCP(cfg config.Config, hname string, target net.IP, maxTTL u
 		return payload.NetworkPath{}, err
 	}
 	log.Tracef("TCP Results: %+v", pathResult)
+
+	return pathResult, nil
+}
+
+func (r *Runner) runICMP(cfg config.Config, hname string, target net.IP, maxTTL uint8, timeout time.Duration) (payload.NetworkPath, error) {
+	targetAddr, ok := netip.AddrFromSlice(target)
+	if !ok {
+		return payload.NetworkPath{}, fmt.Errorf("invalid target IP")
+	}
+	parallelParams := common.TracerouteParallelParams{
+		MinTTL:            DefaultMinTTL,
+		MaxTTL:            maxTTL,
+		TracerouteTimeout: timeout,
+		PollFrequency:     100 * time.Millisecond,
+		SendDelay:         10 * time.Millisecond,
+	}
+	params := icmp.Params{
+		Target:         targetAddr,
+		ParallelParams: parallelParams,
+	}
+	results, err := icmp.RunICMPTraceroute(context.TODO(), params)
+	if err != nil {
+		return payload.NetworkPath{}, err
+	}
+
+	pathResult, err := r.processResults(results, payload.ProtocolICMP, hname, cfg.DestHostname, cfg.DestPort)
+	if err != nil {
+		return payload.NetworkPath{}, err
+	}
+	log.Tracef("ICMP Results: %+v", pathResult)
 
 	return pathResult, nil
 }

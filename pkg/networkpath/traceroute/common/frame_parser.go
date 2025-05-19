@@ -45,6 +45,23 @@ func (p *FrameParser) ParseIPv4(buffer []byte) error {
 	return nil
 }
 
+// NewICMPFrameParser constructs a new FrameParser
+func NewICMPFrameParser() *FrameParser {
+	p := &FrameParser{}
+	p.v4Parser = gopacket.NewDecodingLayerParser(layers.LayerTypeICMPv4, &p.ICMP4, &p.Payload)
+	p.v4Parser.IgnoreUnsupported = true
+	return p
+}
+
+// ParseICMPv4 parses an IPv4 packet
+func (p *FrameParser) ParseICMPv4(buffer []byte) error {
+	err := p.v4Parser.DecodeLayers(buffer, &p.Layers)
+	if err != nil {
+		return fmt.Errorf("ParseIPv4: %w", err)
+	}
+	return nil
+}
+
 // GetIPLayer gets the layer type of the IP layer (right now, only IPv4)
 func (p *FrameParser) GetIPLayer() gopacket.LayerType {
 	if len(p.Layers) < 1 {
