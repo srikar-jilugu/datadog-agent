@@ -5,8 +5,13 @@ ARG BASE_IMAGE_UBUNTU_VERSION
 ARG BASE_IMAGE_UBUNTU_NAME
 LABEL baseimage.os="ubuntu ${BASE_IMAGE_UBUNTU_NAME}"
 LABEL baseimage.name="ubuntu:${BASE_IMAGE_UBUNTU_VERSION}"
+LABEL org.opencontainers.iamge.authors="Datadog <package@datadoghq.com>"
 LABEL org.opencontainers.image.base.name="ubuntu:${BASE_IMAGE_UBUNTU_VERSION}"
+LABEL org.opencontainers.image.source="https://github.com/DataDog/datadog-agent"
 LABEL org.opencontainers.image.title="Datadog Agent"
+LABEL org.opencontainers.image.vendor="Datadog, Inc."
+# Build image, use target none label to avoid replication
+LABEL target="none"
 
 ARG CIBUILD
 # NOTE about APT mirrorlists:

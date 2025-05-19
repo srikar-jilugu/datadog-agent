@@ -13,7 +13,6 @@
     - AGENT_BASE_IMAGE_TAG=registry.ddbuild.io/ci/datadog-agent/agent-base-image${ECR_RELEASE_SUFFIX}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-$ARCH
     - TARGET_TAG=${IMAGE}${ECR_RELEASE_SUFFIX}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}$TAG_SUFFIX-$ARCH
     - !reference [.login_to_docker_readonly]
-    # Build image, use target none label to avoid replication
     - |-
       docker buildx build --no-cache --push --pull \
         --platform linux/$ARCH \
@@ -26,11 +25,8 @@
         --file $BUILD_CONTEXT/Dockerfile \
         --tag ${TARGET_TAG} \
         --label "org.opencontainers.image.created=$(date --rfc-3339=seconds)" \
-        --label "org.opencontainers.image.authors=Datadog <package@datadoghq.com>" \
-        --label "org.opencontainers.image.source=https://github.com/DataDog/datadog-agent" \
         --label "org.opencontainers.image.version=$(dda inv agent.version)" \
         --label "org.opencontainers.image.revision=${CI_COMMIT_SHA}" \
-        --label "org.opencontainers.image.vendor=Datadog, Inc." \
         --label "target=none" \
         $BUILD_CONTEXT
     - FLATTEN_IMAGE=${FLATTEN_IMAGE:-true}
