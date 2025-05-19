@@ -47,7 +47,7 @@ func newSackDriver(params Params, localAddr netip.Addr) (*sackDriver, error) {
 	source, err := packets.NewAFPacketSource()
 	if err != nil {
 		sink.Close()
-		return nil, fmt.Errorf("newSackDriver failed to make ICMP raw conn: %w", err)
+		return nil, fmt.Errorf("newSackDriver failed to make AFPacketSource: %w", err)
 	}
 
 	retval := &sackDriver{

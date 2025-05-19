@@ -9,11 +9,20 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 // TracerouteSerialParams are the parameters for TracerouteSerial
 type TracerouteSerialParams struct {
 	TracerouteParams
+}
+
+// MaxTimeout combines the timeout+probe delays into a total timeout for the traceroute
+func (p TracerouteSerialParams) MaxTimeout() time.Duration {
+	delaySum := (p.TracerouteTimeout) * time.Duration(p.ProbeCount())
+	// add 500ms so that if all hops are missing, it doesn't race with the traceroute itself
+	return delaySum + 500*time.Millisecond
 }
 
 // TracerouteSerial runs a traceroute in serial. Sometimes this is necessary over TracerouteParallel
@@ -22,6 +31,8 @@ func TracerouteSerial(ctx context.Context, t TracerouteDriver, p TracerouteSeria
 	if err := p.validate(); err != nil {
 		return nil, err
 	}
+	globalTimeoutCtx, cancel := context.WithTimeout(ctx, p.MaxTimeout())
+	defer cancel()
 
 	results := make([]*ProbeResponse, int(p.MaxTTL)+1)
 	for i := int(p.MinTTL); i <= int(p.MaxTTL); i++ {
@@ -30,9 +41,7 @@ func TracerouteSerial(ctx context.Context, t TracerouteDriver, p TracerouteSeria
 		}
 		sendDelay := time.After(p.SendDelay)
 
-		start := time.Now()
-		deadline := start.Add(p.TracerouteTimeout)
-		timeoutCtx, cancel := context.WithDeadline(ctx, deadline)
+		timeoutCtx, cancel := context.WithTimeout(globalTimeoutCtx, p.TracerouteTimeout)
 		defer cancel()
 
 		err := t.SendProbe(uint8(i))
@@ -58,6 +67,7 @@ func TracerouteSerial(ctx context.Context, t TracerouteDriver, p TracerouteSeria
 
 		// if we found the destination, no need to keep going
 		if probe != nil {
+			log.Tracef("found probe %+v", probe)
 			results[probe.TTL] = probe
 			if probe.IsDest {
 				break

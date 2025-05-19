@@ -70,7 +70,7 @@ func (p *FrameParser) Parse(buffer []byte) error {
 		return fmt.Errorf("Parse: %w", err)
 	}
 	if err := p.checkLayers(); err != nil {
-		return err
+		return &common.BadPacketError{Err: err}
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func (p *FrameParser) GetICMPInfo() (ICMPInfo, error) {
 		icmpInfo := ICMPInfo{
 			IPPair:          ipPair,
 			ICMPType:        p.ICMP4.TypeCode,
-			WrappedPacketID: p.ICMP4.Id,
+			WrappedPacketID: innerPkt.Id,
 			ICMPPair:        getIPv4Pair(&innerPkt),
 			Payload:         slices.Clone(innerPkt.Payload),
 		}
@@ -219,7 +219,7 @@ func (p *FrameParser) getParser(buffer []byte) (*gopacket.DecodingLayerParser, e
 	case 6:
 		return p.parserv6, nil
 	default:
-		return nil, fmt.Errorf("unexpected IP version %d", version)
+		return nil, &common.BadPacketError{Err: fmt.Errorf("unexpected IP version %d", version)}
 	}
 }
 

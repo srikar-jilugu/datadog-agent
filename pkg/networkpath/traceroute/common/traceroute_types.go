@@ -124,7 +124,7 @@ func clipResults(minTTL uint8, results []*ProbeResponse) []*ProbeResponse {
 
 // ToHops converts a list of ProbeResponses to a Results
 // TODO remove this, and use a single type to represent results
-func ToHops(p TracerouteParallelParams, probes []*ProbeResponse) ([]*Hop, error) {
+func ToHops(p TracerouteParams, probes []*ProbeResponse) ([]*Hop, error) {
 	if p.MinTTL != 1 {
 		return nil, fmt.Errorf("ToHops: processResults() requires MinTTL == 1")
 	}

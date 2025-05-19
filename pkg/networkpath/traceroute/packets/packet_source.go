@@ -7,14 +7,12 @@
 package packets
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/networkpath/traceroute/common"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 // Source is an interface representing ethernet packet capture
@@ -42,11 +40,7 @@ func ReadAndParse(source Source, buffer []byte, parser *FrameParser) error {
 
 	err = parser.Parse(buffer[:n])
 	if err != nil {
-		log.DebugFunc(func() string {
-			data := hex.EncodeToString(buffer[:n])
-			return fmt.Sprintf("error parsing packet of length %d: %s, %s", n, err, data)
-		})
-		return &common.BadPacketError{Err: fmt.Errorf("sackDriver failed to parse packet of length %d: %w", n, err)}
+		return err
 	}
 
 	return nil

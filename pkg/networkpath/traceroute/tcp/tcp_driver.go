@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/netip"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/networkpath/traceroute/common"
@@ -24,12 +23,6 @@ import (
 // Params is extra TCP parameters specific to the tcpDriver
 // TODO combine this with TCPv4?
 type Params struct {
-	// CompatibilityMode is whether to randomize the packet ID instead of the TCP sequence number.
-	// When CompatibilityMode is enabled, we send the same packets as tcptraceroute. When it's disabled,
-	// we send the same packets as paris-traceroute.
-	// We started doing this after getting PCAPs where middleboxes were dropping traffic with
-	// randomized sequence numbers.
-	CompatibilityMode bool
 	// LoosenICMPSrc disables checking the source IP/port in ICMP payloads when enabled.
 	// Reason: Some environments don't properly translate the payload of an ICMP TTL exceeded
 	// packet meaning you can't trust the source address to correspond to your own private IP.
@@ -44,7 +37,7 @@ type probeData struct {
 }
 
 type tcpDriver struct {
-	config TCPv4
+	config *TCPv4
 	params Params
 
 	sink packets.Sink
@@ -67,20 +60,12 @@ type tcpDriver struct {
 
 var _ common.TracerouteDriver = &tcpDriver{}
 
-var curPacketID atomic.Uint32
-
-// nextPacketID returns a unique packet ID. IDs are smaller than the sequence number space,
-// so colissions are more likely. rotate through the space to avoid colissions as much as possible
-func nextPacketID() uint16 {
-	return uint16(curPacketID.Add(1))
-}
-
-func newTCPDriver(config TCPv4, params Params, sink packets.Sink, source packets.Source) (*tcpDriver, error) {
-	basePacketID := uint16(41821)
+func newTCPDriver(config *TCPv4, params Params, sink packets.Sink, source packets.Source) (*tcpDriver, error) {
+	var basePacketID uint16
 	var seqNum uint32
-	if params.CompatibilityMode {
-		seqNum = rand.Uint32()
+	if config.CompatibilityMode {
 		basePacketID = uint16(rand.Uint32())
+		seqNum = rand.Uint32()
 	}
 
 	addr, conn, err := common.LocalAddrForHost(config.Target, config.DestPort)
@@ -146,7 +131,7 @@ func (t *tcpDriver) findMatchingProbe(packetID *uint16, seqNum *uint32) probeDat
 func (t *tcpDriver) getLastSentProbe() (probeData, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if !t.GetDriverInfo().SupportsParallel {
+	if t.GetDriverInfo().SupportsParallel {
 		return probeData{}, fmt.Errorf("getLastSentProbe is only possible in a serial traceroute")
 	}
 
@@ -171,23 +156,32 @@ func (t *tcpDriver) getTargetAddrPort() netip.AddrPort {
 func (t *tcpDriver) GetDriverInfo() common.TracerouteDriverInfo {
 	return common.TracerouteDriverInfo{
 		// in compatibility mode, we can't support parallel
-		SupportsParallel: !t.params.CompatibilityMode,
+		SupportsParallel: !t.config.CompatibilityMode,
 	}
+}
+
+func (t *tcpDriver) getNextPacketIDAndSeqNum(ttl uint8) (uint16, uint32) {
+	if t.config.CompatibilityMode {
+		return t.basePacketID + uint16(ttl), t.seqNum
+	}
+	return 41821, rand.Uint32()
 }
 
 // SendProbe sends a traceroute packet with a specific TTL
 func (t *tcpDriver) SendProbe(ttl uint8) error {
-	packetID := uint16(41821)
-	seqNum := t.seqNum
-	if t.params.CompatibilityMode {
-		packetID = t.basePacketID + uint16(ttl)
-	} else {
-		seqNum = rand.Uint32()
-	}
+	packetID, seqNum := t.getNextPacketIDAndSeqNum(ttl)
 	_, buffer, _, err := t.config.createRawTCPSynBuffer(packetID, seqNum, int(ttl))
 	if err != nil {
 		return fmt.Errorf("tcpDriver SendProbe failed to createRawTCPSynBuffer: %w", err)
 	}
+
+	log.Tracef("sending probe with ttl=%d, packetID=%d, seqNum=%d", ttl, packetID, seqNum)
+	t.storeProbe(probeData{
+		sendTime: time.Now(),
+		ttl:      ttl,
+		packetID: packetID,
+		seqNum:   seqNum,
+	})
 
 	err = t.sink.WriteTo(buffer, t.getTargetAddrPort())
 	if err != nil {
@@ -232,36 +226,47 @@ func (t *tcpDriver) handleProbeLayers(parser *packets.FrameParser) (*common.Prob
 
 	switch parser.GetTransportLayer() {
 	case layers.LayerTypeTCP:
+		// we only care about SYNACK
+		if !(parser.TCP.SYN && parser.TCP.ACK) {
+			return nil, errPacketDidNotMatchTraceroute
+		}
+		log.Tracef("saw synack")
+
 		if ipPair != t.ExpectedIPPair() {
 			return nil, errPacketDidNotMatchTraceroute
 		}
+		log.Tracef("ports?")
 		// make sure the ports match
 		if t.config.DestPort != uint16(parser.TCP.SrcPort) ||
 			t.config.srcPort != uint16(parser.TCP.DstPort) {
 			return nil, errPacketDidNotMatchTraceroute
 		}
-		// we only care about SYNACK
-		if parser.TCP.SYN && parser.TCP.ACK {
-			return nil, errPacketDidNotMatchTraceroute
-		}
 
 		expectedSeq := parser.TCP.Ack - 1
 
-		if t.params.CompatibilityMode {
+		log.Tracef("time to go")
+		if t.config.CompatibilityMode {
 			// in mode, traceroute is serialized and all we can do is use the most recent probe
-			if parser.TCP.Ack != expectedSeq {
-				return nil, errPacketDidNotMatchTraceroute
-			}
-			probe, err = t.getLastSentProbe()
+			lastProbe, err := t.getLastSentProbe()
 			if err != nil {
 				return nil, fmt.Errorf("tcpDriver handleProbeLayers failed to getLastSentProbe: %w", err)
+			}
+			log.Tracef("last probe %+v", lastProbe)
+			if lastProbe.seqNum == expectedSeq {
+				probe = lastProbe
 			}
 		} else {
 			// find the probe with the matching seq number
 			probe = t.findMatchingProbe(nil, &expectedSeq)
 		}
+
+		if probe == (probeData{}) {
+			log.Warnf("got synack but couldn't find probe matching seqNum=%d", expectedSeq)
+
+		}
 		isDest = true
 	case layers.LayerTypeICMPv4:
+		log.Tracef("saw icmp")
 		icmpInfo, err := parser.GetICMPInfo()
 		if err != nil {
 			return nil, &common.BadPacketError{Err: fmt.Errorf("sackDriver failed to get ICMP info: %w", err)}
@@ -269,11 +274,13 @@ func (t *tcpDriver) handleProbeLayers(parser *packets.FrameParser) (*common.Prob
 		if icmpInfo.ICMPType != packets.TTLExceeded4 {
 			return nil, errPacketDidNotMatchTraceroute
 		}
+
 		// make sure the source/destination match
 		tcpInfo, err := packets.ParseTCPFirstBytes(icmpInfo.Payload)
 		if err != nil {
 			return nil, &common.BadPacketError{Err: fmt.Errorf("sackDriver failed to parse TCP info: %w", err)}
 		}
+
 		icmpDst := netip.AddrPortFrom(icmpInfo.ICMPPair.DstAddr, tcpInfo.DstPort)
 		if icmpDst != t.getTargetAddrPort() {
 			return nil, errPacketDidNotMatchTraceroute
@@ -288,6 +295,9 @@ func (t *tcpDriver) handleProbeLayers(parser *packets.FrameParser) (*common.Prob
 		}
 
 		probe = t.findMatchingProbe(&icmpInfo.WrappedPacketID, &tcpInfo.Seq)
+		if probe == (probeData{}) {
+			log.Warnf("couldn't find probe matching packetID=%d and seqNum=%d", icmpInfo.WrappedPacketID, tcpInfo.Seq)
+		}
 	default:
 		return nil, errPacketDidNotMatchTraceroute
 	}
