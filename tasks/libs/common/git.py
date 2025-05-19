@@ -34,6 +34,40 @@ def clone(ctx, repo, branch, options=""):
         os.chdir(current_dir)
 
 
+@contextmanager
+def setup_github_app_auth(ctx: Context, token=None):
+    """
+    Context manager to configure Git to use a GitHub App token for authentication without storing it in the remote URL.
+
+    Args:
+        ctx: The invoke context
+        token: The GitHub App token to use. If not provided, will try to get it from GITHUB_APP_TOKEN
+              environment variable
+    """
+    # Get token from parameter or environment
+    github_token = token or os.environ.get("GITHUB_APP_TOKEN")
+    if not github_token:
+        raise Exit("GitHub App token not provided and GITHUB_APP_TOKEN environment variable not set", code=1)
+
+    # Configure Git to use our credentials file
+    # Store configuration before changing it
+    previous_helper = ctx.run("git config --global credential.helper", warn=True, hide=True)
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as credentials_file:
+            credentials_file.write(github_token.encode())
+            credentials_file.flush()
+            os.chmod(credentials_file.name, 0o600)
+            ctx.run(f"git config --global credential.helper 'store --file={credentials_file.name}'", hide=True)
+            yield
+    finally:
+        # Restore previous credential helper if any
+        if previous_helper and previous_helper.stdout.strip():
+            ctx.run(f"git config --global credential.helper '{previous_helper.stdout.strip()}'", hide=True)
+        else:
+            ctx.run("git config --global --unset credential.helper", warn=True, hide=True)
+
+
 def get_staged_files(ctx, commit="HEAD", include_deleted_files=False, relative_path=False) -> Iterable[str]:
     """
     Get the list of staged (to be committed) files in the repository compared to the `commit` commit.

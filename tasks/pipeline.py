@@ -20,6 +20,7 @@ from tasks.libs.ciproviders.gitlab_api import (
 )
 from tasks.libs.common.color import Color, color_message
 from tasks.libs.common.git import get_commit_sha, get_current_branch, get_default_branch
+from tasks.libs.common.git_auth import setup_github_app_auth
 from tasks.libs.common.utils import get_all_allowed_repo_branches, is_allowed_repo_branch, set_gitconfig_in_ci
 from tasks.libs.owners.parsing import read_owners
 from tasks.libs.pipeline.tools import (
@@ -680,9 +681,10 @@ def update_buildimages(ctx, image_tag, test_version=True, branch_name=None):
     help={
         'owner-branch-name': 'Owner and branch names in the format <owner-name>/<branch-name>',
         'no-verify': 'Adds --no-verify flag when git push',
+        'use-github-token': 'Use GitHub App token for authentication',
     }
 )
-def trigger_external(ctx, owner_branch_name: str, no_verify=False):
+def trigger_external(ctx, owner_branch_name: str, no_verify=False, use_github_token=False):
     """
     Trigger a pipeline from an external owner.
     """
@@ -720,21 +722,16 @@ def trigger_external(ctx, owner_branch_name: str, no_verify=False):
     ]
 
     # Commands to push the branch
-    commands = (
-        [
-            # Fetch
-            f"git remote add {owner} git@github.com:{owner}/datadog-agent.git",
-            f"git fetch '{owner}' '{branch}'",
-            # Create branch
-            f"git checkout '{owner}/{branch}'",  # This first checkout puts us in a detached head state, thus the second checkout below
-            f"git checkout -b '{owner}/{branch}'",
-            # Push
-            f"git push --set-upstream origin '{owner}/{branch}'{no_verify_flag}",
-        ]
-        + restore_commands
-    )
+    commands = [
+        # Fetch
+        f"git remote add {owner} git@github.com:{owner}/datadog-agent.git",
+        f"git fetch '{owner}' '{branch}'",
+        # Create branch
+        f"git checkout '{owner}/{branch}'",  # This first checkout puts us in a detached head state, thus the second checkout below
+        f"git checkout -b '{owner}/{branch}'",
+    ]
 
-    # Run commands then restore commands
+    # Run fetch and branch commands
     ret_code = 0
     for command in commands:
         ret_code = ctx.run(command, warn=True, echo=True).exited
@@ -743,7 +740,34 @@ def trigger_external(ctx, owner_branch_name: str, no_verify=False):
             print('You might want to run these commands to restore the current state:')
             print('\n'.join(restore_commands))
 
-            exit(1)
+            sys.exit(1)  # Use sys.exit instead of exit() to avoid linter error
+
+    # Push using GitHub App token if requested
+    cleanup_func = None
+    try:
+        if use_github_token:
+            # Setup GitHub authentication
+            cleanup_func = setup_github_app_auth(ctx)
+
+        # Push the branch
+        push_command = f"git push --set-upstream origin '{owner}/{branch}'{no_verify_flag}"
+        ret_code = ctx.run(push_command, warn=True, echo=True).exited
+
+        if ret_code != 0:
+            print('The push command exited with code', ret_code)
+            print('You might want to run these commands to restore the current state:')
+            print('\n'.join(restore_commands))
+            sys.exit(1)  # Use sys.exit instead of exit() to avoid linter error
+    finally:
+        # Clean up the credentials if we set them up
+        if cleanup_func:
+            cleanup_func()
+
+    # Restore to original branch
+    for command in restore_commands:
+        ret_code = ctx.run(command, warn=True, echo=True).exited
+        if ret_code != 0:
+            print(f'Warning: command "{command}" failed with code {ret_code}')
 
     # Show links
     repo = f'https://github.com/DataDog/datadog-agent/tree/{owner}/{branch}'
@@ -817,18 +841,21 @@ def compare_to_itself(ctx):
     #     print("No modification in the gitlab configuration, ignoring this test.")
     #     return
     agent = get_gitlab_repo()
+    gh = GithubAPI()
     current_branch = os.environ["CI_COMMIT_REF_NAME"]
     if current_branch.startswith("compare/"):
         print("Branch already in compare_to_itself mode, ignoring this test to prevent infinite loop")
         return
     new_branch = f"compare/{current_branch}/{int(datetime.now(timezone.utc).timestamp())}"
     ctx.run(f"git checkout -b {new_branch}", hide=True)
-    ctx.run(f"git push --set-upstream origin {new_branch}")
+    with setup_github_app_auth(ctx, token=gh._auth.token):
+        ctx.run(f"git push --set-upstream origin {new_branch}")
     set_gitconfig_in_ci(ctx)
     # The branch must exist in gitlab to be able to "compare_to"
     # Push an empty commit to prevent linking this pipeline to the actual PR
     ctx.run("git commit -m 'Initial push of the compare/to branch' --allow-empty --no-verify", hide=True)
-    ctx.run(f"git push origin {new_branch}")
+    with setup_github_app_auth(ctx, token=gh._auth.token):
+        ctx.run(f"git push origin {new_branch}")
 
     from tasks.libs.releasing.json import load_release_json
 
@@ -841,7 +868,8 @@ def compare_to_itself(ctx):
         )
 
     ctx.run("git commit -am 'Commit to compare to itself'", hide=True)
-    ctx.run(f"git push origin {new_branch}", hide=True)
+    with setup_github_app_auth(ctx, token=gh._auth.token):
+        ctx.run(f"git push origin {new_branch}", hide=True)
     max_attempts = 6
     compare_to_pipeline = None
     for attempt in range(max_attempts):
@@ -867,7 +895,8 @@ def compare_to_itself(ctx):
                 cancel_pipeline(pipeline)
             ctx.run(f"git checkout {current_branch}", hide=True)
             ctx.run(f"git branch -D {new_branch}", hide=True)
-            ctx.run(f"git push origin :{new_branch}", hide=True)
+            with setup_github_app_auth(ctx, token=gh._auth.token):
+                ctx.run(f"git push origin :{new_branch}", hide=True)
             raise RuntimeError(f"No pipeline found for {new_branch}")
     try:
         if len(compare_to_pipeline.jobs.list(get_all=False)) == 0:
@@ -885,4 +914,5 @@ def compare_to_itself(ctx):
         print("Cleaning up git")
         ctx.run(f"git checkout {current_branch}", hide=True)
         ctx.run(f"git branch -D {new_branch}", hide=True)
-        ctx.run(f"git push origin :{new_branch}", hide=True)
+        with setup_github_app_auth(ctx, token=gh._auth.token):
+            ctx.run(f"git push origin :{new_branch}", hide=True)
