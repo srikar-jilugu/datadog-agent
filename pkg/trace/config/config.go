@@ -490,6 +490,8 @@ type AgentConfig struct {
 
 	// RemoteConfigClient retrieves sampling updates from the remote config backend
 	RemoteConfigClient RemoteClient `json:"-"`
+	// MRFRemoteConfigClient retrieves MRF updates from the remote config DC.
+	MRFRemoteConfigClient RemoteClient `json:"-"`
 
 	// ContainerTags ...
 	ContainerTags func(cid string) ([]string, error) `json:"-"`

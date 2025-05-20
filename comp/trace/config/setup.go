@@ -48,14 +48,6 @@ const (
 	apiEndpointPrefix = "https://trace.agent."
 	// mrfPrefix is the MRF site prefix.
 	mrfPrefix = "mrf."
-	// rcClientName is the default name for remote configuration clients in the trace agent
-	rcClientName = "trace-agent"
-)
-
-const (
-	// rcClientPollInterval is the default poll interval for remote configuration clients. 1 second ensures that
-	// clients remain up to date without paying too much of a performance cost (polls that contain no updates are cheap)
-	rcClientPollInterval = time.Second * 1
 )
 
 func setupConfigCommon(deps Dependencies, _ string) (*config.AgentConfig, error) {
@@ -120,6 +112,14 @@ func prepareConfig(c corecompcfg.Component, tagger tagger.Component, ipc ipc.Com
 			log.Errorf("Error when subscribing to remote config management %v", err)
 		} else {
 			cfg.RemoteConfigClient = client
+		}
+	}
+	if pkgconfigsetup.Datadog().GetBool("multi_region_failover.enabled") {
+		mrfClient, err := mrfRemoteClient(c, ipcAddress, ipc)
+		if err != nil {
+			log.Errorf("Error when subscribing to MRF remote config management %v", err)
+		} else {
+			cfg.MRFRemoteConfigClient = mrfClient
 		}
 	}
 	cfg.ContainerTags = func(cid string) ([]string, error) {
