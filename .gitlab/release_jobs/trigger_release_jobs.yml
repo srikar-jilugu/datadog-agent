@@ -1,0 +1,27 @@
+---
+trigger_release_jobs_on_failure:
+  stage: trigger_release_jobs
+  allow_failure: true
+  rules: !reference [.on_deploy_failure]
+  trigger:
+    include:
+      - local: gate.yml
+      - local: .gitlab/deploy_packages/winget.yml
+      - local: .gitlab/deploy_containers/deploy_containers_a7.yml
+      - local: .gitlab/deploy_cws_instrumentation/deploy_cws_instrumentation.yml
+      - local: .gitlab/deploy_dca/deploy_dca.yml
+      - local: .gitlab/trigger_release/agent.yml
+      - local: .gitlab/release_jobs/stages.yml
+
+trigger_release_jobs:
+  stage: trigger_release_jobs
+  allow_failure: true
+  rules: !reference [.on_deploy]
+  trigger:
+    include:
+      - local: .gitlab/deploy_packages/winget.yml
+      - local: .gitlab/deploy_containers/deploy_containers_a7.yml
+      - local: .gitlab/deploy_cws_instrumentation/deploy_cws_instrumentation.yml
+      - local: .gitlab/deploy_dca/deploy_dca.yml
+      - local: .gitlab/trigger_release/agent.yml
+      - local: .gitlab/release_jobs/stages.yml
