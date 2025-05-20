@@ -48,8 +48,8 @@ func (t *TCPServer) Addr() net.Addr {
 	return t.ln.Addr()
 }
 
-// Run starts the TCP server
-func (t *TCPServer) Run() error {
+// Listen sets up the socket with net.Listen
+func (t *TCPServer) Listen() error {
 	networkType := "tcp"
 	if t.Network != "" {
 		networkType = t.Network
@@ -59,11 +59,16 @@ func (t *TCPServer) Run() error {
 		return err
 	}
 	t.ln = ln
-	t.address = ln.Addr().String()
 
+	t.address = ln.Addr().String()
+	return nil
+}
+
+// StartAccepting starts up the server's Accept goroutine
+func (t *TCPServer) StartAccepting() {
 	go func() {
 		for {
-			conn, err := ln.Accept()
+			conn, err := t.ln.Accept()
 			if err != nil {
 				return
 			}
@@ -74,7 +79,16 @@ func (t *TCPServer) Run() error {
 			go t.onMessage(conn)
 		}
 	}()
+}
 
+// Run starts the TCP server
+func (t *TCPServer) Run() error {
+	err := t.Listen()
+	if err != nil {
+		return err
+	}
+
+	t.StartAccepting()
 	return nil
 }
 
@@ -101,7 +115,7 @@ func DialTCP(network, address string) (net.Conn, error) {
 func (t *TCPServer) Shutdown() {
 	if t.ln != nil {
 		_ = t.ln.Close()
-		t.ln = nil
+		// do not set t.ln = nil here, because otherwise t.ln.Accept() can panic later
 	}
 }
 

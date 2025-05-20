@@ -74,14 +74,6 @@ func newTCPDriver(config *TCPv4, params Params, sink packets.Sink, source packet
 	}
 	conn.Close() // we don't need the UDP port here
 	config.srcIP = addr.IP
-	// localAddr, ok := common.UnmappedAddrFromSlice(addr.IP)
-	// if !ok {
-	// 	return nil, fmt.Errorf("failed to get netipAddr for source %s", addr)
-	// }
-	// targetAddr, ok := common.UnmappedAddrFromSlice(t.Target)
-	// if !ok {
-	// 	return nil, fmt.Errorf("failed to get netipAddr for target %s", t.Target)
-	// }
 
 	port, tcpListener, err := reserveLocalPort()
 	if err != nil {

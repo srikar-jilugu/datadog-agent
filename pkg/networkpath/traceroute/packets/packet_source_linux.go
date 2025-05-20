@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/net/bpf"
 	"golang.org/x/sys/unix"
 )
 
@@ -60,6 +61,14 @@ func (a *AFPacketSource) Read(buf []byte) (int, error) {
 // Close closes the socket
 func (a *AFPacketSource) Close() error {
 	return a.sock.Close()
+}
+
+func (a *AFPacketSource) setBpfAndDrain(filter []bpf.RawInstruction) error {
+	conn, err := a.sock.SyscallConn()
+	if err != nil {
+		return err
+	}
+	return SetBPFAndDrain(conn, filter)
 }
 
 // htons converts a short (uint16) from host-to-network byte order.

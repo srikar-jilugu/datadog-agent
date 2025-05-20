@@ -230,9 +230,9 @@ func stripEthernetHeader(buf []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("stripEthernetHeader failed to decode ethernet: %w", err)
 	}
-	// return zero bytes when the it's not an IP packet
+	// return ignoredLayerErr when the it's not an IP packet
 	if eth.EthernetType != layers.EthernetTypeIPv4 && eth.EthernetType != layers.EthernetTypeIPv6 {
-		return nil, nil
+		return nil, ignoredLayerErr
 	}
 	return eth.Payload, nil
 }
