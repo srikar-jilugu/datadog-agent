@@ -781,12 +781,12 @@ func (k *KSMCheck) hostnameAndTags(labels, tags map[string]string, labelJoiner *
 		}
 	}
 
-	if owners := ownerTags(ownerKind, ownerName); len(owners) != 0 {
-		tagList = append(tagList, owners...)
+	for key, value := range tags {
+		tagList = append(tagList, fmtTag(key, value))
 	}
 
-	for key, value := range tags {
-		tagList = append(tagList, fmt.Sprintf("%s:%s", key, value))
+	for _, kv := range ownerTags(ownerKind, ownerName) {
+		tagList = append(tagList, fmtTag(kv[0], kv[1]))
 	}
 
 	return hostname, tagList
@@ -1171,10 +1171,14 @@ func buildDeniedMetricsSet(collectors []string) options.MetricSet {
 	return deniedMetrics
 }
 
+func fmtTag(k, v string) string {
+	return fmt.Sprintf("%s:%s", k, v)
+}
+
 // ownerTags returns kube_<kind> tags based on given kind and name.
 // If the owner is a replicaset, it tries to get the kube_deployment tag in addition to kube_replica_set.
 // If the owner is a job, it tries to get the kube_cronjob tag in addition to kube_job.
-func ownerTags(kind, name string) []string {
+func ownerTags(kind, name string) [][2]string {
 	if kind == "" || name == "" {
 		return nil
 	}
@@ -1184,16 +1188,17 @@ func ownerTags(kind, name string) []string {
 		return nil
 	}
 
-	tagFormat := "%s:%s"
-	tagList := []string{fmt.Sprintf(tagFormat, tagKey, name)}
+	tagList := [][2]string{
+		{tagKey, name},
+	}
 	switch kind {
 	case kubernetes.JobKind:
 		if cronjob, _ := kubernetes.ParseCronJobForJob(name); cronjob != "" {
-			return append(tagList, fmt.Sprintf(tagFormat, tags.KubeCronjob, cronjob))
+			return append(tagList, [2]string{tags.KubeCronjob, cronjob})
 		}
 	case kubernetes.ReplicaSetKind:
 		if deployment := kubernetes.ParseDeploymentForReplicaSet(name); deployment != "" {
-			return append(tagList, fmt.Sprintf(tagFormat, tags.KubeDeployment, deployment))
+			return append(tagList, [2]string{tags.KubeDeployment, deployment})
 		}
 	}
 

@@ -1767,7 +1767,11 @@ func TestOwnerTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.tc, func(t *testing.T) {
-			assert.EqualValues(t, tt.want, ownerTags(tt.kind, tt.name))
+			var tags []string
+			for _, owner := range ownerTags(tt.kind, tt.name) {
+				tags = append(tags, fmtTag(owner[0], owner[1]))
+			}
+			assert.EqualValues(t, tt.want, tags)
 		})
 	}
 }

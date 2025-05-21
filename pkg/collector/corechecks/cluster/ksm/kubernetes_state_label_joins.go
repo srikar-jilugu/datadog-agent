@@ -8,6 +8,7 @@
 package ksm
 
 import (
+	"fmt"
 	"slices"
 
 	ksmstore "github.com/DataDog/datadog-agent/pkg/kubestatemetrics/store"
@@ -152,7 +153,7 @@ func (lj *labelJoiner) insertMetric(metric ksmstore.DDMetric, config *joinsConfi
 	// Fill the `labelsToAdd` on the leaf node.
 	if config.getAllLabels {
 		if current.labelsToAdd == nil {
-			current.labelsToAdd = make([]label, 0, len(metric.Labels)-len(config.labelsToMatch))
+			current.labelsToAdd = make([]label, 0, len(metric.Labels)-len(config.labelsToMatch)+len(metric.Tags))
 		}
 
 		for labelName, labelValue := range metric.Labels {
@@ -163,7 +164,7 @@ func (lj *labelJoiner) insertMetric(metric ksmstore.DDMetric, config *joinsConfi
 		}
 	} else {
 		if current.labelsToAdd == nil {
-			current.labelsToAdd = make([]label, 0, len(config.labelsToGet))
+			current.labelsToAdd = make([]label, 0, len(config.labelsToGet)+len(metric.Tags))
 		}
 
 		for labelToGet, ddTagKey := range config.labelsToGet {
@@ -171,6 +172,12 @@ func (lj *labelJoiner) insertMetric(metric ksmstore.DDMetric, config *joinsConfi
 			if found && labelValue != "" {
 				current.labelsToAdd = append(current.labelsToAdd, label{ddTagKey, labelValue})
 			}
+		}
+	}
+
+	for k, v := range metric.Tags {
+		if v != "" {
+			current.labelsToAdd = append(current.labelsToAdd, label{k, v})
 		}
 	}
 }
@@ -189,7 +196,61 @@ func (lj *labelJoiner) insertFamily(metricFamily ksmstore.DDMetricsFam) {
 
 	for _, metric := range metricFamily.ListMetrics {
 		lj.insertMetric(metric, metricToJoin.config, metricToJoin.tree)
+		if len(metric.Tags) > 0 {
+			// if a metric has tags associated tags we should be able to see if we have any
+			// ownership information and try to propagate the tags ups
+			// these tags are explicitly done for POD level information and we want
+			// to have it on the deployment and replicaset, etc
+			ownerKind, ownerName := "", ""
+			for key, value := range metric.Labels {
+				switch key {
+				case createdByKindKey, ownerKindKey:
+					ownerKind = value
+				case createdByNameKey, ownerNameKey:
+					ownerName = value
+				}
+			}
+
+			for _, owner := range ownerTags(ownerKind, ownerName) {
+				if fam, add := lj.implicitOwnerTagsFamily(owner[0], owner[1], metric); add {
+					lj.insertFamily(fam)
+				}
+			}
+		}
 	}
+}
+
+func (lj *labelJoiner) implicitOwnerTagsFamily(kind, owner string, metric ksmstore.DDMetric) (ksmstore.DDMetricsFam, bool) {
+	var metricFam ksmstore.DDMetricsFam
+	ns := metric.Labels["namespace"]
+	if ns == "" {
+		return metricFam, false
+	}
+
+	switch kind {
+	case "kube_deployment"
+		name := "kube_deployment_labels"
+		key = "deployment"
+	case "kube_cronjob":
+		name := "kube_cronjob_labels"
+		key = "cronjob"
+	default:
+		return metricFam, false
+	}
+
+	return ksmstore.DDMetricsFam{
+		Name: name,
+		ListMetrics: []ksmstore.DDMetric{
+			{
+				Value: 1.00,
+				Tags: metric.Tags,
+				Labels: map[string]string{
+					"namespace": ns,
+					key: owner,
+				},
+			},
+		},
+	}, true
 }
 
 func (lj *labelJoiner) insertFamilies(metrics map[string][]ksmstore.DDMetricsFam) {

@@ -29,7 +29,10 @@ type metricAggregator interface {
 // in the code and cannot be arbitrarily set by the end-user.
 const maxNumberOfAllowedLabels = 4
 
-type aggregatorKey = [maxNumberOfAllowedLabels]string
+type (
+	aggregatorKey = [maxNumberOfAllowedLabels]string
+	tagMap        = map[string]string
+)
 
 type counterAggregator struct {
 	ddMetricName  string
@@ -37,7 +40,7 @@ type counterAggregator struct {
 	allowedLabels []string
 
 	accumulator map[aggregatorKey]float64
-	tags        map[aggregatorKey]map[string]string
+	tags        map[aggregatorKey]tagMap
 }
 
 type sumValuesAggregator struct {
@@ -58,6 +61,7 @@ type resourceAggregator struct {
 	allowedResources []string
 
 	accumulators map[string]map[aggregatorKey]float64
+	tags         map[string]map[aggregatorKey]tagMap
 }
 
 type cronJob struct {
@@ -142,6 +146,7 @@ func newResourceValuesAggregator(ddMetricPrefix, ddMetricSuffix, ksmMetricName s
 		allowedLabels:    allowedLabels,
 		allowedResources: allowedResources,
 		accumulators:     accumulators,
+		tags:             tags,
 	}
 }
 
@@ -210,6 +215,18 @@ func (a *resourceAggregator) accumulate(metric ksmstore.DDMetric) {
 	if _, ok := a.accumulators[resource]; ok {
 		a.accumulators[resource][labelValues] += metric.Val
 	}
+
+	resourceTags := a.tags[resource]
+	tags, found := resourceTags[labelValues]
+	if !found {
+		tags = metric.Tags
+	} else {
+		for k, v := range metric.Tags {
+			tags[k] = v
+		}
+	}
+
+	a.tags[resource][labelValues] = tags
 }
 
 func (a *lastCronJobCompleteAggregator) accumulate(metric ksmstore.DDMetric) {
@@ -270,12 +287,13 @@ func (a *counterAggregator) flush(sender sender.Sender, k *KSMCheck, labelJoiner
 	}
 
 	a.accumulator = make(map[aggregatorKey]float64)
-	a.tags = make(map[aggregatorKey]map[string]string)
+	a.tags = make(map[aggregatorKey]tagMap)
 }
 
 func (a *resourceAggregator) flush(sender sender.Sender, k *KSMCheck, labelJoiner *labelJoiner) {
 	for _, resource := range a.allowedResources {
 		metricName := fmt.Sprintf("%s%s.%s_%s", ksmMetricPrefix, a.ddMetricPrefix, resource, a.ddMetricSuffix)
+		resourceTags := a.tags[resource]
 		for labelValues, count := range a.accumulators[resource] {
 			labels := make(map[string]string)
 			for i, allowedLabel := range a.allowedLabels {
@@ -286,10 +304,17 @@ func (a *resourceAggregator) flush(sender sender.Sender, k *KSMCheck, labelJoine
 				labels[allowedLabel] = labelValues[i]
 			}
 
-			hostname, tags := k.hostnameAndTags(labels, nil, labelJoiner, labelsMapperOverride(a.ksmMetricName))
+			var accumulatedTags tagMap
+			if resourceTags != nil {
+				accumulatedTags = resourceTags[labelValues]
+			}
+
+			hostname, tags := k.hostnameAndTags(labels, accumulatedTags, labelJoiner, labelsMapperOverride(a.ksmMetricName))
 			sender.Gauge(metricName, count, hostname, tags)
 		}
-		a.accumulators[resource] = make(map[[maxNumberOfAllowedLabels]string]float64)
+
+		a.accumulators[resource] = make(map[aggregatorKey]float64)
+		a.tags[resource] = make(map[aggregatorKey]tagMap)
 	}
 }
 

@@ -32,7 +32,7 @@ type MetricsStore struct {
 	// metric families, containing a slice of metrics.
 	metrics map[types.UID][]DDMetricsFam
 
-	// tags is a ap indexed by kubernets object id
+	// tags is a ap indexed by kubernets object id.
 	tags map[types.UID]map[string]string
 
 	// generateMetricsFunc generates metrics based on a given Kubernetes object
@@ -112,6 +112,7 @@ func (s *MetricsStore) createDDMetrics(obj interface{}) ([]DDMetricsFam, map[str
 	case *corev1.Pod:
 		tags = s.extractTagsFromInstrumentationTarget(v)
 	case *appsv1.Deployment:
+		log.Debugf("createDDMetrics::deployment type=%s", s.MetricsType)
 		// ???
 	}
 
@@ -138,8 +139,8 @@ func (s *MetricsStore) Add(obj interface{}) error {
 	tags := s.mergedTagsForID(id, newTags)
 	s.tags[id] = tags
 
-	// this means we can hypothetically propagate the UST tags
-	// we find up to the owner from Pod -> ReplicaSet -> Deployment.
+	// this means we can propagate the UST tags we find
+	// up to the owner from Pod -> ReplicaSet -> Deployment.
 	// by virtue of the the ID parent reference.
 	//
 	// the other idea is to keep a list of child references per parent
