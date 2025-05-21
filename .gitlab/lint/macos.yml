@@ -38,6 +38,7 @@ celian:
     - !reference [.select_python_env_commands]
     - !reference [.install_python_dependencies]
     - DD_API_KEY="$("$CI_PROJECT_DIR"/tools/ci/fetch_secret.sh "$AGENT_API_KEY_ORG2" token)" || exit $?; export DD_API_KEY
+    - dda inv -- -e macos.report-versions -l all || true
     # Remove inactive versions
     - |
       echo Trying to remove inactive versions
