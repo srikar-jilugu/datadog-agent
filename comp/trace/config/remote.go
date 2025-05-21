@@ -40,7 +40,7 @@ func remote(c corecompcfg.Component, ipcAddress string, ipc ipc.Component) (conf
 	)
 }
 
-func mrfRemoteClient(c corecompcfg.Component, ipcAddress string, ipc ipc.Component) (config.RemoteClient, error) {
+func mrfRemoteClient(ipcAddress string, ipc ipc.Component) (config.RemoteClient, error) {
 	return rc.NewUnverifiedMRFGRPCClient(
 		ipcAddress,
 		pkgconfigsetup.GetIPCPort(),

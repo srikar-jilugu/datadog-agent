@@ -115,7 +115,7 @@ func prepareConfig(c corecompcfg.Component, tagger tagger.Component, ipc ipc.Com
 		}
 	}
 	if pkgconfigsetup.Datadog().GetBool("multi_region_failover.enabled") {
-		mrfClient, err := mrfRemoteClient(c, ipcAddress, ipc)
+		mrfClient, err := mrfRemoteClient(ipcAddress, ipc)
 		if err != nil {
 			log.Errorf("Error when subscribing to MRF remote config management %v", err)
 		} else {
