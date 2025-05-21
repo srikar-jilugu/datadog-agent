@@ -97,7 +97,9 @@ build do
   # the crazy platform specific compiler flags at the end.
   configure_args << env["CFLAGS"] << env["LDFLAGS"]
 
-  configure(*configure_args, bin: configure_cmd, env: env, no_build_triplet: true)
+  # We need to specify a bunch of extra options here since openssl's configure is not
+  # the usual autoconf configure but something handmade written in perl
+  configure(*configure_args, bin: configure_cmd, env: env, no_build_triplet: true, install_man: true)
 
   command "make depend", env: env
   command "make -j #{workers}", env: env
