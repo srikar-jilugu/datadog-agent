@@ -118,6 +118,10 @@ func ExtractTagsFromPodMeta(in metav1.ObjectMeta) (*ExtractedTags, error) {
 	return out, nil
 }
 
+// extractSingleValueFromPodMeta is largely copied from kubernetes source but uses the tracer
+// config to provide the target.
+//
+// ref: https://github.com/kubernetes/kubernetes/blob/6da56bd4b782658a4060f65c24df5830ec01c6c1/pkg/fieldpath/fieldpath.go#L53-L120
 func extractSingleValueFromPodMeta(meta metav1.ObjectMeta, c TracerConfig) (string, bool, error) {
 	if c.ValueFrom == nil {
 		return c.Value, c.Value != "", nil
@@ -140,8 +144,6 @@ func extractSingleValueFromPodMeta(meta metav1.ObjectMeta, c TracerConfig) (stri
 			return "", false, fmt.Errorf("invalid fieldPath with subscript %s", fieldPath)
 		}
 	}
-
-	log.Debugf("split didn't work for fieldPath %s", fieldPath)
 
 	switch fieldPath {
 	case "metadata.name":
