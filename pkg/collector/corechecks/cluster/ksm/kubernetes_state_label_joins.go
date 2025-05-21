@@ -8,9 +8,9 @@
 package ksm
 
 import (
-	"fmt"
 	"slices"
 
+	"github.com/DataDog/datadog-agent/comp/core/tagger/tags"
 	ksmstore "github.com/DataDog/datadog-agent/pkg/kubestatemetrics/store"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -212,7 +212,7 @@ func (lj *labelJoiner) insertFamily(metricFamily ksmstore.DDMetricsFam) {
 			}
 
 			for _, owner := range ownerTags(ownerKind, ownerName) {
-				if fam, add := lj.implicitOwnerTagsFamily(owner[0], owner[1], metric); add {
+				if fam, add := lj.ownerTagsFamily(owner[0], owner[1], metric); add {
 					lj.insertFamily(fam)
 				}
 			}
@@ -220,34 +220,50 @@ func (lj *labelJoiner) insertFamily(metricFamily ksmstore.DDMetricsFam) {
 	}
 }
 
-func (lj *labelJoiner) implicitOwnerTagsFamily(kind, owner string, metric ksmstore.DDMetric) (ksmstore.DDMetricsFam, bool) {
+// ownerTagsFamily attempts to fulfill the implicit relationship
+// between resources as it exists and is codified in [[defaultLabelJoins]].
+//
+// In [[getLabelToMatchForKind]] we produce a list of labels we are matching
+// to join on for the resources and it is generally the namespace and the resource
+// name.
+//
+// We do an enrichment here for passing the data up to the owners.
+func (lj *labelJoiner) ownerTagsFamily(kind, owner string, metric ksmstore.DDMetric) (ksmstore.DDMetricsFam, bool) {
+	const nsKey = "namespace"
 	var metricFam ksmstore.DDMetricsFam
-	ns := metric.Labels["namespace"]
+	ns := metric.Labels[nsKey]
 	if ns == "" {
 		return metricFam, false
 	}
 
+	var (
+		labelKey         string
+		metricFamilyName string
+	)
 	switch kind {
-	case "kube_deployment"
-		name := "kube_deployment_labels"
-		key = "deployment"
-	case "kube_cronjob":
-		name := "kube_cronjob_labels"
-		key = "cronjob"
+	case tags.KubeJob:
+		metricFamilyName = "kube_job_labels"
+		labelKey = "job"
+	case tags.KubeReplicaSet:
+		metricFamilyName = "kube_replicaset_labels"
+		labelKey = "replicaset"
+	case tags.KubeDeployment:
+		metricFamilyName = "kube_deployment_labels"
+		labelKey = "deployment"
+	case tags.KubeCronjob:
+		metricFamilyName = "kube_cronjob_labels"
+		labelKey = "cronjob"
 	default:
 		return metricFam, false
 	}
 
 	return ksmstore.DDMetricsFam{
-		Name: name,
+		Name: metricFamilyName,
 		ListMetrics: []ksmstore.DDMetric{
 			{
-				Value: 1.00,
-				Tags: metric.Tags,
-				Labels: map[string]string{
-					"namespace": ns,
-					key: owner,
-				},
+				Val:    1.00,
+				Tags:   metric.Tags,
+				Labels: map[string]string{nsKey: ns, labelKey: owner},
 			},
 		},
 	}, true
