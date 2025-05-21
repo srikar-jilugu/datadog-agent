@@ -26,6 +26,11 @@ const (
 	fileMetadataResolverCacheSize = 512
 )
 
+// Opt defines options for resolvers
+type Opt struct {
+	CgroupResolver *cgroup.Resolver
+}
+
 // Resolver represents a cache for mountpoints and the corresponding file systems
 type Resolver struct {
 	cache *lru.Cache[LRUCacheKey, *model.FileMetadatas]
@@ -46,7 +51,7 @@ type LRUCacheKey struct {
 }
 
 // NewResolver returns a new instance of the hash resolver
-func NewResolver(statsdClient statsd.ClientInterface, cgroupResolver *cgroup.Resolver) (*Resolver, error) {
+func NewResolver(statsdClient statsd.ClientInterface, opt *Opt) (*Resolver, error) {
 	cache, err := lru.New[LRUCacheKey, *model.FileMetadatas](fileMetadataResolverCacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create file metadatas resolver cache: %w", err)
@@ -54,7 +59,7 @@ func NewResolver(statsdClient statsd.ClientInterface, cgroupResolver *cgroup.Res
 
 	return &Resolver{
 		statsdClient:   statsdClient,
-		cgroupResolver: cgroupResolver,
+		cgroupResolver: opt.CgroupResolver,
 		cache:          cache,
 		cacheHit:       atomic.NewUint64(0),
 		cacheMiss:      atomic.NewUint64(0),
@@ -99,7 +104,6 @@ func (r *Resolver) ResolveFileMetadatas(event *model.Event, file *model.FileEven
 		entry, ok := r.cache.Get(key)
 		if ok {
 			r.cacheHit.Inc()
-			// fmt.Printf("ResolveFile return cache %s: %+v\n", path, entry)
 			return entry, nil
 		}
 
@@ -109,7 +113,6 @@ func (r *Resolver) ResolveFileMetadatas(event *model.Event, file *model.FileEven
 			continue
 		}
 
-		// fmt.Printf("ResolveFile %s: %+v\n", path, info)
 		r.cacheMiss.Inc()
 		r.cache.Add(key, info)
 		return info, nil

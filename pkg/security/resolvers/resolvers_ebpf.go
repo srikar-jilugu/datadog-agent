@@ -177,7 +177,7 @@ func NewEBPFResolvers(config *config.Config, manager *manager.Manager, statsdCli
 		return nil, err
 	}
 
-	fileMetadataResolver, err := file.NewResolver(statsdClient, cgroupsResolver)
+	fileMetadataResolver, err := file.NewResolver(statsdClient, &file.Opt{CgroupResolver: cgroupsResolver})
 	if err != nil {
 		return nil, err
 	}
