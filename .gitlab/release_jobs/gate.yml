@@ -1,4 +1,7 @@
 ---
+include:
+  - .gitlab/release_jobs/stages.yml
+
 gate-release-jobs:
   stage: gate
   when: manual
