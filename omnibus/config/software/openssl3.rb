@@ -76,6 +76,7 @@ build do
     "shared",
     "no-ssl3",
     "no-gost",
+    "no-uplink", # explicitly disable uplink to match CPython 
   ]
 
   if windows?

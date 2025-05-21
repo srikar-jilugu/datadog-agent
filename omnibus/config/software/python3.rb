@@ -99,6 +99,23 @@ build do
     command "touch externals\\openssl-bin-#{openssl_version}\\#{python_arch}\\libcrypto-3.pdb"
     # And finally the headers:
     copy "#{install_dir}\\embedded3\\include\\openssl", "externals\\openssl-bin-#{openssl_version}\\#{python_arch}\\include\\"
+
+    # Verify OpenSSL files for Python build
+    block "Verify OpenSSL files for Python build" do
+      base = File.join("externals", "openssl-bin-#{openssl_version}", python_arch)
+      files = [
+        File.join(base, "libssl-3.dll"),
+        File.join(base, "libcrypto-3.dll"),
+        File.join(base, "libssl.lib"),
+        File.join(base, "libcrypto.lib"),
+        File.join(base, "include", "openssl", "ssl.h"),
+        File.join(base, "include", "openssl", "crypto.h"),
+      ]
+      missing = files.reject { |f| File.exist?(f) }
+      unless missing.empty?
+        raise "Missing OpenSSL files for Python build: #{missing.join(', ')}"
+      end
+    end
     # Now build python itself...
 
     ###############################
