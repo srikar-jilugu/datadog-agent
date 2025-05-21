@@ -5,7 +5,7 @@ trigger_release_jobs_on_failure:
   rules: !reference [.on_deploy_failure]
   trigger:
     include:
-      - local: gate.yml
+      - local: .gitlab/release_jobs/gate.yml
       - local: .gitlab/release_jobs/include.yml
 
 trigger_release_jobs:
