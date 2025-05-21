@@ -13,11 +13,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/dyninst/ir"
 )
 
-type TypeResolver interface {
-	// Panics if type is not found.
-	Resolve(id ir.TypeID) ir.Type
-}
-
 type Function struct {
 	ID  FunctionID
 	Ops []Op
@@ -29,10 +24,8 @@ type Program struct {
 }
 
 type encoder struct {
-	typeResolver TypeResolver
-
 	// Queue of interesting types that need a `ProcessType` function.
-	typeQueue []ir.TypeID
+	typeQueue []ir.Type
 	// Metadata for `ProcessType` functions.
 	typeFuncMetadata map[ir.TypeID]typeFuncMetadata
 
@@ -49,10 +42,10 @@ type typeFuncMetadata struct {
 	offsetShift uint32
 }
 
-func EncodeProgram(resolver TypeResolver, program *ir.Program) Program {
-	e := &encoder{
-		typeResolver: resolver,
-		functions:    nil,
+func EncodeProgram(program ir.Program) Program {
+	e := encoder{
+		typeFuncMetadata: make(map[ir.TypeID]typeFuncMetadata, len(program.Types)),
+		functionReg:      make(map[FunctionID]bool),
 	}
 	for _, probe := range program.Probes {
 		for _, event := range probe.Events {
@@ -62,7 +55,7 @@ func EncodeProgram(resolver TypeResolver, program *ir.Program) Program {
 		}
 	}
 	for len(e.typeQueue) > 0 {
-		e.addTypeHandler(e.typeResolver.Resolve(e.typeQueue[0]))
+		e.addTypeHandler(e.typeQueue[0])
 		e.typeQueue = e.typeQueue[1:]
 	}
 	return Program{
@@ -219,7 +212,7 @@ func (e *encoder) addTypeHandler(t ir.Type) (FunctionID, bool) {
 	// Pointer or fat pointer types.
 
 	case *ir.PointerType:
-		e.typeQueue = append(e.typeQueue, t.Pointee.GetID())
+		e.typeQueue = append(e.typeQueue, t.Pointee)
 		needed = true
 		offsetShift = 0
 		ops = []Op{
@@ -227,7 +220,7 @@ func (e *encoder) addTypeHandler(t ir.Type) (FunctionID, bool) {
 		}
 
 	case *ir.GoSliceHeaderType:
-		e.typeQueue = append(e.typeQueue, t.GoSliceDataType.GetID())
+		e.typeQueue = append(e.typeQueue, t.GoSliceDataType)
 		needed = true
 		offsetShift = 0
 		ops = []Op{
@@ -235,7 +228,7 @@ func (e *encoder) addTypeHandler(t ir.Type) (FunctionID, bool) {
 		}
 
 	case *ir.GoStringHeaderType:
-		e.typeQueue = append(e.typeQueue, t.GoStringDataType.GetID())
+		e.typeQueue = append(e.typeQueue, t.GoStringDataType)
 		needed = true
 		offsetShift = 0
 		ops = []Op{
@@ -394,7 +387,7 @@ func (e *encoder) EncodeLocationOp(pc uint64, op *ir.LocationOp, ops []Op) []Op 
 						Size:     uint8(locPiece.Size),
 					})
 				} else {
-					ops = append(ops, ExprDereferenceCfaOffsetOp{
+					ops = append(ops, ExprDereferenceCfaOp{
 						Offset: uint32(locPiece.StackOffset),
 						Len:    uint32(locPiece.Size),
 					})

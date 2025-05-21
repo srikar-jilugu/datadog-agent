@@ -80,10 +80,10 @@ func (i callInstruction) encode(e tracker, out io.Writer) {
 	si.encode(e, out)
 }
 
-// generateCode generates:
+// GenerateCode generates:
 //   - stack machine code
 //   - type infos
-func generateCode(program logical.Program, out io.Writer) error {
+func GenerateCode(program logical.Program, out io.Writer) error {
 	t := tracker{
 		functionLoc: make(map[logical.FunctionID]uint32, len(program.Functions)),
 	}

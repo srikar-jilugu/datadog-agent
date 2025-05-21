@@ -56,7 +56,7 @@ type ExprSaveOp struct {
 	ExprIdx uint32
 }
 
-type ExprDereferenceCfaOffsetOp struct {
+type ExprDereferenceCfaOp struct {
 	baseOp
 	Offset uint32
 	Len    uint32

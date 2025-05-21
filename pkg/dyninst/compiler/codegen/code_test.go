@@ -58,5 +58,5 @@ func TestGenerateCode(t *testing.T) {
 			},
 		},
 	}
-	generateCode(logical.Program{Functions: functions}, os.Stdout)
+	GenerateCode(logical.Program{Functions: functions}, os.Stdout)
 }

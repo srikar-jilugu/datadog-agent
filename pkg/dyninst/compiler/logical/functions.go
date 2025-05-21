@@ -55,7 +55,7 @@ type ProcessExpression struct {
 }
 
 func (e ProcessExpression) PrettyString() string {
-	return fmt.Sprintf("ProcessExpression[%s@%x.expr[%d]]", e.EventRootType.GetName(), e.InjectionPC, e.ExprIdx)
+	return fmt.Sprintf("ProcessExpression[%s@0x%x.expr[%d]]", e.EventRootType.GetName(), e.InjectionPC, e.ExprIdx)
 }
 
 // Process user data of a specific type, chasing pointers, resolving interfaces,

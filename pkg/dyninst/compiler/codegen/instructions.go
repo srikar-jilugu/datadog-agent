@@ -54,7 +54,7 @@ func makeInstruction(op logical.Op) encodable {
 			bytes: bytes,
 		}
 
-	case logical.ExprDereferenceCfaOffsetOp:
+	case logical.ExprDereferenceCfaOp:
 		bytes := make([]byte, 8)
 		bytes = binary.LittleEndian.AppendUint32(bytes, op.Offset)
 		bytes = binary.LittleEndian.AppendUint32(bytes, op.Len)
