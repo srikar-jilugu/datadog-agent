@@ -6,6 +6,7 @@
 package file
 
 import (
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +29,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux x86_64 tests
 		{
 			name:                "Linux x86_64 static",
-			filepath:            "testdata/linux_amd64_static",
+			filepath:            "linux_amd64_static",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -39,7 +40,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86_64 static UPX",
-			filepath:            "testdata/linux_amd64_static-upx-best",
+			filepath:            "linux_amd64_static-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -50,7 +51,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86_64 dynamic",
-			filepath:            "testdata/linux_amd64_dyn",
+			filepath:            "linux_amd64_dyn",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -61,7 +62,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86_64 dynamic UPX",
-			filepath:            "testdata/linux_amd64_dyn-upx-best",
+			filepath:            "linux_amd64_dyn-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -74,7 +75,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux x86 tests
 		{
 			name:                "Linux x86 static",
-			filepath:            "testdata/linux_386_static",
+			filepath:            "linux_386_static",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -85,7 +86,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86 static UPX",
-			filepath:            "testdata/linux_386_static-upx-best",
+			filepath:            "linux_386_static-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -96,7 +97,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86 dynamic",
-			filepath:            "testdata/linux_386_dyn",
+			filepath:            "linux_386_dyn",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -107,7 +108,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86 dynamic UPX",
-			filepath:            "testdata/linux_386_dyn-upx-best",
+			filepath:            "linux_386_dyn-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -120,7 +121,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux ARM64 tests
 		{
 			name:                "Linux ARM64 static",
-			filepath:            "testdata/linux_arm64_static",
+			filepath:            "linux_arm64_static",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -131,7 +132,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM64 static UPX",
-			filepath:            "testdata/linux_arm64_static-upx-best",
+			filepath:            "linux_arm64_static-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -142,7 +143,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM64 dynamic",
-			filepath:            "testdata/linux_arm64_dyn",
+			filepath:            "linux_arm64_dyn",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -153,7 +154,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM64 dynamic UPX",
-			filepath:            "testdata/linux_arm64_dyn-upx-best",
+			filepath:            "linux_arm64_dyn-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -166,7 +167,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux ARM tests
 		{
 			name:                "Linux ARM static",
-			filepath:            "testdata/linux_arm_static",
+			filepath:            "linux_arm_static",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -177,7 +178,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM static UPX",
-			filepath:            "testdata/linux_arm_static-upx-best",
+			filepath:            "linux_arm_static-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -188,7 +189,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM dynamic",
-			filepath:            "testdata/linux_arm_dyn",
+			filepath:            "linux_arm_dyn",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -199,7 +200,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM dynamic UPX",
-			filepath:            "testdata/linux_arm_dyn-upx-best",
+			filepath:            "linux_arm_dyn-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -212,7 +213,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows x86_64 tests
 		{
 			name:                "Windows x86_64 static",
-			filepath:            "testdata/windows_amd64_static.exe",
+			filepath:            "windows_amd64_static_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -223,7 +224,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86_64 static UPX",
-			filepath:            "testdata/windows_amd64_static.exe-upx-best",
+			filepath:            "windows_amd64_static.exe-upx-best",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -234,7 +235,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86_64 dynamic",
-			filepath:            "testdata/windows_amd64_dyn.exe",
+			filepath:            "windows_amd64_dyn_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -245,7 +246,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86_64 dynamic UPX",
-			filepath:            "testdata/windows_amd64_dyn.exe-upx-best",
+			filepath:            "windows_amd64_dyn.exe-upx-best",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -258,7 +259,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows x86 tests
 		{
 			name:                "Windows x86 static",
-			filepath:            "testdata/windows_386_static.exe",
+			filepath:            "windows_386_static_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -269,7 +270,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86 static UPX",
-			filepath:            "testdata/windows_386_static.exe-upx-best",
+			filepath:            "windows_386_static.exe-upx-best",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -280,7 +281,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86 dynamic",
-			filepath:            "testdata/windows_386_dyn.exe",
+			filepath:            "windows_386_dyn_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -291,7 +292,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86 dynamic UPX",
-			filepath:            "testdata/windows_386_dyn.exe-upx-best",
+			filepath:            "windows_386_dyn.exe-upx-best",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -304,7 +305,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// macOS tests
 		{
 			name:                "macOS x86_64 dynamic",
-			filepath:            "testdata/macos_amd64_dyn",
+			filepath:            "macos_amd64_dyn",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -315,7 +316,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "macOS x86_64 dynamic UPX",
-			filepath:            "testdata/macos_amd64_dyn-upx-best",
+			filepath:            "macos_amd64_dyn-upx-best",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -326,7 +327,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "macOS ARM64 dynamic",
-			filepath:            "testdata/macos_arm64_dyn",
+			filepath:            "macos_arm64_dyn",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -337,7 +338,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "macOS ARM64 dynamic UPX",
-			filepath:            "testdata/macos_arm64_dyn-upx-best",
+			filepath:            "macos_arm64_dyn-upx-best",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -350,7 +351,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// macOS garble tests
 		{
 			name:                "macOS x86_64 dynamic garble",
-			filepath:            "testdata/macos_amd64_dyn_garble",
+			filepath:            "macos_amd64_dyn_garble",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -361,7 +362,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "macOS x86_64 dynamic garble UPX",
-			filepath:            "testdata/macos_amd64_dyn_garble-upx-best",
+			filepath:            "macos_amd64_dyn_garble-upx-best",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -372,7 +373,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "macOS ARM64 dynamic garble",
-			filepath:            "testdata/macos_arm64_dyn_garble",
+			filepath:            "macos_arm64_dyn_garble",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -383,7 +384,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "macOS ARM64 dynamic garble UPX",
-			filepath:            "testdata/macos_arm64_dyn_garble-upx-best",
+			filepath:            "macos_arm64_dyn_garble-upx-best",
 			expectedType:        model.MachOExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -396,7 +397,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Archive and text file tests
 		{
 			name:                "7z archive",
-			filepath:            "testdata/test_7z",
+			filepath:            "test_7z",
 			expectedType:        model.Compressed,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -407,7 +408,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "bzip2 archive",
-			filepath:            "testdata/test_bz2",
+			filepath:            "test_bz2",
 			expectedType:        model.Compressed,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -418,7 +419,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "gzip archive",
-			filepath:            "testdata/test_gz",
+			filepath:            "test_gz",
 			expectedType:        model.Compressed,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -429,7 +430,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "shell script",
-			filepath:            "testdata/test_sh",
+			filepath:            "test_sh",
 			expectedType:        model.ShellScript,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -440,7 +441,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "shell script with .exe extension",
-			filepath:            "testdata/test_sh_exe",
+			filepath:            "test_sh_exe",
 			expectedType:        model.ShellScript,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -451,7 +452,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "tar archive",
-			filepath:            "testdata/test_tar",
+			filepath:            "test_tar",
 			expectedType:        model.Binary,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -462,7 +463,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "tgz archive",
-			filepath:            "testdata/test_tgz",
+			filepath:            "test_tgz",
 			expectedType:        model.Compressed,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -473,7 +474,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "text file",
-			filepath:            "testdata/test_txt",
+			filepath:            "test_txt",
 			expectedType:        model.Text,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -484,7 +485,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "xz archive",
-			filepath:            "testdata/test_xz",
+			filepath:            "test_xz",
 			expectedType:        model.Compressed,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -495,7 +496,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "zip archive",
-			filepath:            "testdata/test_zip",
+			filepath:            "test_zip",
 			expectedType:        model.Compressed,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -508,7 +509,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Empty file test
 		{
 			name:                "Empty file",
-			filepath:            "testdata/test_empty",
+			filepath:            "test_empty",
 			expectedType:        model.Empty,
 			expectedABI:         model.UnknownABI,
 			expectedArch:        model.UnknownArch,
@@ -521,7 +522,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux x86_64 garble tests
 		{
 			name:                "Linux x86_64 static garble",
-			filepath:            "testdata/linux_amd64_static_garble",
+			filepath:            "linux_amd64_static_garble",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -532,7 +533,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86_64 static garble UPX",
-			filepath:            "testdata/linux_amd64_static_garble-upx-best",
+			filepath:            "linux_amd64_static_garble-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -545,7 +546,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux x86 garble tests
 		{
 			name:                "Linux x86 static garble",
-			filepath:            "testdata/linux_386_static_garble",
+			filepath:            "linux_386_static_garble",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -556,7 +557,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux x86 static garble UPX",
-			filepath:            "testdata/linux_386_static_garble-upx-upx-best",
+			filepath:            "linux_386_static_garble-upx-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -569,7 +570,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux ARM64 garble tests
 		{
 			name:                "Linux ARM64 static garble",
-			filepath:            "testdata/linux_arm64_static_garble",
+			filepath:            "linux_arm64_static_garble",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -580,7 +581,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM64 static garble UPX",
-			filepath:            "testdata/linux_arm64_static_garble-upx-best",
+			filepath:            "linux_arm64_static_garble-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -593,7 +594,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Linux ARM garble tests
 		{
 			name:                "Linux ARM static garble",
-			filepath:            "testdata/linux_arm_static_garble",
+			filepath:            "linux_arm_static_garble",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -604,7 +605,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Linux ARM static garble UPX",
-			filepath:            "testdata/linux_arm_static_garble-upx-best",
+			filepath:            "linux_arm_static_garble-upx-best",
 			expectedType:        model.ELFExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -617,7 +618,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows x86_64 garble tests
 		{
 			name:                "Windows x86_64 static garble",
-			filepath:            "testdata/windows_amd64_static_garble.exe",
+			filepath:            "windows_amd64_static_garble_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -628,7 +629,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86_64 static garble UPX",
-			filepath:            "testdata/windows_amd64_static_garble.exe-upx-best",
+			filepath:            "windows_amd64_static_garble.exe-upx-best",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.X8664,
@@ -641,7 +642,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows x86 garble tests
 		{
 			name:                "Windows x86 static garble",
-			filepath:            "testdata/windows_386_static_garble.exe",
+			filepath:            "windows_386_static_garble_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -652,7 +653,7 @@ func TestAnalyzeFile(t *testing.T) {
 		},
 		{
 			name:                "Windows x86 static garble UPX",
-			filepath:            "testdata/windows_386_static_garble.exe-upx-best",
+			filepath:            "windows_386_static_garble.exe-upx-best",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.X86,
@@ -665,7 +666,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows ARM64 garble tests
 		{
 			name:                "Windows ARM64 static garble",
-			filepath:            "testdata/windows_arm64_static_garble.exe",
+			filepath:            "windows_arm64_static_garble_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -678,7 +679,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows ARM garble tests
 		{
 			name:                "Windows ARM static garble",
-			filepath:            "testdata/windows_arm_static_garble.exe",
+			filepath:            "windows_arm_static_garble_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -691,7 +692,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows ARM64 tests
 		{
 			name:                "Windows ARM64 static",
-			filepath:            "testdata/windows_arm64_static.exe",
+			filepath:            "windows_arm64_static_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit64,
 			expectedArch:        model.ARM64,
@@ -704,7 +705,7 @@ func TestAnalyzeFile(t *testing.T) {
 		// Windows ARM tests
 		{
 			name:                "Windows ARM static",
-			filepath:            "testdata/windows_arm_static.exe",
+			filepath:            "windows_arm_static_exe",
 			expectedType:        model.PEExecutable,
 			expectedABI:         model.Bit32,
 			expectedArch:        model.ARM,
@@ -717,7 +718,7 @@ func TestAnalyzeFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			info, err := AnalyzeFile(tt.filepath, nil, true)
+			info, err := AnalyzeFile(path.Join("testdata", tt.filepath), nil, true)
 			assert.NoError(t, err)
 
 			if err == nil {
