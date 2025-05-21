@@ -101,9 +101,7 @@ func (h *RemoteConfigHandler) Start() {
 }
 
 // mrfUpdateCallback is the callback function for the AGENT_FAILOVER configs.
-// It fetches all the configs targeting the agent and applies the failover settings
-// using an OR strategy. In case of nil the value is not updated, for a false it does not update if
-// the setting is already set to true.
+// It fetches all the configs targeting the agent and applies the failover_apm settings.
 // Note: we only care about APM (failover_apm) configuration, but Logs (failover_logs) and Metrics (failover_metrics)
 // may also be present on the MRF configuration. These are handled on the core agent RC.
 func (h *RemoteConfigHandler) mrfUpdateCallback(updates map[string]state.RawConfig, applyStateCallback func(string, state.ApplyStatus)) {
