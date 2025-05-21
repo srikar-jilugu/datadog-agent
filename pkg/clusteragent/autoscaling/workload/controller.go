@@ -300,7 +300,7 @@ func (c *Controller) syncPodAutoscaler(ctx context.Context, key, ns, name string
 	validationErr := c.validateAutoscaler(podAutoscalerInternal)
 	if validationErr != nil {
 		podAutoscalerInternal.SetError(validationErr)
-		return autoscaling.NoRequeue, c.updateAutoscalerStatusAndUnlock(ctx, key, ns, name, validationErr, podAutoscalerInternal, podAutoscaler)
+		return autoscaling.Requeue, c.updateAutoscalerStatusAndUnlock(ctx, key, ns, name, validationErr, podAutoscalerInternal, podAutoscaler)
 	}
 
 	// Get autoscaler target
