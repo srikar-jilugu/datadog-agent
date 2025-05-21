@@ -95,6 +95,7 @@ func (h *RemoteConfigHandler) Start() {
 	h.client.Subscribe(state.ProductAPMSampling, h.onUpdate)
 	h.client.Subscribe(state.ProductAgentConfig, h.onAgentConfigUpdate)
 	if h.mrfClient != nil {
+		h.mrfClient.Start()
 		h.mrfClient.Subscribe(state.ProductAgentFailover, h.mrfUpdateCallback)
 	}
 }
