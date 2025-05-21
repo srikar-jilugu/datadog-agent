@@ -2054,6 +2054,10 @@
         {
           "name": "MACOS_EXECUTABLE",
           "architecture": "all"
+        },
+        {
+          "name": "FILE_LESS",
+          "architecture": "all"
         }
       ]
     },

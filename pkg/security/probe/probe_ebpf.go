@@ -1031,9 +1031,9 @@ func (p *EBPFProbe) handleEvent(CPU int, data []byte) {
 		metadatas, err := p.Resolvers.FileMetadataResolver.ResolveFileMetadatas(event, &event.Exec.Process.FileEvent)
 		if err != nil {
 			seclog.Errorf("failed to resolve exec binary metadatas: %s", err)
-			return
+		} else {
+			event.Exec.FileMetadatas = metadatas
 		}
-		event.Exec.FileMetadatas = metadatas
 	}
 
 	switch eventType {

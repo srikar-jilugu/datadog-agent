@@ -842,6 +842,7 @@ File types.
 | `LINUX_EXECUTABLE` | all |
 | `WINDOWS_EXECUTABLE` | all |
 | `MACOS_EXECUTABLE` | all |
+| `FILE_LESS` | all |
 
 ### `L3 protocols` {#l3-protocols}
 L3 protocols are the supported Layer 3 protocols.

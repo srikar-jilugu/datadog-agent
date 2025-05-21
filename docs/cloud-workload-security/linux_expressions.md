@@ -4314,6 +4314,7 @@ File types.
 | `LINUX_EXECUTABLE` | all |
 | `WINDOWS_EXECUTABLE` | all |
 | `MACOS_EXECUTABLE` | all |
+| `FILE_LESS` | all |
 
 ### `Inode mode constants` {#inode-mode-constants}
 Inode mode constants are the supported file type constants as well as the file mode constants.

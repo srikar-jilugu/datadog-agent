@@ -409,6 +409,7 @@ var (
 		"LINUX_EXECUTABLE":   ELFExecutable,
 		"WINDOWS_EXECUTABLE": PEExecutable,
 		"MACOS_EXECUTABLE":   MachOExecutable,
+		"FILE_LESS":          FileLess,
 	}
 
 	// LinkageTypeConstants defines linkage type constants
@@ -1021,6 +1022,8 @@ const (
 	PEExecutable
 	// MachOExecutable file
 	MachOExecutable
+	// FileLess file
+	FileLess
 )
 
 func (ft FileType) String() string {

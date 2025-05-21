@@ -68,6 +68,14 @@ func NewResolver(statsdClient statsd.ClientInterface, opt *Opt) (*Resolver, erro
 
 // ResolveFileMetadatas resolves file metadatas
 func (r *Resolver) ResolveFileMetadatas(event *model.Event, file *model.FileEvent) (*model.FileMetadatas, error) {
+	// fileless
+	if file.BasenameStr == "memfd:" && file.PathnameStr == "" {
+		return &model.FileMetadatas{
+			Type:         int(model.FileLess),
+			IsExecutable: true,
+		}, nil
+	}
+
 	// TODO: needed?
 	// resolve FileEvent
 	event.FieldHandlers.ResolveFilePath(event, file)
