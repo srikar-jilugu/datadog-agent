@@ -41,6 +41,6 @@ celian:
     # Remove inactive versions
     - |
       echo Trying to remove inactive versions
-      dda inv -- -e macos.list-ci-active-versions -l python -t "$PYTHON_VERSION"
-      dda inv -- -e macos.list-ci-active-versions -l go -t "$PYTHON_VERSION"
+      dda inv -- -e macos.list-ci-active-versions -l python
+      dda inv -- -e macos.list-ci-active-versions -l go
     - echo ok
