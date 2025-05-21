@@ -28,8 +28,8 @@ lint_macos_gitlab_arm64:
 
 celian:
   tags: ["macos:ventura-amd64", "specific:true"]
+  stage: lint
   needs: []
-  extends: .macos_gitlab
   parallel: 8
   script:
     - !reference [.vault_login]
