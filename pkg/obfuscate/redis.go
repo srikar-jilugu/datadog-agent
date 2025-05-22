@@ -147,10 +147,9 @@ func obfuscateRedisCmd(out *strings.Builder, cmd string, args ...string) {
 		// • ZSCORE key member
 		obfuscateRedisArgN(args, 1)
 
-	case "HSET", "HSETNX", "LREM", "LSET", "SETBIT", "SETEX", "PSETEX",
+	case "HSETNX", "LREM", "LSET", "SETBIT", "SETEX", "PSETEX",
 		"SETRANGE", "ZINCRBY", "SMOVE", "RESTORE":
 		// Obfuscate 3rd argument:
-		// • HSET key field value
 		// • HSETNX key field value
 		// • LREM key count value
 		// • LSET key index value
@@ -189,9 +188,10 @@ func obfuscateRedisCmd(out *strings.Builder, cmd string, args ...string) {
 		// • GEOADD key longitude latitude member [longitude latitude member ...]
 		obfuscateRedisArgsStep(args, 1, 3)
 
-	case "HMSET":
+	case "HMSET", "HSET":
 		// Every 2nd argument starting from first.
 		// • HMSET key field value [field value ...]
+		// • HSET key field value [field value ...]
 		obfuscateRedisArgsStep(args, 1, 2)
 
 	case "MSET", "MSETNX":
